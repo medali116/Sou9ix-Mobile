@@ -1,29 +1,67 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import 'package:sou9ix/core/formatters.dart';
+import 'package:sou9ix/features/clients/viewmodel/clients_provider.dart';
 import 'package:sou9ix/features/sales/model/sale.dart';
 import 'package:sou9ix/features/sales/service/ticket_pdf_service.dart';
 import 'package:sou9ix/core/theme/app_colors.dart';
 import 'package:sou9ix/core/theme/app_theme.dart';
 
-class ReceiptScreen extends StatefulWidget {
+class ReceiptScreen extends ConsumerStatefulWidget {
   final Sale sale;
 
   const ReceiptScreen({super.key, required this.sale});
 
   @override
-  State<ReceiptScreen> createState() => _ReceiptScreenState();
+  ConsumerState<ReceiptScreen> createState() => _ReceiptScreenState();
 }
 
-class _ReceiptScreenState extends State<ReceiptScreen> {
+class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
+  static const _autoReturnSeconds = 3;
+
   bool _printing = false;
+  Timer? _autoReturnTimer;
+  int _secondsLeft = _autoReturnSeconds;
+  bool _autoReturnActive = true;
 
   Sale get sale => widget.sale;
 
+  @override
+  void initState() {
+    super.initState();
+    // Lets a cashier chain sales quickly — the receipt clears itself after a
+    // beat unless they're still doing something with it (printing) or tap
+    // the cancel button below.
+    _autoReturnTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_secondsLeft <= 1) {
+        timer.cancel();
+        if (mounted) context.go('/app');
+      } else {
+        setState(() => _secondsLeft--);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _autoReturnTimer?.cancel();
+    super.dispose();
+  }
+
+  void _cancelAutoReturn() {
+    _autoReturnTimer?.cancel();
+    if (mounted) setState(() => _autoReturnActive = false);
+  }
+
   Future<void> _printOrShare() async {
+    _cancelAutoReturn();
     setState(() => _printing = true);
     try {
       await ticketPdfService.printOrShare(sale);
@@ -36,6 +74,14 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
   Widget build(BuildContext context) {
     final dateStr = DateFormat('dd/MM/yyyy · HH:mm').format(sale.dateHeure);
 
+    double? clientNewDebt;
+    if (sale.modePaiement == ModePaiement.credit && sale.clientId != null) {
+      final matches = ref
+          .watch(clientsProvider)
+          .where((c) => c.id == sale.clientId);
+      if (matches.isNotEmpty) clientNewDebt = matches.first.creditTotal;
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -43,26 +89,81 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
           children: [
             const SizedBox(height: 28),
             Container(
-              width: 84,
-              height: 84,
-              decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.check_rounded, color: AppColors.success, size: 44),
-            )
+                  width: 84,
+                  height: 84,
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_rounded,
+                    color: AppColors.success,
+                    size: 44,
+                  ),
+                )
                 .animate()
                 .scale(duration: 450.ms, curve: Curves.elasticOut)
                 .fadeIn(duration: 200.ms),
             const SizedBox(height: 16),
-            Text('Vente enregistrée', style: Theme.of(context).textTheme.headlineMedium)
-                .animate()
-                .fadeIn(delay: 150.ms),
+            Text(
+              'Vente enregistrée',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ).animate().fadeIn(delay: 150.ms),
             const SizedBox(height: 4),
             Text(
               'Ticket #${sale.id.substring(sale.id.length - 6).toUpperCase()}',
               style: Theme.of(context).textTheme.bodyMedium,
             ).animate().fadeIn(delay: 200.ms),
+            if (clientNewDebt != null) ...[
+              const SizedBox(height: 14),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    border: Border.all(
+                      color: AppColors.warning.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.menu_book_rounded,
+                        color: AppColors.warning,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Dette du client mise à jour',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13,
+                              ),
+                            ),
+                            Text(
+                              'Nouveau solde : ${AppFormat.dt(clientNewDebt)}',
+                              style: const TextStyle(
+                                color: AppColors.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ).animate().fadeIn(delay: 220.ms),
+            ],
             const SizedBox(height: 24),
             Expanded(
               child: SingleChildScrollView(
@@ -80,15 +181,20 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                       Center(
                         child: Column(
                           children: [
-                            Text('Sou9ix',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
-                                    ?.copyWith(color: AppColors.teal)),
+                            Text(
+                              'Sou9ix',
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(color: AppColors.teal),
+                            ),
                             const SizedBox(height: 2),
-                            Text('Épicerie El Baraka — La Marsa',
-                                style: Theme.of(context).textTheme.bodyMedium),
-                            Text(dateStr, style: Theme.of(context).textTheme.bodyMedium),
+                            Text(
+                              'Épicerie El Baraka — La Marsa',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            Text(
+                              dateStr,
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
                           ],
                         ),
                       ),
@@ -98,53 +204,68 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                       if (sale.lignes.isEmpty)
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Text('Détails de vente indisponibles pour cette démo.',
-                              style: Theme.of(context).textTheme.bodyMedium),
+                          child: Text(
+                            'Détails de vente indisponibles pour cette démo.',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
                         )
                       else
-                        ...sale.lignes.map((l) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 5),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    flex: 3,
-                                    child: Text(
-                                      l.discount.isNone
-                                          ? l.product.name
-                                          : '${l.product.name} (${l.discount.label((v) => v.toStringAsFixed(2))})',
-                                      style: Theme.of(context).textTheme.bodyLarge,
+                        ...sale.lignes.map(
+                          (l) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 5),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  flex: 3,
+                                  child: Text(
+                                    l.discount.isNone
+                                        ? l.product.name
+                                        : '${l.product.name} (${l.discount.label((v) => v.toStringAsFixed(2))})',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyLarge,
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Text(
+                                    l.product.venduAuPoids
+                                        ? AppFormat.kg(l.quantite)
+                                        : '× ${l.quantite.toInt()}',
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium,
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Text(
+                                    AppFormat.dtShort(l.sousTotal),
+                                    textAlign: TextAlign.right,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
-                                  Expanded(
-                                    flex: 2,
-                                    child: Text(
-                                      l.product.venduAuPoids
-                                          ? AppFormat.kg(l.quantite)
-                                          : '× ${l.quantite.toInt()}',
-                                      textAlign: TextAlign.center,
-                                      style: Theme.of(context).textTheme.bodyMedium,
-                                    ),
-                                  ),
-                                  Expanded(
-                                    flex: 2,
-                                    child: Text(
-                                      AppFormat.dtShort(l.sousTotal),
-                                      textAlign: TextAlign.right,
-                                      style: const TextStyle(fontWeight: FontWeight.w700),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       const SizedBox(height: 8),
                       const _DashedDivider(),
                       const SizedBox(height: 12),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Mode de paiement', style: Theme.of(context).textTheme.bodyMedium),
-                          Text(sale.modePaiement.label,
-                              style: const TextStyle(fontWeight: FontWeight.w700)),
+                          Text(
+                            'Mode de paiement',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          Text(
+                            sale.modePaiement.label,
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
                         ],
                       ),
                       if (!sale.discount.isNone) ...[
@@ -152,18 +273,31 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Sous-total', style: Theme.of(context).textTheme.bodyMedium),
-                            Text(AppFormat.dtShort(sale.sousTotal),
-                                style: Theme.of(context).textTheme.bodyMedium),
+                            Text(
+                              'Sous-total',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            Text(
+                              AppFormat.dtShort(sale.sousTotal),
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
                           ],
                         ),
                         const SizedBox(height: 4),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('Remise', style: Theme.of(context).textTheme.bodyMedium),
-                            Text(sale.discount.label(AppFormat.dtShort),
-                                style: const TextStyle(color: AppColors.goldDark, fontWeight: FontWeight.w700)),
+                            Text(
+                              'Remise',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            Text(
+                              sale.discount.label(AppFormat.dtShort),
+                              style: const TextStyle(
+                                color: AppColors.goldDark,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -171,19 +305,30 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Total TTC', style: Theme.of(context).textTheme.titleMedium),
-                          Text(AppFormat.dt(sale.total),
-                              style: Theme.of(context).textTheme.headlineMedium),
+                          Text(
+                            'Total TTC',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
+                          Text(
+                            AppFormat.dt(sale.total),
+                            style: Theme.of(context).textTheme.headlineMedium,
+                          ),
                         ],
                       ),
                       const SizedBox(height: 16),
                       Center(
                         child: Text(
                           'Merci de votre visite !',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
+                          style: Theme.of(context).textTheme.bodyMedium
                               ?.copyWith(fontStyle: FontStyle.italic),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Center(
+                        child: QrImageView(
+                          data: sale.id,
+                          size: 64,
+                          padding: EdgeInsets.zero,
                         ),
                       ),
                     ],
@@ -191,6 +336,62 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                 ),
               ).animate().fadeIn(delay: 250.ms, duration: 350.ms).slideY(begin: 0.06, end: 0),
             ),
+            if (_autoReturnActive)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.teal.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.timer_outlined,
+                            size: 16,
+                            color: AppColors.teal,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'Retour automatique dans ${_secondsLeft}s',
+                            style: const TextStyle(
+                              color: AppColors.teal,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
+                      TextButton(
+                        onPressed: _cancelAutoReturn,
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text(
+                          'Annuler le retour automatique',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ).animate().fadeIn(duration: 200.ms),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
               child: Row(
@@ -205,7 +406,9 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.print_outlined),
-                      label: Text(_printing ? 'Préparation…' : 'Imprimer / PDF'),
+                      label: Text(
+                        _printing ? 'Préparation…' : 'Imprimer / PDF',
+                      ),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         side: const BorderSide(color: AppColors.border),
@@ -218,7 +421,10 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () => context.go('/app'),
+                      onPressed: () {
+                        _cancelAutoReturn();
+                        context.go('/app');
+                      },
                       icon: const Icon(Icons.add_rounded),
                       label: const Text('Nouvelle vente'),
                     ),
@@ -247,7 +453,11 @@ class _DashedDivider extends StatelessWidget {
             children: List.generate(
               count,
               (_) => Expanded(
-                child: Container(height: 1, color: AppColors.border, margin: const EdgeInsets.only(right: 4)),
+                child: Container(
+                  height: 1,
+                  color: AppColors.border,
+                  margin: const EdgeInsets.only(right: 4),
+                ),
               ),
             ),
           );

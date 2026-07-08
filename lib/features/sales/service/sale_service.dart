@@ -19,6 +19,10 @@ class SaleService {
   /// Records a new sale, decrements stock for every line sold, and — for a
   /// crédit (karné) payment — adds the total to the client's outstanding
   /// balance.
+  ///
+  /// A client is only ever attached to the sale for a crédit payment — a
+  /// client scanned ahead of time on the Caisse screen but then paid in
+  /// cash/carte shouldn't have their name recorded on the ticket.
   Sale checkout({
     required List<CartItem> lignes,
     required ModePaiement modePaiement,
@@ -26,10 +30,11 @@ class SaleService {
     String? employeeId,
     Discount discount = const Discount.none(),
   }) {
+    final effectiveClientId = modePaiement == ModePaiement.credit ? clientId : null;
     final sale = _ref.read(salesProvider.notifier).recordSale(
           lignes: lignes,
           modePaiement: modePaiement,
-          clientId: clientId,
+          clientId: effectiveClientId,
           employeeId: employeeId,
           discount: discount,
         );
@@ -37,8 +42,8 @@ class SaleService {
     for (final item in lignes) {
       _ref.read(productsProvider.notifier).decrementStock(item.product.id, item.quantite);
     }
-    if (modePaiement == ModePaiement.credit && clientId != null) {
-      _ref.read(clientsProvider.notifier).addCredit(clientId, sale.total);
+    if (modePaiement == ModePaiement.credit && effectiveClientId != null) {
+      _ref.read(clientsProvider.notifier).addCredit(effectiveClientId, sale.total);
     }
     return sale;
   }

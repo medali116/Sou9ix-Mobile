@@ -36,18 +36,32 @@ class TicketPdfService {
               pw.Center(
                 child: pw.Column(
                   children: [
-                    pw.Text('Sou9ix', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
-                    pw.Text('Épicerie El Baraka — La Marsa', style: const pw.TextStyle(fontSize: 9)),
+                    pw.Text(
+                      'Sou9ix',
+                      style: pw.TextStyle(
+                        fontSize: 16,
+                        fontWeight: pw.FontWeight.bold,
+                      ),
+                    ),
+                    pw.Text(
+                      'Épicerie El Baraka — La Marsa',
+                      style: const pw.TextStyle(fontSize: 9),
+                    ),
                     pw.Text(dateStr, style: const pw.TextStyle(fontSize: 9)),
-                    pw.Text('Ticket #${sale.id.substring(sale.id.length - 6).toUpperCase()}',
-                        style: const pw.TextStyle(fontSize: 9)),
+                    pw.Text(
+                      'Ticket #${sale.id.substring(sale.id.length - 6).toUpperCase()}',
+                      style: const pw.TextStyle(fontSize: 9),
+                    ),
                   ],
                 ),
               ),
               pw.SizedBox(height: 8),
               pw.Divider(),
               if (sale.lignes.isEmpty)
-                pw.Text('Détails de vente indisponibles.', style: const pw.TextStyle(fontSize: 9))
+                pw.Text(
+                  'Détails de vente indisponibles.',
+                  style: const pw.TextStyle(fontSize: 9),
+                )
               else
                 ...sale.lignes.map(
                   (l) => pw.Padding(
@@ -66,7 +80,9 @@ class TicketPdfService {
                         pw.Expanded(
                           flex: 2,
                           child: pw.Text(
-                            l.product.venduAuPoids ? AppFormat.kg(l.quantite) : 'x${l.quantite.toInt()}',
+                            l.product.venduAuPoids
+                                ? AppFormat.kg(l.quantite)
+                                : 'x${l.quantite.toInt()}',
                             style: const pw.TextStyle(fontSize: 9),
                             textAlign: pw.TextAlign.center,
                           ),
@@ -93,7 +109,20 @@ class TicketPdfService {
               _row('Total TTC', AppFormat.dt(sale.total), bold: true),
               pw.SizedBox(height: 10),
               pw.Center(
-                child: pw.Text('Merci de votre visite !', style: const pw.TextStyle(fontSize: 9)),
+                child: pw.Text(
+                  'Merci de votre visite !',
+                  style: const pw.TextStyle(fontSize: 9),
+                ),
+              ),
+              pw.SizedBox(height: 10),
+              pw.Center(
+                child: pw.BarcodeWidget(
+                  data: sale.id,
+                  barcode: pw.Barcode.qrCode(),
+                  width: 60,
+                  height: 60,
+                  drawText: false,
+                ),
               ),
             ],
           );
@@ -104,7 +133,10 @@ class TicketPdfService {
   }
 
   pw.Widget _row(String label, String value, {bool bold = false}) {
-    final style = pw.TextStyle(fontSize: bold ? 11 : 9, fontWeight: bold ? pw.FontWeight.bold : null);
+    final style = pw.TextStyle(
+      fontSize: bold ? 11 : 9,
+      fontWeight: bold ? pw.FontWeight.bold : null,
+    );
     return pw.Padding(
       padding: const pw.EdgeInsets.symmetric(vertical: 2),
       child: pw.Row(

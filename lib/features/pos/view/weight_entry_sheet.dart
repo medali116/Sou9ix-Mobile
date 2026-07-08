@@ -17,7 +17,11 @@ class WeightEntrySheet extends StatefulWidget {
 
   const WeightEntrySheet({super.key, required this.product, this.initialKg});
 
-  static Future<double?> show(BuildContext context, Product product, {double? initialKg}) {
+  static Future<double?> show(
+    BuildContext context,
+    Product product, {
+    double? initialKg,
+  }) {
     return showModalBottomSheet<double>(
       context: context,
       isScrollControlled: true,
@@ -49,7 +53,9 @@ class _WeightEntrySheetState extends State<WeightEntrySheet> {
   void _tapKey(String key) {
     setState(() {
       if (key == 'back') {
-        _input = _input.length > 1 ? _input.substring(0, _input.length - 1) : '0';
+        _input = _input.length > 1
+            ? _input.substring(0, _input.length - 1)
+            : '0';
         return;
       }
       if (key == '.') {
@@ -69,7 +75,12 @@ class _WeightEntrySheetState extends State<WeightEntrySheet> {
   Widget build(BuildContext context) {
     final product = widget.product;
     return Container(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.9,
+      ),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       decoration: const BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
@@ -78,86 +89,107 @@ class _WeightEntrySheetState extends State<WeightEntrySheet> {
         mainAxisSize: MainAxisSize.min,
         children: [
           const SheetHandle(),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-            child: Row(
-              children: [
-                ProductAvatar(emoji: product.emoji, photoBytes: product.photoBytes, size: 44),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(product.name, style: Theme.of(context).textTheme.titleMedium),
-                      Text(
-                        '${AppFormat.dtShort(product.prixVente)} / kg',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ],
+          Flexible(
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
+                    child: Row(
+                      children: [
+                        ProductAvatar(
+                          emoji: product.emoji,
+                          photoBytes: product.photoBytes,
+                          size: 44,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                product.name,
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              Text(
+                                '${AppFormat.dtShort(product.prixVente)} / kg',
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.pop(context),
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.pop(context),
-                  icon: const Icon(Icons.close_rounded),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            margin: const EdgeInsets.symmetric(horizontal: 20),
-            padding: const EdgeInsets.symmetric(vertical: 22),
-            decoration: BoxDecoration(
-              gradient: AppColors.inkGradient,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-            ),
-            child: Column(
-              children: [
-                const Text(
-                  'POIDS (kg)',
-                  style: TextStyle(
-                    color: AppColors.tealLight,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                    letterSpacing: 2,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  _input,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 42,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ).animate(key: ValueKey(_input)).fadeIn(duration: 120.ms),
-                const SizedBox(height: 14),
-                AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 200),
-                  child: Container(
-                    key: ValueKey(_montant),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  const SizedBox(height: 8),
+                  Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 20),
+                    padding: const EdgeInsets.symmetric(vertical: 22),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(100),
+                      gradient: AppColors.inkGradient,
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
                     ),
-                    child: Text(
-                      'Montant calculé  ${AppFormat.dt(_montant)}',
-                      style: const TextStyle(
-                        color: AppColors.gold,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13.5,
-                      ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'POIDS (kg)',
+                          style: TextStyle(
+                            color: AppColors.tealLight,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                            letterSpacing: 2,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                              _input,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 42,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            )
+                            .animate(key: ValueKey(_input))
+                            .fadeIn(duration: 120.ms),
+                        const SizedBox(height: 14),
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child: Container(
+                            key: ValueKey(_montant),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                            child: Text(
+                              'Montant calculé  ${AppFormat.dt(_montant)}',
+                              style: const TextStyle(
+                                color: AppColors.gold,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 13.5,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 18),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: _NumPad(onKey: _tapKey),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 18),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: _NumPad(onKey: _tapKey),
           ),
           const SizedBox(height: 14),
           Padding(
@@ -185,7 +217,20 @@ class _NumPad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'back'];
+    const keys = [
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+      '8',
+      '9',
+      '.',
+      '0',
+      'back',
+    ];
     return GridView.count(
       crossAxisCount: 3,
       shrinkWrap: true,
@@ -203,10 +248,17 @@ class _NumPad extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: k == 'back'
-                ? const Icon(Icons.backspace_outlined, size: 19, color: AppColors.textPrimary)
+                ? const Icon(
+                    Icons.backspace_outlined,
+                    size: 19,
+                    color: AppColors.textPrimary,
+                  )
                 : Text(
                     k,
-                    style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
           ),
         );

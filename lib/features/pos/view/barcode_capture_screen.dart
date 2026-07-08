@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'package:sou9ix/core/theme/app_colors.dart';
 import 'package:sou9ix/core/theme/app_theme.dart';
@@ -19,6 +20,12 @@ class _BarcodeCaptureScreenState extends State<BarcodeCaptureScreen> {
   bool _captured = false;
 
   @override
+  void initState() {
+    super.initState();
+    _manualCtrl.addListener(() => setState(() {}));
+  }
+
+  @override
   void dispose() {
     _manualCtrl.dispose();
     super.dispose();
@@ -27,6 +34,8 @@ class _BarcodeCaptureScreenState extends State<BarcodeCaptureScreen> {
   void _handleDetect(String code) {
     if (_captured) return;
     setState(() => _captured = true);
+    HapticFeedback.mediumImpact();
+    SystemSound.play(SystemSoundType.click);
     Future.delayed(const Duration(milliseconds: 400), () {
       if (mounted) Navigator.pop(context, code);
     });
@@ -55,8 +64,11 @@ class _BarcodeCaptureScreenState extends State<BarcodeCaptureScreen> {
                   ),
                   const Spacer(),
                   const Text(
-                    'Code-barres du produit',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                    'Scanner un code-barres',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const Spacer(),
                   const SizedBox(width: 48),
@@ -64,9 +76,10 @@ class _BarcodeCaptureScreenState extends State<BarcodeCaptureScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: AspectRatio(
+                aspectRatio: 1,
                 child: Stack(
                   children: [
                     LiveBarcodeScanner(
@@ -81,7 +94,11 @@ class _BarcodeCaptureScreenState extends State<BarcodeCaptureScreen> {
                             borderRadius: BorderRadius.circular(AppRadius.lg),
                           ),
                           child: const Center(
-                            child: Icon(Icons.check_circle_rounded, color: AppColors.success, size: 64),
+                            child: Icon(
+                              Icons.check_circle_rounded,
+                              color: AppColors.success,
+                              size: 64,
+                            ),
                           ),
                         ),
                       ),
@@ -90,40 +107,66 @@ class _BarcodeCaptureScreenState extends State<BarcodeCaptureScreen> {
               ),
             ),
             const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+              padding: EdgeInsets.fromLTRB(24, 6, 24, 12),
               child: Text(
-                'Tenez le code-barres stable, à 15–20 cm de la caméra,\ndans un endroit bien éclairé — ou saisissez-le manuellement.',
+                'Placez le code-barres dans le cadre\nou saisissez-le manuellement.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: Colors.white70, fontSize: 13),
               ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-              child: Row(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _manualCtrl,
-                      keyboardType: TextInputType.number,
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        hintText: 'Code-barres (EAN)',
-                        filled: true,
-                        fillColor: Colors.white.withValues(alpha: 0.08),
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
+                  const Padding(
+                    padding: EdgeInsets.only(left: 4, bottom: 6),
+                    child: Text(
+                      'Saisie manuelle',
+                      style: TextStyle(color: Colors.white70, fontSize: 12.5),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  IconButton.filled(
-                    onPressed: _submitManual,
-                    style: IconButton.styleFrom(backgroundColor: AppColors.teal),
-                    icon: const Icon(Icons.check_rounded),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _manualCtrl,
+                          keyboardType: TextInputType.number,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            hintText: 'Code-barres (EAN)',
+                            prefixIcon: const Icon(
+                              Icons.sell_outlined,
+                              color: Colors.white54,
+                              size: 20,
+                            ),
+                            filled: true,
+                            fillColor: Colors.white.withValues(alpha: 0.08),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 14,
+                            ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                              borderSide: BorderSide.none,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      IconButton.filled(
+                        onPressed: _manualCtrl.text.trim().isEmpty
+                            ? null
+                            : _submitManual,
+                        style: IconButton.styleFrom(
+                          backgroundColor: AppColors.teal,
+                          disabledBackgroundColor: Colors.white.withValues(
+                            alpha: 0.08,
+                          ),
+                        ),
+                        icon: const Icon(Icons.check_rounded),
+                      ),
+                    ],
                   ),
                 ],
               ),

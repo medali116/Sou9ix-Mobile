@@ -14,6 +14,8 @@ import 'package:sou9ix/core/widgets/press_scale.dart';
 import 'package:sou9ix/core/widgets/product_avatar.dart';
 import 'package:sou9ix/core/widgets/quantity_stepper.dart';
 import 'package:sou9ix/core/widgets/sheet_handle.dart';
+import 'package:sou9ix/core/widgets/weight_stepper.dart';
+import 'package:sou9ix/features/pos/view/weight_entry_sheet.dart';
 
 class CartSheet extends ConsumerWidget {
   const CartSheet({super.key});
@@ -43,7 +45,9 @@ class CartSheet extends ConsumerWidget {
         return Container(
           decoration: const BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppRadius.xl),
+            ),
           ),
           child: Column(
             children: [
@@ -53,13 +57,16 @@ class CartSheet extends ConsumerWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Panier · ${items.length} article${items.length > 1 ? 's' : ''}',
-                        style: Theme.of(context).textTheme.titleLarge),
+                    Text(
+                      'Panier · ${items.length} article${items.length > 1 ? 's' : ''}',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                     if (items.isNotEmpty)
                       TextButton(
                         onPressed: () {
                           ref.read(cartProvider.notifier).clear();
-                          ref.read(cartDiscountProvider.notifier).state = const Discount.none();
+                          ref.read(cartDiscountProvider.notifier).state =
+                              const Discount.none();
                         },
                         child: const Text('Vider'),
                       ),
@@ -71,7 +78,8 @@ class CartSheet extends ConsumerWidget {
                     ? const EmptyState(
                         icon: Icons.shopping_basket_outlined,
                         title: 'Panier vide',
-                        message: 'Ajoutez des produits depuis la caisse\npour commencer une vente.',
+                        message:
+                            'Ajoutez des produits depuis la caisse\npour commencer une vente.',
                       )
                     : ListView.separated(
                         controller: scrollController,
@@ -96,40 +104,61 @@ class CartSheet extends ConsumerWidget {
                                 const SizedBox(width: 12),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Text(item.product.name,
-                                          style: Theme.of(context).textTheme.titleMedium),
+                                      Text(
+                                        item.product.name,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.titleMedium,
+                                      ),
                                       const SizedBox(height: 2),
                                       Text(
                                         item.product.venduAuPoids
                                             ? '${AppFormat.kg(item.quantite)} × ${AppFormat.dtShort(item.product.prixVente)}'
                                             : '${item.quantite.toInt()} × ${AppFormat.dtShort(item.product.prixVente)}',
-                                        style: Theme.of(context).textTheme.bodyMedium,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.bodyMedium,
                                       ),
                                       const SizedBox(height: 4),
                                       PressScale(
                                         onTap: () async {
-                                          final result = await DiscountEditorSheet.show(
-                                            context,
-                                            title: 'Remise sur ${item.product.name}',
-                                            initial: item.discount,
-                                          );
+                                          final result =
+                                              await DiscountEditorSheet.show(
+                                                context,
+                                                title:
+                                                    'Remise sur ${item.product.name}',
+                                                initial: item.discount,
+                                              );
                                           if (result != null) {
                                             ref
                                                 .read(cartProvider.notifier)
-                                                .setDiscount(item.product.id, result);
+                                                .setDiscount(
+                                                  item.product.id,
+                                                  result,
+                                                );
                                           }
                                         },
                                         child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
                                           decoration: BoxDecoration(
                                             color: item.discount.isNone
                                                 ? AppColors.surface
-                                                : AppColors.gold.withValues(alpha: 0.16),
-                                            borderRadius: BorderRadius.circular(100),
+                                                : AppColors.gold.withValues(
+                                                    alpha: 0.16,
+                                                  ),
+                                            borderRadius: BorderRadius.circular(
+                                              100,
+                                            ),
                                             border: Border.all(
-                                              color: item.discount.isNone ? AppColors.border : AppColors.gold,
+                                              color: item.discount.isNone
+                                                  ? AppColors.border
+                                                  : AppColors.gold,
                                             ),
                                           ),
                                           child: Text(
@@ -149,22 +178,63 @@ class CartSheet extends ConsumerWidget {
                                     ],
                                   ),
                                 ),
-                                if (!item.product.venduAuPoids)
+                                if (!item.product.venduAuPoids) ...[
                                   QuantityStepper(
                                     quantite: item.quantite,
                                     buttonColor: AppColors.surface,
                                     buttonSpacing: 0,
-                                    onChanged: (q) =>
-                                        ref.read(cartProvider.notifier).updateQuantite(item.product.id, q),
-                                  )
-                                else
+                                    onChanged: (q) => ref
+                                        .read(cartProvider.notifier)
+                                        .updateQuantite(item.product.id, q),
+                                  ),
                                   IconButton(
                                     onPressed: () => ref
                                         .read(cartProvider.notifier)
                                         .removeItem(item.product.id),
-                                    icon: const Icon(Icons.delete_outline_rounded,
-                                        color: AppColors.danger, size: 20),
+                                    icon: const Icon(
+                                      Icons.delete_outline_rounded,
+                                      color: AppColors.danger,
+                                      size: 20,
+                                    ),
                                   ),
+                                ] else ...[
+                                  WeightStepper(
+                                    totalKg: item.quantite,
+                                    buttonColor: AppColors.surface,
+                                    onIncrement: () => ref
+                                        .read(cartProvider.notifier)
+                                        .incrementWeightUnit(item.product.id),
+                                    onDecrement: () => ref
+                                        .read(cartProvider.notifier)
+                                        .decrementWeightUnit(item.product.id),
+                                    onTapLabel: () async {
+                                      final updated =
+                                          await WeightEntrySheet.show(
+                                            context,
+                                            item.product,
+                                            initialKg: item.quantite,
+                                          );
+                                      if (updated != null) {
+                                        ref
+                                            .read(cartProvider.notifier)
+                                            .updateQuantite(
+                                              item.product.id,
+                                              updated,
+                                            );
+                                      }
+                                    },
+                                  ),
+                                  IconButton(
+                                    onPressed: () => ref
+                                        .read(cartProvider.notifier)
+                                        .removeItem(item.product.id),
+                                    icon: const Icon(
+                                      Icons.delete_outline_rounded,
+                                      color: AppColors.danger,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ],
                                 const SizedBox(width: 4),
                                 SizedBox(
                                   width: 66,
@@ -176,12 +246,15 @@ class CartSheet extends ConsumerWidget {
                                           fit: BoxFit.scaleDown,
                                           alignment: Alignment.centerRight,
                                           child: Text(
-                                            AppFormat.dtShort(item.sousTotalAvantRemise),
+                                            AppFormat.dtShort(
+                                              item.sousTotalAvantRemise,
+                                            ),
                                             maxLines: 1,
                                             style: const TextStyle(
                                               fontSize: 11,
                                               color: AppColors.textFaint,
-                                              decoration: TextDecoration.lineThrough,
+                                              decoration:
+                                                  TextDecoration.lineThrough,
                                             ),
                                           ),
                                         ),
@@ -192,7 +265,9 @@ class CartSheet extends ConsumerWidget {
                                           AppFormat.dtShort(item.sousTotal),
                                           maxLines: 1,
                                           textAlign: TextAlign.right,
-                                          style: const TextStyle(fontWeight: FontWeight.w800),
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.w800,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -207,7 +282,11 @@ class CartSheet extends ConsumerWidget {
               if (items.isNotEmpty)
                 Container(
                   padding: EdgeInsets.fromLTRB(
-                      20, 16, 20, 16 + MediaQuery.of(context).padding.bottom),
+                    20,
+                    16,
+                    20,
+                    16 + MediaQuery.of(context).padding.bottom,
+                  ),
                   decoration: const BoxDecoration(
                     border: Border(top: BorderSide(color: AppColors.border)),
                   ),
@@ -216,8 +295,14 @@ class CartSheet extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Sous-total', style: Theme.of(context).textTheme.bodyMedium),
-                          Text(AppFormat.dtShort(subtotal), style: Theme.of(context).textTheme.bodyMedium),
+                          Text(
+                            'Sous-total',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                          Text(
+                            AppFormat.dtShort(subtotal),
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
                         ],
                       ),
                       const SizedBox(height: 6),
@@ -232,18 +317,28 @@ class CartSheet extends ConsumerWidget {
                                 initial: ticketDiscount,
                               );
                               if (result != null) {
-                                ref.read(cartDiscountProvider.notifier).state = result;
+                                ref.read(cartDiscountProvider.notifier).state =
+                                    result;
                               }
                             },
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.sell_outlined, size: 15, color: AppColors.teal),
+                                const Icon(
+                                  Icons.sell_outlined,
+                                  size: 15,
+                                  color: AppColors.teal,
+                                ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  ticketDiscount.isNone ? 'Ajouter une remise' : 'Remise ticket',
+                                  ticketDiscount.isNone
+                                      ? 'Ajouter une remise'
+                                      : 'Remise ticket',
                                   style: const TextStyle(
-                                      color: AppColors.teal, fontWeight: FontWeight.w700, fontSize: 12.5),
+                                    color: AppColors.teal,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12.5,
+                                  ),
                                 ),
                               ],
                             ),
@@ -251,7 +346,10 @@ class CartSheet extends ConsumerWidget {
                           if (!ticketDiscount.isNone)
                             Text(
                               ticketDiscount.label(AppFormat.dtShort),
-                              style: const TextStyle(color: AppColors.goldDark, fontWeight: FontWeight.w700),
+                              style: const TextStyle(
+                                color: AppColors.goldDark,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                         ],
                       ),
@@ -259,7 +357,10 @@ class CartSheet extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Total', style: Theme.of(context).textTheme.titleMedium),
+                          Text(
+                            'Total',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
                           Text(
                             AppFormat.dt(total),
                             style: Theme.of(context).textTheme.headlineMedium,

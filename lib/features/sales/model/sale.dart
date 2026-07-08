@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+
 import 'package:sou9ix/core/models/discount.dart';
 import 'package:sou9ix/features/pos/model/cart_item.dart';
 
@@ -14,6 +16,17 @@ extension ModePaiementLabel on ModePaiement {
         return 'Crédit';
     }
   }
+
+  IconData get icon {
+    switch (this) {
+      case ModePaiement.especes:
+        return Icons.payments_rounded;
+      case ModePaiement.carte:
+        return Icons.credit_card_rounded;
+      case ModePaiement.credit:
+        return Icons.menu_book_rounded;
+    }
+  }
 }
 
 class Sale {
@@ -23,6 +36,7 @@ class Sale {
   final ModePaiement modePaiement;
   final String? clientId;
   final String? employeeId;
+
   /// Extra discount applied on top of the (already per-line-discounted)
   /// ticket subtotal, e.g. a cashier-granted rebate on the whole sale.
   final Discount discount;
