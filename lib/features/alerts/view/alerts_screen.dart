@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import 'package:sou9ix/core/formatters.dart';
+import 'package:sou9ix/features/clients/model/client.dart';
 import 'package:sou9ix/features/products/model/product.dart';
 import 'package:sou9ix/features/stock/model/purchase_invoice.dart';
 import 'package:sou9ix/features/alerts/viewmodel/alerts_provider.dart';
@@ -30,9 +31,15 @@ class AlertsScreen extends ConsumerWidget {
     final expiringSoon = ref.watch(expiringSoonProvider);
     final expired = ref.watch(expiredProductsProvider);
     final unsettled = ref.watch(unsettledInvoicesProvider);
+    final overLimit = ref.watch(clientsOverLimitProvider);
     final warningDays = ref.watch(expiryWarningDaysProvider);
 
-    final hasAny = lowStock.isNotEmpty || expiringSoon.isNotEmpty || expired.isNotEmpty || unsettled.isNotEmpty;
+    final hasAny =
+        lowStock.isNotEmpty ||
+        expiringSoon.isNotEmpty ||
+        expired.isNotEmpty ||
+        unsettled.isNotEmpty ||
+        overLimit.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Alertes')),
@@ -40,13 +47,17 @@ class AlertsScreen extends ConsumerWidget {
           ? const EmptyState(
               icon: Icons.notifications_off_outlined,
               title: 'Tout est en ordre',
-              message: 'Aucune alerte de stock, de péremption\nou de facture en attente.',
+              message:
+                  'Aucune alerte de stock, de péremption\nou de facture en attente.',
             )
           : ListView(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(AppRadius.md),
@@ -55,21 +66,39 @@ class AlertsScreen extends ConsumerWidget {
                   child: Row(
                     children: [
                       const Expanded(
-                        child: Text('Alerter avant péremption (jours)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
+                        child: Text(
+                          'Alerter avant péremption (jours)',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12.5,
+                          ),
+                        ),
                       ),
                       _StepperButton(
                         icon: Icons.remove_rounded,
                         onTap: warningDays > 1
-                            ? () => ref.read(expiryWarningDaysProvider.notifier).state = warningDays - 1
+                            ? () =>
+                                  ref
+                                          .read(
+                                            expiryWarningDaysProvider.notifier,
+                                          )
+                                          .state =
+                                      warningDays - 1
                             : null,
                       ),
                       SizedBox(
                         width: 28,
-                        child: Text('$warningDays', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w800)),
+                        child: Text(
+                          '$warningDays',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
                       ),
                       _StepperButton(
                         icon: Icons.add_rounded,
-                        onTap: () => ref.read(expiryWarningDaysProvider.notifier).state = warningDays + 1,
+                        onTap: () =>
+                            ref.read(expiryWarningDaysProvider.notifier).state =
+                                warningDays + 1,
                       ),
                     ],
                   ),
@@ -97,9 +126,68 @@ class AlertsScreen extends ConsumerWidget {
                   const SectionHeader(title: 'Factures fournisseurs impayées'),
                   const SizedBox(height: 12),
                   ...unsettled.map((i) => _InvoiceAlertTile(invoice: i)),
+                  const SizedBox(height: 22),
+                ],
+                if (overLimit.isNotEmpty) ...[
+                  const SectionHeader(
+                    title: 'Clients au-dessus de leur limite',
+                  ),
+                  const SizedBox(height: 12),
+                  ...overLimit.map((c) => _ClientAlertTile(client: c)),
                 ],
               ],
             ),
+    );
+  }
+}
+
+class _ClientAlertTile extends StatelessWidget {
+  final Client client;
+  const _ClientAlertTile({required this.client});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: PressScale(
+        onTap: () => context.push('/clients/detail', extra: client),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            boxShadow: AppShadows.card,
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.person_outline_rounded, color: AppColors.danger),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      client.nom,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(
+                      'Limite ${AppFormat.dtShort(client.limiteCredit!)}',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                AppFormat.dtShort(client.creditTotal),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.danger,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
@@ -126,13 +214,25 @@ class _ProductAlertTile extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  ProductAvatar(emoji: product.emoji, photoBytes: product.photoBytes, size: 32),
+                  ProductAvatar(
+                    emoji: product.emoji,
+                    photoBytes: product.photoBytes,
+                    size: 32,
+                  ),
                   const SizedBox(width: 10),
-                  Expanded(child: Text(product.name, style: Theme.of(context).textTheme.titleMedium)),
+                  Expanded(
+                    child: Text(
+                      product.name,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
                   if (product.datePeremption != null)
                     Text(
                       DateFormat('dd/MM/yyyy').format(product.datePeremption!),
-                      style: const TextStyle(fontSize: 11, color: AppColors.textFaint),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textFaint,
+                      ),
                     ),
                 ],
               ),
@@ -171,14 +271,23 @@ class _InvoiceAlertTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(invoice.fournisseurNom ?? 'Fournisseur non précisé', style: Theme.of(context).textTheme.titleMedium),
-                    Text(DateFormat('dd/MM/yyyy').format(invoice.date), style: Theme.of(context).textTheme.bodyMedium),
+                    Text(
+                      invoice.fournisseurNom ?? 'Fournisseur non précisé',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(
+                      DateFormat('dd/MM/yyyy').format(invoice.date),
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
                   ],
                 ),
               ),
               Text(
                 'Reste ${AppFormat.dtShort(invoice.montantRestant)}',
-                style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.warning),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.warning,
+                ),
               ),
             ],
           ),
@@ -201,10 +310,16 @@ class _StepperButton extends StatelessWidget {
         width: 28,
         height: 28,
         decoration: BoxDecoration(
-          color: onTap == null ? AppColors.surfaceMuted.withValues(alpha: 0.5) : AppColors.surfaceMuted,
+          color: onTap == null
+              ? AppColors.surfaceMuted.withValues(alpha: 0.5)
+              : AppColors.surfaceMuted,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, size: 15, color: onTap == null ? AppColors.textFaint : AppColors.textPrimary),
+        child: Icon(
+          icon,
+          size: 15,
+          color: onTap == null ? AppColors.textFaint : AppColors.textPrimary,
+        ),
       ),
     );
   }

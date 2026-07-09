@@ -27,31 +27,38 @@ class PurchaseService {
     final invoiceLines = <PurchaseInvoiceLine>[];
     for (final line in lines) {
       if (line.existingProduct != null) {
-        _ref.read(productsProvider.notifier).restock(
+        _ref
+            .read(productsProvider.notifier)
+            .restock(
               line.existingProduct!.id,
               line.quantite,
               nouveauPrixAchat: line.prixAchatUnitaire,
             );
-        invoiceLines.add(PurchaseInvoiceLine(
-          productId: line.existingProduct!.id,
-          productName: line.existingProduct!.name,
-          quantite: line.quantite,
-          venduAuPoids: line.venduAuPoids,
-          prixAchatUnitaire: line.prixAchatUnitaire,
-        ));
+        invoiceLines.add(
+          PurchaseInvoiceLine(
+            productId: line.existingProduct!.id,
+            productName: line.existingProduct!.name,
+            quantite: line.quantite,
+            venduAuPoids: line.venduAuPoids,
+            prixAchatUnitaire: line.prixAchatUnitaire,
+          ),
+        );
       } else {
         final product = line.newProductDraft!;
         _ref.read(productsProvider.notifier).upsert(product);
-        invoiceLines.add(PurchaseInvoiceLine(
-          productId: product.id,
-          productName: product.name,
-          quantite: line.quantite,
-          venduAuPoids: line.venduAuPoids,
-          prixAchatUnitaire: line.prixAchatUnitaire,
-        ));
+        invoiceLines.add(
+          PurchaseInvoiceLine(
+            productId: product.id,
+            productName: product.name,
+            quantite: line.quantite,
+            venduAuPoids: line.venduAuPoids,
+            prixAchatUnitaire: line.prixAchatUnitaire,
+          ),
+        );
       }
     }
 
+    final montantVerse = montantPaye.clamp(0, double.infinity).toDouble();
     final invoice = PurchaseInvoice(
       id: 'ach${DateTime.now().microsecondsSinceEpoch}',
       date: DateTime.now(),
@@ -59,11 +66,21 @@ class PurchaseService {
       fournisseurNom: supplier?.nom,
       photoBytes: photoBytes,
       lignes: invoiceLines,
-      montantPaye: montantPaye.clamp(0, double.infinity),
+      paiements: montantVerse > 0
+          ? [
+              PurchaseInvoicePayment(
+                id: DateTime.now().microsecondsSinceEpoch.toString(),
+                montant: montantVerse,
+                date: DateTime.now(),
+              ),
+            ]
+          : const [],
     );
     _ref.read(purchaseInvoicesProvider.notifier).add(invoice);
     return invoice;
   }
 }
 
-final purchaseServiceProvider = Provider<PurchaseService>((ref) => PurchaseService(ref));
+final purchaseServiceProvider = Provider<PurchaseService>(
+  (ref) => PurchaseService(ref),
+);

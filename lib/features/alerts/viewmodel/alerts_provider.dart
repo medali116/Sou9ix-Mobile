@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:sou9ix/features/clients/model/client.dart';
+import 'package:sou9ix/features/clients/viewmodel/clients_provider.dart';
 import 'package:sou9ix/features/products/model/product.dart';
 import 'package:sou9ix/features/products/viewmodel/products_provider.dart';
 import 'package:sou9ix/features/stock/viewmodel/purchase_invoices_provider.dart';
@@ -25,6 +27,14 @@ final expiredProductsProvider = Provider<List<Product>>((ref) {
       .toList();
 });
 
+/// Clients whose karné balance has reached or passed their credit limit.
+final clientsOverLimitProvider = Provider<List<Client>>((ref) {
+  return ref
+      .watch(clientsProvider)
+      .where((c) => c.limiteCredit != null && c.creditTotal >= c.limiteCredit!)
+      .toList();
+});
+
 /// Aggregate count surfaced on the notification bell badge and the
 /// dashboard's "Alertes" card — sum of every alert category shown on the
 /// Alertes screen.
@@ -32,5 +42,6 @@ final totalAlertsCountProvider = Provider<int>((ref) {
   return ref.watch(lowStockProvider).length +
       ref.watch(expiringSoonProvider).length +
       ref.watch(expiredProductsProvider).length +
-      ref.watch(unsettledInvoicesProvider).length;
+      ref.watch(unsettledInvoicesProvider).length +
+      ref.watch(clientsOverLimitProvider).length;
 });

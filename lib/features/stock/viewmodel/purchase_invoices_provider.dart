@@ -14,7 +14,14 @@ class PurchaseInvoicesNotifier extends StateNotifier<List<PurchaseInvoice>> {
         date: now.subtract(const Duration(days: 2)),
         fournisseurId: 'f1',
         fournisseurNom: 'Grossiste Fruits Secs Sfax',
-        montantPaye: 165.000,
+        paiements: [
+          PurchaseInvoicePayment(
+            id: 'pay1',
+            montant: 165.000,
+            date: now.subtract(const Duration(days: 2)),
+            modePaiement: PurchasePaymentMethod.especes,
+          ),
+        ],
         lignes: const [
           PurchaseInvoiceLine(
             productId: 'p2',
@@ -30,7 +37,20 @@ class PurchaseInvoicesNotifier extends StateNotifier<List<PurchaseInvoice>> {
         date: now.subtract(const Duration(days: 1)),
         fournisseurId: 'f2',
         fournisseurNom: 'Torréfaction Ben Ali',
-        montantPaye: 60.000,
+        paiements: [
+          PurchaseInvoicePayment(
+            id: 'pay2',
+            montant: 35.000,
+            date: now.subtract(const Duration(days: 1)),
+            modePaiement: PurchasePaymentMethod.especes,
+          ),
+          PurchaseInvoicePayment(
+            id: 'pay3',
+            montant: 25.000,
+            date: now.subtract(const Duration(hours: 6)),
+            modePaiement: PurchasePaymentMethod.virement,
+          ),
+        ],
         lignes: const [
           PurchaseInvoiceLine(
             productId: 'p6',
@@ -54,12 +74,26 @@ class PurchaseInvoicesNotifier extends StateNotifier<List<PurchaseInvoice>> {
   void add(PurchaseInvoice invoice) => state = [invoice, ...state];
 
   /// Records an additional payment against an invoice (partial or final) —
-  /// clamped so it can never exceed the invoice's total.
-  void recordPayment(String invoiceId, double montant) {
+  /// clamped so a single payment can never exceed what's still owed.
+  void recordPayment(
+    String invoiceId,
+    double montant, {
+    PurchasePaymentMethod? modePaiement,
+  }) {
     state = [
       for (final i in state)
         if (i.id == invoiceId)
-          i.copyWith(montantPaye: (i.montantPaye + montant).clamp(0, i.montantTotal))
+          i.copyWith(
+            paiements: [
+              ...i.paiements,
+              PurchaseInvoicePayment(
+                id: DateTime.now().microsecondsSinceEpoch.toString(),
+                montant: montant.clamp(0, i.montantRestant),
+                date: DateTime.now(),
+                modePaiement: modePaiement,
+              ),
+            ],
+          )
         else
           i,
     ];
@@ -68,8 +102,8 @@ class PurchaseInvoicesNotifier extends StateNotifier<List<PurchaseInvoice>> {
 
 final purchaseInvoicesProvider =
     StateNotifierProvider<PurchaseInvoicesNotifier, List<PurchaseInvoice>>(
-  (ref) => PurchaseInvoicesNotifier(),
-);
+      (ref) => PurchaseInvoicesNotifier(),
+    );
 
 final totalUnpaidPurchasesProvider = Provider<double>((ref) {
   final list = ref.watch(purchaseInvoicesProvider);
@@ -80,6 +114,11 @@ final unsettledInvoicesProvider = Provider<List<PurchaseInvoice>>((ref) {
   return ref.watch(purchaseInvoicesProvider).where((i) => !i.soldee).toList();
 });
 
-final supplierInvoicesProvider = Provider.family<List<PurchaseInvoice>, String>((ref, supplierId) {
-  return ref.watch(purchaseInvoicesProvider).where((i) => i.fournisseurId == supplierId).toList();
-});
+final supplierInvoicesProvider = Provider.family<List<PurchaseInvoice>, String>(
+  (ref, supplierId) {
+    return ref
+        .watch(purchaseInvoicesProvider)
+        .where((i) => i.fournisseurId == supplierId)
+        .toList();
+  },
+);

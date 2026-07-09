@@ -12,9 +12,17 @@ class DiscountEditorSheet extends StatefulWidget {
   final String title;
   final Discount initial;
 
-  const DiscountEditorSheet({super.key, required this.title, required this.initial});
+  const DiscountEditorSheet({
+    super.key,
+    required this.title,
+    required this.initial,
+  });
 
-  static Future<Discount?> show(BuildContext context, {required String title, required Discount initial}) {
+  static Future<Discount?> show(
+    BuildContext context, {
+    required String title,
+    required Discount initial,
+  }) {
     return showModalBottomSheet<Discount>(
       context: context,
       isScrollControlled: true,
@@ -36,7 +44,13 @@ class _DiscountEditorSheetState extends State<DiscountEditorSheet> {
     super.initState();
     _type = widget.initial.isNone ? DiscountType.percent : widget.initial.type;
     _valueCtrl = TextEditingController(
-      text: widget.initial.isNone ? '' : widget.initial.value.toStringAsFixed(widget.initial.value.truncateToDouble() == widget.initial.value ? 0 : 3),
+      text: widget.initial.isNone
+          ? ''
+          : widget.initial.value.toStringAsFixed(
+              widget.initial.value.truncateToDouble() == widget.initial.value
+                  ? 0
+                  : 3,
+            ),
     );
   }
 
@@ -54,14 +68,18 @@ class _DiscountEditorSheetState extends State<DiscountEditorSheet> {
     }
     Navigator.pop(
       context,
-      _type == DiscountType.percent ? Discount.percent(value.clamp(0, 100)) : Discount.amount(value),
+      _type == DiscountType.percent
+          ? Discount.percent(value.clamp(0, 100))
+          : Discount.amount(value),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       decoration: const BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
@@ -75,7 +93,10 @@ class _DiscountEditorSheetState extends State<DiscountEditorSheet> {
             const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerLeft,
-              child: Text(widget.title, style: Theme.of(context).textTheme.titleLarge),
+              child: Text(
+                widget.title,
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
             ),
             const SizedBox(height: 16),
             Row(
@@ -84,7 +105,8 @@ class _DiscountEditorSheetState extends State<DiscountEditorSheet> {
                   child: ChoiceChip(
                     label: const Text('Pourcentage (%)'),
                     selected: _type == DiscountType.percent,
-                    onSelected: (_) => setState(() => _type = DiscountType.percent),
+                    onSelected: (_) =>
+                        setState(() => _type = DiscountType.percent),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -92,7 +114,8 @@ class _DiscountEditorSheetState extends State<DiscountEditorSheet> {
                   child: ChoiceChip(
                     label: const Text('Montant (DT)'),
                     selected: _type == DiscountType.amount,
-                    onSelected: (_) => setState(() => _type = DiscountType.amount),
+                    onSelected: (_) =>
+                        setState(() => _type = DiscountType.amount),
                   ),
                 ),
               ],
@@ -101,8 +124,14 @@ class _DiscountEditorSheetState extends State<DiscountEditorSheet> {
             TextField(
               controller: _valueCtrl,
               autofocus: true,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: InputDecoration(hintText: _type == DiscountType.percent ? '0 %' : '0.000 DT'),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: InputDecoration(
+                labelText: 'Valeur',
+                prefixIcon: const Icon(Icons.local_offer_outlined),
+                hintText: _type == DiscountType.percent ? '0 %' : '0.000 DT',
+              ),
             ),
             const SizedBox(height: 20),
             Row(
@@ -110,7 +139,8 @@ class _DiscountEditorSheetState extends State<DiscountEditorSheet> {
                 if (!widget.initial.isNone)
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () => Navigator.pop(context, const Discount.none()),
+                      onPressed: () =>
+                          Navigator.pop(context, const Discount.none()),
                       child: const Text('Retirer la remise'),
                     ),
                   ),

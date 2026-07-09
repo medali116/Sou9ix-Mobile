@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sou9ix/features/clients/model/client.dart';
+import 'package:sou9ix/features/sales/model/sale.dart';
 
 List<Client> _buildMockClients() => [
   Client(
@@ -30,6 +31,7 @@ List<Client> _buildMockClients() => [
     telephone: '+216 71 456 789',
     creditTotal: 260.750,
     dernierAchat: DateTime.now().subtract(const Duration(days: 2)),
+    limiteCredit: 300,
   ),
 ];
 
@@ -52,8 +54,9 @@ class ClientsNotifier extends StateNotifier<List<Client>> {
   }
 
   /// Adds (or, with a negative [montant], reverses) credit on a client's
-  /// karné. Clamped at 0 like [settle] so reversing a past sale's credit
-  /// impact can never push a balance negative.
+  /// karné as a *side effect of a sale* (see [SaleService]) — clamped at 0
+  /// like [settle]. Deliberately not logged as a [ClientTransaction]: the
+  /// [Sale] record itself is the timeline entry for this change.
   void addCredit(String clientId, double montant) {
     state = [
       for (final c in state)
@@ -66,17 +69,121 @@ class ClientsNotifier extends StateNotifier<List<Client>> {
     ];
   }
 
-  void settle(String clientId, double montant) {
+  /// Manual credit adjustment from the "Ajouter crédit" action — unlike
+  /// [addCredit], this has no [Sale] behind it, so it's logged as an
+  /// [ClientTransactionType.ajustement] to keep the client's timeline
+  /// complete.
+  void addManualCredit(String clientId, double montant, {String? notes}) {
     state = [
       for (final c in state)
         if (c.id == clientId)
           c.copyWith(
-            creditTotal: (c.creditTotal - montant).clamp(0, double.infinity),
+            creditTotal: (c.creditTotal + montant).clamp(0, double.infinity),
+            transactions: [
+              ...c.transactions,
+              ClientTransaction(
+                id: DateTime.now().microsecondsSinceEpoch.toString(),
+                type: ClientTransactionType.ajustement,
+                montant: montant,
+                date: DateTime.now(),
+                notes: notes,
+              ),
+            ],
           )
         else
           c,
     ];
   }
+
+  /// Records a payment collected against a client's karné — clamps the
+  /// balance at 0 and logs a [ClientTransaction] so it shows up in their
+  /// timeline (unlike [addCredit], which isn't itself a payment).
+  ///
+  /// [creditSalesOldestFirst] — that client's credit [Sale]s, oldest first —
+  /// is used to allocate the payment FIFO: the oldest unpaid/partially-paid
+  /// ticket is settled first, then the next, until the payment is used up.
+  /// Any leftover past the last tracked ticket (e.g. a legacy balance with
+  /// no ticket behind it) is simply not tied to a specific ticket.
+  void settle(
+    String clientId,
+    double montant, {
+    List<Sale> creditSalesOldestFirst = const [],
+    PaymentMethod? modePaiement,
+    String? notes,
+  }) {
+    state = [
+      for (final c in state)
+        if (c.id == clientId)
+          c.copyWith(
+            creditTotal: (c.creditTotal - montant).clamp(0, double.infinity),
+            transactions: [
+              ...c.transactions,
+              ClientTransaction(
+                id: DateTime.now().microsecondsSinceEpoch.toString(),
+                type: ClientTransactionType.paiement,
+                montant: montant,
+                date: DateTime.now(),
+                modePaiement: modePaiement,
+                notes: notes,
+                allocations: _allocateFifo(c, montant, creditSalesOldestFirst),
+              ),
+            ],
+          )
+        else
+          c,
+    ];
+  }
+
+  List<PaymentAllocation> _allocateFifo(
+    Client c,
+    double montant,
+    List<Sale> creditSalesOldestFirst,
+  ) {
+    final alreadyPaid = <String, double>{};
+    for (final t in c.transactions) {
+      for (final a in t.allocations) {
+        alreadyPaid[a.saleId] = (alreadyPaid[a.saleId] ?? 0) + a.montant;
+      }
+    }
+
+    var remaining = montant;
+    final allocations = <PaymentAllocation>[];
+    for (final sale in creditSalesOldestFirst) {
+      if (remaining <= 0) break;
+      final saleRemaining = sale.total - (alreadyPaid[sale.id] ?? 0);
+      if (saleRemaining <= 0) continue;
+      final toApply = remaining < saleRemaining ? remaining : saleRemaining;
+      allocations.add(PaymentAllocation(saleId: sale.id, montant: toApply));
+      remaining -= toApply;
+    }
+    return allocations;
+  }
+
+  void updateClient(
+    String id, {
+    required String nom,
+    required String telephone,
+    String? adresse,
+    String? notes,
+    double? limiteCredit,
+  }) {
+    state = [
+      for (final c in state)
+        if (c.id == id)
+          c.copyWith(
+            nom: nom,
+            telephone: telephone,
+            adresse: adresse,
+            notes: notes,
+            limiteCredit: limiteCredit,
+          )
+        else
+          c,
+    ];
+  }
+
+  void removeClient(String id) =>
+      state = state.where((c) => c.id != id).toList();
 }
 
 final clientsProvider = StateNotifierProvider<ClientsNotifier, List<Client>>(

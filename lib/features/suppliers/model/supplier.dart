@@ -18,11 +18,16 @@ class Supplier {
     this.photoBytes,
   });
 
-  Supplier copyWith({String? nom, String? telephone, String? adresse, Uint8List? photoBytes}) => Supplier(
-        id: id,
-        nom: nom ?? this.nom,
-        telephone: telephone ?? this.telephone,
-        adresse: adresse ?? this.adresse,
-        photoBytes: photoBytes ?? this.photoBytes,
-      );
+  Supplier copyWith({
+    String? nom,
+    String? telephone,
+    String? adresse,
+    Uint8List? photoBytes,
+  }) => Supplier(
+    id: id,
+    nom: nom ?? this.nom,
+    telephone: telephone ?? this.telephone,
+    adresse: adresse ?? this.adresse,
+    photoBytes: photoBytes ?? this.photoBytes,
+  );
 }

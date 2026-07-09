@@ -6,24 +6,27 @@ class SuppliersNotifier extends StateNotifier<List<Supplier>> {
   SuppliersNotifier() : super(_seed());
 
   static List<Supplier> _seed() => const [
-        Supplier(
-          id: 'f1',
-          nom: 'Grossiste Fruits Secs Sfax',
-          telephone: '+216 74 111 222',
-          adresse: 'Zone industrielle, Sfax',
-        ),
-        Supplier(
-          id: 'f2',
-          nom: 'Torréfaction Ben Ali',
-          telephone: '+216 71 333 444',
-          adresse: 'Rue de la Torréfaction, Tunis',
-        ),
-      ];
+    Supplier(
+      id: 'f1',
+      nom: 'Grossiste Fruits Secs Sfax',
+      telephone: '+216 74 111 222',
+      adresse: 'Zone industrielle, Sfax',
+    ),
+    Supplier(
+      id: 'f2',
+      nom: 'Torréfaction Ben Ali',
+      telephone: '+216 71 333 444',
+      adresse: 'Rue de la Torréfaction, Tunis',
+    ),
+  ];
 
   void upsert(Supplier supplier) {
     final exists = state.any((s) => s.id == supplier.id);
     if (exists) {
-      state = [for (final s in state) if (s.id == supplier.id) supplier else s];
+      state = [
+        for (final s in state)
+          if (s.id == supplier.id) supplier else s,
+      ];
     } else {
       state = [...state, supplier];
     }
@@ -34,6 +37,7 @@ class SuppliersNotifier extends StateNotifier<List<Supplier>> {
   }
 }
 
-final suppliersProvider = StateNotifierProvider<SuppliersNotifier, List<Supplier>>(
-  (ref) => SuppliersNotifier(),
-);
+final suppliersProvider =
+    StateNotifierProvider<SuppliersNotifier, List<Supplier>>(
+      (ref) => SuppliersNotifier(),
+    );

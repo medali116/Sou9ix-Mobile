@@ -47,8 +47,9 @@ class _EditSaleScreenState extends ConsumerState<EditSaleScreen> {
     _clientId = widget.sale.clientId;
   }
 
-  double get _total =>
-      widget.sale.discount.applyTo(_lignes.fold(0, (sum, l) => sum + l.sousTotal));
+  double get _total => widget.sale.discount.applyTo(
+    _lignes.fold(0, (sum, l) => sum + l.sousTotal),
+  );
 
   double _originalQuantiteFor(String productId) {
     final matches = widget.sale.lignes.where((l) => l.product.id == productId);
@@ -67,10 +68,15 @@ class _EditSaleScreenState extends ConsumerState<EditSaleScreen> {
     final produits = ref.read(productsProvider);
     final produit = produits.where((p) => p.id == item.product.id);
     if (produit.isNotEmpty) {
-      final disponible = produit.first.stock + _originalQuantiteFor(item.product.id);
+      final disponible =
+          produit.first.stock + _originalQuantiteFor(item.product.id);
       if (quantite > disponible) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Stock insuffisant (max ${disponible.toStringAsFixed(item.product.venduAuPoids ? 3 : 0)})')),
+          SnackBar(
+            content: Text(
+              'Stock insuffisant (max ${disponible.toStringAsFixed(item.product.venduAuPoids ? 3 : 0)})',
+            ),
+          ),
         );
         return;
       }
@@ -80,21 +86,28 @@ class _EditSaleScreenState extends ConsumerState<EditSaleScreen> {
 
   Future<void> _editWeight(int index) async {
     final item = _lignes[index];
-    final updated = await WeightEntrySheet.show(context, item.product, initialKg: item.quantite);
+    final updated = await WeightEntrySheet.show(
+      context,
+      item.product,
+      initialKg: item.quantite,
+    );
     if (updated != null) _updateQuantite(index, updated);
   }
 
   Future<void> _save() async {
     if (_lignes.isEmpty) return;
     if (_mode == ModePaiement.credit && _clientId == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Sélectionnez un client pour le crédit')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sélectionnez un client pour le crédit')),
+      );
       return;
     }
 
     setState(() => _saving = true);
 
-    ref.read(saleServiceProvider).updateSale(
+    ref
+        .read(saleServiceProvider)
+        .updateSale(
           original: widget.sale,
           lignes: _lignes,
           modePaiement: _mode,
@@ -147,19 +160,30 @@ class _EditSaleScreenState extends ConsumerState<EditSaleScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Nouveau total', style: Theme.of(context).textTheme.titleMedium),
-                Text(AppFormat.dt(_total), style: Theme.of(context).textTheme.headlineMedium),
+                Text(
+                  'Nouveau total',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+                Text(
+                  AppFormat.dt(_total),
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
               ],
             ),
           ),
           const SizedBox(height: 22),
-          Text('Mode de paiement', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'Mode de paiement',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 12),
           Row(
             children: ModePaiement.values.map((m) {
               return Expanded(
                 child: Padding(
-                  padding: EdgeInsets.only(right: m != ModePaiement.values.last ? 10 : 0),
+                  padding: EdgeInsets.only(
+                    right: m != ModePaiement.values.last ? 10 : 0,
+                  ),
                   child: _ModeOption(
                     label: m.label,
                     selected: _mode == m,
@@ -171,7 +195,10 @@ class _EditSaleScreenState extends ConsumerState<EditSaleScreen> {
           ),
           if (_mode == ModePaiement.credit) ...[
             const SizedBox(height: 20),
-            Text('Client (karné)', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Client (karné)',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 10),
             ...clients.map((c) {
               final selected = c.id == _clientId;
@@ -181,7 +208,9 @@ class _EditSaleScreenState extends ConsumerState<EditSaleScreen> {
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: selected ? AppColors.teal.withValues(alpha: 0.08) : AppColors.surface,
+                    color: selected
+                        ? AppColors.teal.withValues(alpha: 0.08)
+                        : AppColors.surface,
                     borderRadius: BorderRadius.circular(AppRadius.md),
                     border: Border.all(
                       color: selected ? AppColors.teal : AppColors.border,
@@ -200,14 +229,21 @@ class _EditSaleScreenState extends ConsumerState<EditSaleScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(c.nom, style: Theme.of(context).textTheme.titleMedium),
-                            Text('Solde dû : ${AppFormat.dt(c.creditTotal)}',
-                                style: Theme.of(context).textTheme.bodyMedium),
+                            Text(
+                              c.nom,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            Text(
+                              'Solde dû : ${AppFormat.dt(c.creditTotal)}',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
                           ],
                         ),
                       ),
                       Icon(
-                        selected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                        selected
+                            ? Icons.check_circle_rounded
+                            : Icons.circle_outlined,
                         color: selected ? AppColors.teal : AppColors.textFaint,
                       ),
                     ],
@@ -229,7 +265,10 @@ class _EditSaleScreenState extends ConsumerState<EditSaleScreen> {
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Text('Enregistrer les modifications'),
             ),
@@ -265,13 +304,21 @@ class _EditableLineRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          ProductAvatar(emoji: product.emoji, photoBytes: product.photoBytes, size: 42),
+          ProductAvatar(
+            emoji: product.emoji,
+            photoBytes: product.photoBytes,
+            size: 42,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(product.name, style: Theme.of(context).textTheme.titleMedium, overflow: TextOverflow.ellipsis),
+                Text(
+                  product.name,
+                  style: Theme.of(context).textTheme.titleMedium,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 2),
                 Text(
                   product.venduAuPoids
@@ -287,11 +334,18 @@ class _EditableLineRow extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _smallIconBtn(icon: Icons.edit_rounded, onTap: onEditWeight),
-                _smallIconBtn(icon: Icons.delete_outline_rounded, onTap: onRemove, color: AppColors.danger),
+                _smallIconBtn(
+                  icon: Icons.delete_outline_rounded,
+                  onTap: onRemove,
+                  color: AppColors.danger,
+                ),
               ],
             )
           else
-            QuantityStepper(quantite: item.quantite, onChanged: onQuantiteChanged),
+            QuantityStepper(
+              quantite: item.quantite,
+              onChanged: onQuantiteChanged,
+            ),
           const SizedBox(width: 8),
           SizedBox(
             width: 64,
@@ -311,7 +365,11 @@ class _EditableLineRow extends StatelessWidget {
     );
   }
 
-  Widget _smallIconBtn({required IconData icon, required VoidCallback onTap, Color? color}) {
+  Widget _smallIconBtn({
+    required IconData icon,
+    required VoidCallback onTap,
+    Color? color,
+  }) {
     return PressScale(
       onTap: onTap,
       child: Container(
@@ -333,7 +391,11 @@ class _ModeOption extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _ModeOption({required this.label, required this.selected, required this.onTap});
+  const _ModeOption({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -345,8 +407,12 @@ class _ModeOption extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected ? AppColors.teal : AppColors.surface,
           borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: selected ? AppColors.teal : AppColors.border),
-          boxShadow: selected ? AppShadows.colored(AppColors.teal) : AppShadows.card,
+          border: Border.all(
+            color: selected ? AppColors.teal : AppColors.border,
+          ),
+          boxShadow: selected
+              ? AppShadows.colored(AppColors.teal)
+              : AppShadows.card,
         ),
         child: Text(
           label,

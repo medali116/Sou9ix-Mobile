@@ -1,8 +1,14 @@
 class AppFormat {
   AppFormat._();
 
-  static String dt(num value) => '${value.toStringAsFixed(3)} DT';
-  static String dtShort(num value) => '${value.toStringAsFixed(2)} DT';
+  /// Currency symbol appended to every formatted amount — set from
+  /// Profil → "Gestion de l'entreprise" → Devise (see
+  /// [CompanySettingsNotifier.setCurrency]).
+  static String currencySymbol = 'DT';
+
+  static String dt(num value) => '${value.toStringAsFixed(3)} $currencySymbol';
+  static String dtShort(num value) =>
+      '${value.toStringAsFixed(2)} $currencySymbol';
   static String kg(num value) => '${value.toStringAsFixed(3)} kg';
 
   static String weekday(DateTime date) {

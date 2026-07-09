@@ -48,15 +48,22 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             children: [
               const SizedBox(height: 12),
               Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  gradient: AppColors.tealGradient,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  boxShadow: AppShadows.colored(AppColors.teal),
-                ),
-                child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 30),
-              ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.7, 0.7)),
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      gradient: AppColors.tealGradient,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      boxShadow: AppShadows.colored(AppColors.teal),
+                    ),
+                    child: const Icon(
+                      Icons.storefront_rounded,
+                      color: Colors.white,
+                      size: 30,
+                    ),
+                  )
+                  .animate()
+                  .fadeIn(duration: 400.ms)
+                  .scale(begin: const Offset(0.7, 0.7)),
               const SizedBox(height: 24),
               Text(
                 'Hello 👋',
@@ -82,7 +89,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 trailing: IconButton(
                   onPressed: () => setState(() => _obscure = !_obscure),
                   icon: Icon(
-                    _obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                    _obscure
+                        ? Icons.visibility_off_rounded
+                        : Icons.visibility_rounded,
                     color: AppColors.textFaint,
                     size: 20,
                   ),
@@ -102,7 +111,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 child: ElevatedButton(
                   onPressed: _loading
                       ? null
-                      : () => _login(ref.read(authProvider.notifier).loginAsAdmin),
+                      : () => _login(
+                          ref.read(authProvider.notifier).loginAsAdmin,
+                        ),
                   child: _loading
                       ? const SizedBox(
                           width: 22,
@@ -121,7 +132,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const Expanded(child: Divider()),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('accès rapide démo', style: Theme.of(context).textTheme.bodyMedium),
+                    child: Text(
+                      'accès rapide démo',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
                   ),
                   const Expanded(child: Divider()),
                 ],
@@ -136,7 +150,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       color: AppColors.teal,
                       onTap: _loading
                           ? null
-                          : () => _login(ref.read(authProvider.notifier).loginAsAdmin),
+                          : () => _login(
+                              ref.read(authProvider.notifier).loginAsAdmin,
+                            ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -147,7 +163,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       color: AppColors.goldDark,
                       onTap: _loading
                           ? null
-                          : () => _login(ref.read(authProvider.notifier).loginAsCaissier),
+                          : () => _login(
+                              ref.read(authProvider.notifier).loginAsCaissier,
+                            ),
                     ),
                   ),
                 ],
@@ -208,7 +226,11 @@ class _RoleQuickButton extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               label,
-              style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 13),
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w700,
+                fontSize: 13,
+              ),
             ),
           ],
         ),

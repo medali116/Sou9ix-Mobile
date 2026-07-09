@@ -11,6 +11,7 @@ import 'package:sou9ix/features/employees/viewmodel/employees_provider.dart';
 import 'package:sou9ix/features/sales/viewmodel/sales_provider.dart';
 import 'package:sou9ix/features/sales/service/sale_service.dart';
 import 'package:sou9ix/features/sales/service/ticket_pdf_service.dart';
+import 'package:sou9ix/features/settings/viewmodel/company_settings_provider.dart';
 import 'package:sou9ix/core/theme/app_colors.dart';
 import 'package:sou9ix/core/theme/app_theme.dart';
 import 'package:sou9ix/core/widgets/empty_state.dart';
@@ -720,7 +721,12 @@ class _SaleTile extends ConsumerWidget {
     if (action == 'view') {
       context.push('/receipt', extra: sale);
     } else if (action == 'print') {
-      ticketPdfService.printOrShare(sale);
+      final settings = ref.read(companySettingsProvider);
+      ticketPdfService.printOrShare(
+        sale,
+        nomTicket: settings.ticketName,
+        logoBytes: settings.logoBytes,
+      );
     } else if (action == 'edit') {
       context.push('/history/edit', extra: sale);
     } else if (action == 'return') {

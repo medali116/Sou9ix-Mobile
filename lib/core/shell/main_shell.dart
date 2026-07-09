@@ -6,6 +6,8 @@ import 'package:sou9ix/features/auth/viewmodel/auth_provider.dart';
 import 'package:sou9ix/core/theme/app_colors.dart';
 import 'package:sou9ix/core/shell/animated_bottom_nav.dart';
 import 'package:sou9ix/core/shell/bottom_nav_visibility_provider.dart';
+import 'package:sou9ix/core/shell/tab_navigation_provider.dart';
+import 'package:sou9ix/features/settings/viewmodel/company_settings_provider.dart';
 import 'package:sou9ix/features/dashboard/view/dashboard_screen.dart';
 import 'package:sou9ix/features/sales/view/history_screen.dart';
 import 'package:sou9ix/features/pos/view/scan_sale_screen.dart';
@@ -87,6 +89,16 @@ class _MainShellState extends ConsumerState<MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<int?>(requestedTabIndexProvider, (previous, next) {
+      if (next != null) {
+        setState(() => _index = next);
+        ref.read(requestedTabIndexProvider.notifier).state = null;
+      }
+    });
+    // Watched purely so every tab (Dashboard, Caisse, Stats…) rebuilds when
+    // the currency/ticket settings change, since AppFormat itself is a
+    // plain static utility with no reactivity of its own.
+    ref.watch(companySettingsProvider);
     final isAdmin = ref.watch(authProvider)?.role == UserRole.admin;
     final items = isAdmin ? _adminItems : _caissierItems;
     // The Caisse tab holds the only persistent camera session; every other

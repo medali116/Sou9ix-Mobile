@@ -113,13 +113,19 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   controller: nomCtrl,
                   autofocus: true,
                   textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(hintText: 'Nom du client'),
+                  decoration: const InputDecoration(
+                    labelText: 'Nom du client',
+                    prefixIcon: Icon(Icons.person_outline_rounded),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: telCtrl,
                   keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(hintText: 'Téléphone'),
+                  decoration: const InputDecoration(
+                    labelText: 'Téléphone',
+                    prefixIcon: Icon(Icons.call_outlined),
+                  ),
                 ),
                 const SizedBox(height: 20),
                 SizedBox(

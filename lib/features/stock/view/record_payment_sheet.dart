@@ -29,8 +29,10 @@ class RecordPaymentSheet extends ConsumerStatefulWidget {
 }
 
 class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
-  late final TextEditingController _montantCtrl =
-      TextEditingController(text: widget.invoice.montantRestant.toStringAsFixed(3));
+  late final TextEditingController _montantCtrl = TextEditingController(
+    text: widget.invoice.montantRestant.toStringAsFixed(3),
+  );
+  var _mode = PurchasePaymentMethod.especes;
 
   @override
   void dispose() {
@@ -46,14 +48,18 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
       );
       return;
     }
-    ref.read(purchaseInvoicesProvider.notifier).recordPayment(widget.invoice.id, montant);
+    ref
+        .read(purchaseInvoicesProvider.notifier)
+        .recordPayment(widget.invoice.id, montant, modePaiement: _mode);
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       decoration: const BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
@@ -67,7 +73,10 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
             const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerLeft,
-              child: Text('Régler un paiement', style: Theme.of(context).textTheme.titleLarge),
+              child: Text(
+                'Régler un paiement',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
             ),
             const SizedBox(height: 4),
             Align(
@@ -81,8 +90,43 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
             TextField(
               controller: _montantCtrl,
               autofocus: true,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(hintText: '0.000'),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              decoration: const InputDecoration(
+                labelText: 'Montant',
+                prefixIcon: Icon(Icons.payments_rounded),
+                hintText: '0.000',
+              ),
+            ),
+            const SizedBox(height: 16),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Mode de paiement',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: PurchasePaymentMethod.values.map((m) {
+                final selected = m == _mode;
+                return ChoiceChip(
+                  label: Text(m.label),
+                  avatar: Icon(
+                    m.icon,
+                    size: 16,
+                    color: selected ? Colors.white : AppColors.textSecondary,
+                  ),
+                  selected: selected,
+                  onSelected: (_) => setState(() => _mode = m),
+                );
+              }).toList(),
             ),
             const SizedBox(height: 20),
             SizedBox(

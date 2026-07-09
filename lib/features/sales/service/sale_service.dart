@@ -30,8 +30,12 @@ class SaleService {
     String? employeeId,
     Discount discount = const Discount.none(),
   }) {
-    final effectiveClientId = modePaiement == ModePaiement.credit ? clientId : null;
-    final sale = _ref.read(salesProvider.notifier).recordSale(
+    final effectiveClientId = modePaiement == ModePaiement.credit
+        ? clientId
+        : null;
+    final sale = _ref
+        .read(salesProvider.notifier)
+        .recordSale(
           lignes: lignes,
           modePaiement: modePaiement,
           clientId: effectiveClientId,
@@ -40,10 +44,14 @@ class SaleService {
         );
 
     for (final item in lignes) {
-      _ref.read(productsProvider.notifier).decrementStock(item.product.id, item.quantite);
+      _ref
+          .read(productsProvider.notifier)
+          .decrementStock(item.product.id, item.quantite);
     }
     if (modePaiement == ModePaiement.credit && effectiveClientId != null) {
-      _ref.read(clientsProvider.notifier).addCredit(effectiveClientId, sale.total);
+      _ref
+          .read(clientsProvider.notifier)
+          .addCredit(effectiveClientId, sale.total);
     }
     return sale;
   }
@@ -58,11 +66,17 @@ class SaleService {
     String? clientId,
     Discount discount = const Discount.none(),
   }) {
-    final oldQty = <String, double>{for (final l in original.lignes) l.product.id: l.quantite};
-    final newQty = <String, double>{for (final l in lignes) l.product.id: l.quantite};
+    final oldQty = <String, double>{
+      for (final l in original.lignes) l.product.id: l.quantite,
+    };
+    final newQty = <String, double>{
+      for (final l in lignes) l.product.id: l.quantite,
+    };
     for (final id in {...oldQty.keys, ...newQty.keys}) {
       final delta = (oldQty[id] ?? 0) - (newQty[id] ?? 0);
-      if (delta != 0) _ref.read(productsProvider.notifier).adjustStock(id, delta);
+      if (delta != 0) {
+        _ref.read(productsProvider.notifier).adjustStock(id, delta);
+      }
     }
 
     final updated = Sale(
@@ -75,11 +89,17 @@ class SaleService {
       discount: discount,
     );
 
-    if (original.modePaiement == ModePaiement.credit && original.clientId != null) {
-      _ref.read(clientsProvider.notifier).addCredit(original.clientId!, -original.total);
+    if (original.modePaiement == ModePaiement.credit &&
+        original.clientId != null) {
+      _ref
+          .read(clientsProvider.notifier)
+          .addCredit(original.clientId!, -original.total);
     }
-    if (updated.modePaiement == ModePaiement.credit && updated.clientId != null) {
-      _ref.read(clientsProvider.notifier).addCredit(updated.clientId!, updated.total);
+    if (updated.modePaiement == ModePaiement.credit &&
+        updated.clientId != null) {
+      _ref
+          .read(clientsProvider.notifier)
+          .addCredit(updated.clientId!, updated.total);
     }
 
     _ref.read(salesProvider.notifier).updateSale(updated);
@@ -89,10 +109,14 @@ class SaleService {
   /// client credit it created (if any), then removes the record.
   void deleteSale(Sale sale) {
     for (final l in sale.lignes) {
-      _ref.read(productsProvider.notifier).adjustStock(l.product.id, l.quantite);
+      _ref
+          .read(productsProvider.notifier)
+          .adjustStock(l.product.id, l.quantite);
     }
     if (sale.modePaiement == ModePaiement.credit && sale.clientId != null) {
-      _ref.read(clientsProvider.notifier).addCredit(sale.clientId!, -sale.total);
+      _ref
+          .read(clientsProvider.notifier)
+          .addCredit(sale.clientId!, -sale.total);
     }
     _ref.read(salesProvider.notifier).removeSale(sale.id);
   }

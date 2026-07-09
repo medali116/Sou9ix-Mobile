@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:intl/intl.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -9,19 +11,24 @@ import 'package:sou9ix/features/sales/model/sale.dart';
 /// Builds a printable/shareable PDF ticket for a [Sale] and hands it to the
 /// OS print/share sheet via the `printing` package — covers "imprimer",
 /// "réimprimer" (same sale, opened again from l'historique) and exporting
-/// the ticket as a real PDF file with a single flow.
+/// the ticket as a real PDF file with a single flow. [nomTicket] and
+/// [logoBytes] come from Profil → "Gestion de l'entreprise".
 class TicketPdfService {
   const TicketPdfService();
 
-  Future<void> printOrShare(Sale sale) async {
-    final doc = _build(sale);
+  Future<void> printOrShare(
+    Sale sale, {
+    String nomTicket = 'Sou9ix',
+    Uint8List? logoBytes,
+  }) async {
+    final doc = _build(sale, nomTicket, logoBytes);
     await Printing.layoutPdf(
       onLayout: (_) => doc.save(),
       name: 'ticket_${sale.id}.pdf',
     );
   }
 
-  pw.Document _build(Sale sale) {
+  pw.Document _build(Sale sale, String nomTicket, Uint8List? logoBytes) {
     final doc = pw.Document();
     final dateStr = DateFormat('dd/MM/yyyy · HH:mm').format(sale.dateHeure);
 
@@ -36,13 +43,16 @@ class TicketPdfService {
               pw.Center(
                 child: pw.Column(
                   children: [
-                    pw.Text(
-                      'Sou9ix',
-                      style: pw.TextStyle(
-                        fontSize: 16,
-                        fontWeight: pw.FontWeight.bold,
+                    if (logoBytes != null)
+                      pw.Image(pw.MemoryImage(logoBytes), width: 48, height: 48)
+                    else
+                      pw.Text(
+                        nomTicket,
+                        style: pw.TextStyle(
+                          fontSize: 16,
+                          fontWeight: pw.FontWeight.bold,
+                        ),
                       ),
-                    ),
                     pw.Text(
                       'Épicerie El Baraka — La Marsa',
                       style: const pw.TextStyle(fontSize: 9),

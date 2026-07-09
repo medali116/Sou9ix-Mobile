@@ -46,8 +46,9 @@ class _SupplierFormScreenState extends ConsumerState<SupplierFormScreen> {
 
   void _save() {
     if (_nomCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Le nom du fournisseur est requis')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Le nom du fournisseur est requis')),
+      );
       return;
     }
     final supplier = Supplier(
@@ -65,15 +66,22 @@ class _SupplierFormScreenState extends ConsumerState<SupplierFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEdit ? 'Modifier le fournisseur' : 'Nouveau fournisseur'),
+        title: Text(
+          _isEdit ? 'Modifier le fournisseur' : 'Nouveau fournisseur',
+        ),
         actions: [
           if (_isEdit)
             IconButton(
               onPressed: () {
-                ref.read(suppliersProvider.notifier).remove(widget.supplier!.id);
+                ref
+                    .read(suppliersProvider.notifier)
+                    .remove(widget.supplier!.id);
                 context.pop();
               },
-              icon: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
+              icon: const Icon(
+                Icons.delete_outline_rounded,
+                color: AppColors.danger,
+              ),
             ),
         ],
       ),
@@ -90,7 +98,12 @@ class _SupplierFormScreenState extends ConsumerState<SupplierFormScreen> {
           ),
           const SizedBox(height: 18),
           _label('Nom du fournisseur'),
-          TextField(controller: _nomCtrl, decoration: const InputDecoration(hintText: 'Ex. Grossiste Fruits Secs Sfax')),
+          TextField(
+            controller: _nomCtrl,
+            decoration: const InputDecoration(
+              hintText: 'Ex. Grossiste Fruits Secs Sfax',
+            ),
+          ),
           const SizedBox(height: 18),
           _label('Téléphone'),
           TextField(
@@ -103,14 +116,20 @@ class _SupplierFormScreenState extends ConsumerState<SupplierFormScreen> {
           TextField(
             controller: _adresseCtrl,
             maxLines: 2,
-            decoration: const InputDecoration(hintText: 'Ex. Zone industrielle, Sfax'),
+            decoration: const InputDecoration(
+              hintText: 'Ex. Zone industrielle, Sfax',
+            ),
           ),
           const SizedBox(height: 28),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: _save,
-              child: Text(_isEdit ? 'Enregistrer les modifications' : 'Ajouter le fournisseur'),
+              child: Text(
+                _isEdit
+                    ? 'Enregistrer les modifications'
+                    : 'Ajouter le fournisseur',
+              ),
             ),
           ),
         ],
@@ -119,7 +138,10 @@ class _SupplierFormScreenState extends ConsumerState<SupplierFormScreen> {
   }
 
   Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(text, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-      );
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Text(
+      text,
+      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+    ),
+  );
 }

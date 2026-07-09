@@ -31,7 +31,8 @@ class AddInvoiceLineSheet extends ConsumerStatefulWidget {
   }
 
   @override
-  ConsumerState<AddInvoiceLineSheet> createState() => _AddInvoiceLineSheetState();
+  ConsumerState<AddInvoiceLineSheet> createState() =>
+      _AddInvoiceLineSheetState();
 }
 
 class _AddInvoiceLineSheetState extends ConsumerState<AddInvoiceLineSheet> {
@@ -62,11 +63,16 @@ class _AddInvoiceLineSheetState extends ConsumerState<AddInvoiceLineSheet> {
     super.dispose();
   }
 
-  bool get _venduAuPoids => _newProduct ? _newVenduAuPoids : (_selectedProduct?.venduAuPoids ?? false);
+  bool get _venduAuPoids => _newProduct
+      ? _newVenduAuPoids
+      : (_selectedProduct?.venduAuPoids ?? false);
 
   Future<void> _scanBarcode() async {
     final code = await Navigator.of(context).push<String>(
-      MaterialPageRoute(builder: (_) => const BarcodeCaptureScreen(), fullscreenDialog: true),
+      MaterialPageRoute(
+        builder: (_) => const BarcodeCaptureScreen(),
+        fullscreenDialog: true,
+      ),
     );
     if (code != null && code.isNotEmpty) {
       setState(() => _newCodeCtrl.text = code);
@@ -74,7 +80,9 @@ class _AddInvoiceLineSheetState extends ConsumerState<AddInvoiceLineSheet> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _submit() {
@@ -92,7 +100,9 @@ class _AddInvoiceLineSheetState extends ConsumerState<AddInvoiceLineSheet> {
 
     if (_newProduct) {
       final name = _newNameCtrl.text.trim();
-      final prixVente = double.tryParse(_newPrixVenteCtrl.text.replaceAll(',', '.'));
+      final prixVente = double.tryParse(
+        _newPrixVenteCtrl.text.replaceAll(',', '.'),
+      );
       if (name.isEmpty) {
         _showError('Le nom du nouveau produit est requis');
         return;
@@ -108,28 +118,36 @@ class _AddInvoiceLineSheetState extends ConsumerState<AddInvoiceLineSheet> {
         photoBytes: _productPhotoBytes,
         prixVente: prixVente,
         prixAchat: prixAchat,
-        codeBarres: _newCodeCtrl.text.trim().isEmpty ? null : _newCodeCtrl.text.trim(),
+        codeBarres: _newCodeCtrl.text.trim().isEmpty
+            ? null
+            : _newCodeCtrl.text.trim(),
         venduAuPoids: _newVenduAuPoids,
         categorieId: _newCategorieId,
         stock: quantite,
         seuilAlerte: double.tryParse(_newSeuilCtrl.text) ?? 2,
         datePeremption: _newDatePeremption,
       );
-      Navigator.pop(context, DraftInvoiceLine(
-        newProductDraft: newProduct,
-        quantite: quantite,
-        prixAchatUnitaire: prixAchat,
-      ));
+      Navigator.pop(
+        context,
+        DraftInvoiceLine(
+          newProductDraft: newProduct,
+          quantite: quantite,
+          prixAchatUnitaire: prixAchat,
+        ),
+      );
     } else {
       if (_selectedProduct == null) {
         _showError('Sélectionnez le produit à réapprovisionner');
         return;
       }
-      Navigator.pop(context, DraftInvoiceLine(
-        existingProduct: _selectedProduct,
-        quantite: quantite,
-        prixAchatUnitaire: prixAchat,
-      ));
+      Navigator.pop(
+        context,
+        DraftInvoiceLine(
+          existingProduct: _selectedProduct,
+          quantite: quantite,
+          prixAchatUnitaire: prixAchat,
+        ),
+      );
     }
   }
 
@@ -138,7 +156,11 @@ class _AddInvoiceLineSheetState extends ConsumerState<AddInvoiceLineSheet> {
     final products = ref.watch(productsProvider);
     final categories = ref.watch(categoriesProvider);
     final filtered = products
-        .where((p) => _productQuery.isEmpty || p.name.toLowerCase().contains(_productQuery.toLowerCase()))
+        .where(
+          (p) =>
+              _productQuery.isEmpty ||
+              p.name.toLowerCase().contains(_productQuery.toLowerCase()),
+        )
         .toList();
 
     return DraggableScrollableSheet(
@@ -149,7 +171,9 @@ class _AddInvoiceLineSheetState extends ConsumerState<AddInvoiceLineSheet> {
       builder: (context, scrollController) => Container(
         decoration: const BoxDecoration(
           color: AppColors.background,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadius.xl),
+          ),
         ),
         child: Column(
           children: [
@@ -159,7 +183,10 @@ class _AddInvoiceLineSheetState extends ConsumerState<AddInvoiceLineSheet> {
               child: Row(
                 children: [
                   Expanded(
-                    child: Text('Ajouter une ligne', style: Theme.of(context).textTheme.titleLarge),
+                    child: Text(
+                      'Ajouter une ligne',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                   ),
                   IconButton(
                     onPressed: () => Navigator.pop(context),
@@ -190,58 +217,84 @@ class _AddInvoiceLineSheetState extends ConsumerState<AddInvoiceLineSheet> {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      ...filtered.take(6).map((p) => PressScale(
-                            onTap: () => setState(() {
-                              _selectedProduct = p;
-                              _prixAchatCtrl.text = p.prixAchat.toStringAsFixed(3);
-                            }),
-                            child: Container(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: AppColors.surfaceMuted,
-                                borderRadius: BorderRadius.circular(AppRadius.md),
-                              ),
-                              child: Row(
-                                children: [
-                                  ProductAvatar(emoji: p.emoji, photoBytes: p.photoBytes, size: 38),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(p.name, style: Theme.of(context).textTheme.titleMedium),
-                                        Text(
-                                          'Stock actuel : ${p.venduAuPoids ? '${p.stock.toStringAsFixed(3)} kg' : '${p.stock.toInt()} pcs'}',
-                                          style: Theme.of(context).textTheme.bodyMedium,
-                                        ),
-                                      ],
-                                    ),
+                      ...filtered
+                          .take(6)
+                          .map(
+                            (p) => PressScale(
+                              onTap: () => setState(() {
+                                _selectedProduct = p;
+                                _prixAchatCtrl.text = p.prixAchat
+                                    .toStringAsFixed(3);
+                              }),
+                              child: Container(
+                                margin: const EdgeInsets.only(bottom: 8),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surfaceMuted,
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.md,
                                   ),
-                                ],
+                                ),
+                                child: Row(
+                                  children: [
+                                    ProductAvatar(
+                                      emoji: p.emoji,
+                                      photoBytes: p.photoBytes,
+                                      size: 38,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            p.name,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.titleMedium,
+                                          ),
+                                          Text(
+                                            'Stock actuel : ${p.venduAuPoids ? '${p.stock.toStringAsFixed(3)} kg' : '${p.stock.toInt()} pcs'}',
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodyMedium,
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                          )),
+                          ),
                     ] else
                       Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           color: AppColors.teal.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(AppRadius.md),
-                          border: Border.all(color: AppColors.teal.withValues(alpha: 0.3)),
+                          border: Border.all(
+                            color: AppColors.teal.withValues(alpha: 0.3),
+                          ),
                         ),
                         child: Row(
                           children: [
                             ProductAvatar(
-                                emoji: _selectedProduct!.emoji,
-                                photoBytes: _selectedProduct!.photoBytes,
-                                size: 42),
+                              emoji: _selectedProduct!.emoji,
+                              photoBytes: _selectedProduct!.photoBytes,
+                              size: 42,
+                            ),
                             const SizedBox(width: 10),
                             Expanded(
-                              child: Text(_selectedProduct!.name, style: Theme.of(context).textTheme.titleMedium),
+                              child: Text(
+                                _selectedProduct!.name,
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
                             ),
                             TextButton(
-                              onPressed: () => setState(() => _selectedProduct = null),
+                              onPressed: () =>
+                                  setState(() => _selectedProduct = null),
                               child: const Text('Changer'),
                             ),
                           ],
@@ -252,14 +305,20 @@ class _AddInvoiceLineSheetState extends ConsumerState<AddInvoiceLineSheet> {
                     _label('Photo du produit (optionnel)'),
                     PhotoPickerField(
                       photoBytes: _productPhotoBytes,
-                      onChanged: (bytes) => setState(() => _productPhotoBytes = bytes),
+                      onChanged: (bytes) =>
+                          setState(() => _productPhotoBytes = bytes),
                       placeholderLabel: 'Ajouter une photo du produit',
                       placeholderIcon: Icons.inventory_2_outlined,
                       height: 110,
                     ),
                     const SizedBox(height: 16),
                     _label('Nom du produit'),
-                    TextField(controller: _newNameCtrl, decoration: const InputDecoration(hintText: 'Ex. Noisettes grillées')),
+                    TextField(
+                      controller: _newNameCtrl,
+                      decoration: const InputDecoration(
+                        hintText: 'Ex. Noisettes grillées',
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     _label('Code-barres (EAN)'),
                     TextField(
@@ -269,7 +328,10 @@ class _AddInvoiceLineSheetState extends ConsumerState<AddInvoiceLineSheet> {
                         hintText: 'Optionnel — scannez ou saisissez',
                         suffixIcon: IconButton(
                           onPressed: _scanBarcode,
-                          icon: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.teal),
+                          icon: const Icon(
+                            Icons.qr_code_scanner_rounded,
+                            color: AppColors.teal,
+                          ),
                           tooltip: 'Scanner le code-barres',
                         ),
                       ),
@@ -284,7 +346,8 @@ class _AddInvoiceLineSheetState extends ConsumerState<AddInvoiceLineSheet> {
                         return ChoiceChip(
                           label: Text(c.name),
                           selected: selected,
-                          onSelected: (_) => setState(() => _newCategorieId = c.id),
+                          onSelected: (_) =>
+                              setState(() => _newCategorieId = c.id),
                         );
                       }).toList(),
                     ),
@@ -292,7 +355,9 @@ class _AddInvoiceLineSheetState extends ConsumerState<AddInvoiceLineSheet> {
                     _label('Prix de vente (DT)'),
                     TextField(
                       controller: _newPrixVenteCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       decoration: const InputDecoration(hintText: '0.000'),
                     ),
                     const SizedBox(height: 10),
@@ -314,7 +379,9 @@ class _AddInvoiceLineSheetState extends ConsumerState<AddInvoiceLineSheet> {
                     _label('Seuil d\'alerte de stock'),
                     TextField(
                       controller: _newSeuilCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                     ),
                     const SizedBox(height: 16),
                     _label('Date de péremption (optionnel)'),
@@ -330,11 +397,20 @@ class _AddInvoiceLineSheetState extends ConsumerState<AddInvoiceLineSheet> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _label(_newProduct ? 'Quantité initiale' : 'Quantité reçue'),
+                            _label(
+                              _newProduct
+                                  ? 'Quantité initiale'
+                                  : 'Quantité reçue',
+                            ),
                             TextField(
                               controller: _quantiteCtrl,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              decoration: InputDecoration(hintText: _venduAuPoids ? 'kg' : 'pièces'),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              decoration: InputDecoration(
+                                hintText: _venduAuPoids ? 'kg' : 'pièces',
+                              ),
                             ),
                           ],
                         ),
@@ -347,8 +423,13 @@ class _AddInvoiceLineSheetState extends ConsumerState<AddInvoiceLineSheet> {
                             _label('Prix d\'achat unitaire (DT)'),
                             TextField(
                               controller: _prixAchatCtrl,
-                              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                              decoration: const InputDecoration(hintText: '0.000'),
+                              keyboardType:
+                                  const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                              decoration: const InputDecoration(
+                                hintText: '0.000',
+                              ),
                             ),
                           ],
                         ),
@@ -373,7 +454,10 @@ class _AddInvoiceLineSheetState extends ConsumerState<AddInvoiceLineSheet> {
   }
 
   Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(text, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-      );
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Text(
+      text,
+      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+    ),
+  );
 }

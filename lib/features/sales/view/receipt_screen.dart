@@ -11,6 +11,7 @@ import 'package:sou9ix/core/formatters.dart';
 import 'package:sou9ix/features/clients/viewmodel/clients_provider.dart';
 import 'package:sou9ix/features/sales/model/sale.dart';
 import 'package:sou9ix/features/sales/service/ticket_pdf_service.dart';
+import 'package:sou9ix/features/settings/viewmodel/company_settings_provider.dart';
 import 'package:sou9ix/core/theme/app_colors.dart';
 import 'package:sou9ix/core/theme/app_theme.dart';
 
@@ -64,7 +65,12 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
     _cancelAutoReturn();
     setState(() => _printing = true);
     try {
-      await ticketPdfService.printOrShare(sale);
+      final settings = ref.read(companySettingsProvider);
+      await ticketPdfService.printOrShare(
+        sale,
+        nomTicket: settings.ticketName,
+        logoBytes: settings.logoBytes,
+      );
     } finally {
       if (mounted) setState(() => _printing = false);
     }
@@ -73,6 +79,7 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
   @override
   Widget build(BuildContext context) {
     final dateStr = DateFormat('dd/MM/yyyy · HH:mm').format(sale.dateHeure);
+    final companySettings = ref.watch(companySettingsProvider);
 
     double? clientNewDebt;
     if (sale.modePaiement == ModePaiement.credit && sale.clientId != null) {
@@ -181,11 +188,24 @@ class _ReceiptScreenState extends ConsumerState<ReceiptScreen> {
                       Center(
                         child: Column(
                           children: [
-                            Text(
-                              'Sou9ix',
-                              style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(color: AppColors.teal),
-                            ),
+                            if (companySettings.logoBytes != null)
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.xs,
+                                ),
+                                child: Image.memory(
+                                  companySettings.logoBytes!,
+                                  width: 48,
+                                  height: 48,
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            else
+                              Text(
+                                companySettings.ticketName,
+                                style: Theme.of(context).textTheme.titleLarge
+                                    ?.copyWith(color: AppColors.teal),
+                              ),
                             const SizedBox(height: 2),
                             Text(
                               'Épicerie El Baraka — La Marsa',

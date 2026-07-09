@@ -5,12 +5,14 @@ import 'package:flutter/material.dart';
 class PressScale extends StatefulWidget {
   final Widget child;
   final VoidCallback? onTap;
+  final VoidCallback? onLongPress;
   final double scale;
 
   const PressScale({
     super.key,
     required this.child,
     this.onTap,
+    this.onLongPress,
     this.scale = 0.96,
   });
 
@@ -40,7 +42,11 @@ class _PressScaleState extends State<PressScale> {
         // instead of the scale alone standing in for press feedback.
         child: Material(
           color: Colors.transparent,
-          child: InkWell(onTap: widget.onTap, child: widget.child),
+          child: InkWell(
+            onTap: widget.onTap,
+            onLongPress: widget.onLongPress,
+            child: widget.child,
+          ),
         ),
       ),
     );

@@ -50,7 +50,9 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _submit() async {
@@ -58,12 +60,15 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
       _showError('Ajoutez au moins une ligne à la facture');
       return;
     }
-    final montantPaye = double.tryParse(_montantVerseCtrl.text.replaceAll(',', '.')) ?? 0;
+    final montantPaye =
+        double.tryParse(_montantVerseCtrl.text.replaceAll(',', '.')) ?? 0;
 
     setState(() => _saving = true);
     await Future.delayed(const Duration(milliseconds: 500));
 
-    ref.read(purchaseServiceProvider).receiveInvoice(
+    ref
+        .read(purchaseServiceProvider)
+        .receiveInvoice(
           lines: _lines,
           supplier: _selectedSupplier,
           photoBytes: _invoicePhotoBytes,
@@ -72,7 +77,11 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Facture enregistrée : ${_lines.length} produit${_lines.length > 1 ? 's' : ''}')),
+      SnackBar(
+        content: Text(
+          'Facture enregistrée : ${_lines.length} produit${_lines.length > 1 ? 's' : ''}',
+        ),
+      ),
     );
     context.pop();
   }
@@ -81,7 +90,11 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
   Widget build(BuildContext context) {
     final suppliers = ref.watch(suppliersProvider);
     final filteredSuppliers = suppliers
-        .where((s) => _supplierQuery.isEmpty || s.nom.toLowerCase().contains(_supplierQuery.toLowerCase()))
+        .where(
+          (s) =>
+              _supplierQuery.isEmpty ||
+              s.nom.toLowerCase().contains(_supplierQuery.toLowerCase()),
+        )
         .toList();
 
     return Scaffold(
@@ -124,13 +137,20 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
                 ),
                 child: Row(
                   children: [
-                    ProductAvatar(emoji: line.emoji, photoBytes: line.photoBytes, size: 38),
+                    ProductAvatar(
+                      emoji: line.emoji,
+                      photoBytes: line.photoBytes,
+                      size: 38,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(line.productName, style: Theme.of(context).textTheme.titleMedium),
+                          Text(
+                            line.productName,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
                           Text(
                             '${line.quantite.toStringAsFixed(line.venduAuPoids ? 3 : 0)} ${line.venduAuPoids ? 'kg' : 'pcs'} × ${AppFormat.dtShort(line.prixAchatUnitaire)}',
                             style: Theme.of(context).textTheme.bodyMedium,
@@ -138,10 +158,17 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
                         ],
                       ),
                     ),
-                    Text(AppFormat.dtShort(line.montant), style: const TextStyle(fontWeight: FontWeight.w800)),
+                    Text(
+                      AppFormat.dtShort(line.montant),
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
                     IconButton(
                       onPressed: () => setState(() => _lines.removeAt(index)),
-                      icon: const Icon(Icons.close_rounded, color: AppColors.danger, size: 18),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: AppColors.danger,
+                        size: 18,
+                      ),
                     ),
                   ],
                 ),
@@ -162,7 +189,13 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
                 children: [
                   Icon(Icons.add_rounded, color: AppColors.teal, size: 18),
                   SizedBox(width: 6),
-                  Text('Ajouter une ligne', style: TextStyle(color: AppColors.teal, fontWeight: FontWeight.w700)),
+                  Text(
+                    'Ajouter une ligne',
+                    style: TextStyle(
+                      color: AppColors.teal,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -178,8 +211,22 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('TOTAL FACTURE', style: TextStyle(color: AppColors.tealLight, fontWeight: FontWeight.w700, fontSize: 12)),
-                  Text(AppFormat.dt(_total), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18)),
+                  const Text(
+                    'TOTAL FACTURE',
+                    style: TextStyle(
+                      color: AppColors.tealLight,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
+                  ),
+                  Text(
+                    AppFormat.dt(_total),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -194,28 +241,39 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            ...filteredSuppliers.take(5).map((s) => PressScale(
-                  onTap: () => setState(() => _selectedSupplier = s),
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceMuted,
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          backgroundColor: AppColors.teal.withValues(alpha: 0.12),
-                          foregroundColor: AppColors.tealDark,
-                          child: Text(s.nom.substring(0, 1)),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(child: Text(s.nom, style: Theme.of(context).textTheme.titleMedium)),
-                      ],
+            ...filteredSuppliers
+                .take(5)
+                .map(
+                  (s) => PressScale(
+                    onTap: () => setState(() => _selectedSupplier = s),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceMuted,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: AppColors.teal.withValues(
+                              alpha: 0.12,
+                            ),
+                            foregroundColor: AppColors.tealDark,
+                            child: Text(s.nom.substring(0, 1)),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              s.nom,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                )),
+                ),
             PressScale(
               onTap: () => context.push('/suppliers/new'),
               child: Container(
@@ -230,7 +288,13 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
                   children: [
                     Icon(Icons.add_rounded, color: AppColors.teal, size: 18),
                     SizedBox(width: 6),
-                    Text('Nouveau fournisseur', style: TextStyle(color: AppColors.teal, fontWeight: FontWeight.w700)),
+                    Text(
+                      'Nouveau fournisseur',
+                      style: TextStyle(
+                        color: AppColors.teal,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -241,7 +305,9 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
               decoration: BoxDecoration(
                 color: AppColors.teal.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                border: Border.all(color: AppColors.teal.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: AppColors.teal.withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 children: [
@@ -251,7 +317,12 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
                     child: Text(_selectedSupplier!.nom.substring(0, 1)),
                   ),
                   const SizedBox(width: 10),
-                  Expanded(child: Text(_selectedSupplier!.nom, style: Theme.of(context).textTheme.titleMedium)),
+                  Expanded(
+                    child: Text(
+                      _selectedSupplier!.nom,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
                   TextButton(
                     onPressed: () => setState(() => _selectedSupplier = null),
                     child: const Text('Changer'),
@@ -272,7 +343,9 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => setState(() => _montantVerseCtrl.text = _total.toStringAsFixed(3)),
+                  onPressed: () => setState(
+                    () => _montantVerseCtrl.text = _total.toStringAsFixed(3),
+                  ),
                   child: const Text('Payée intégralement'),
                 ),
               ),
@@ -294,18 +367,23 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
           ),
           const SizedBox(height: 28),
           SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _saving ? null : _submit,
-              child: _saving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
-                    )
-                  : const Text('Enregistrer la facture'),
-            ),
-          ).animate(target: _saving ? 1 : 0, onPlay: (c) => c.repeat()).shimmer(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _saving ? null : _submit,
+                  child: _saving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Enregistrer la facture'),
+                ),
+              )
+              .animate(target: _saving ? 1 : 0, onPlay: (c) => c.repeat())
+              .shimmer(
                 duration: 1100.ms,
                 color: Colors.white.withValues(alpha: 0.45),
               ),
@@ -315,7 +393,10 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
   }
 
   Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(text, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-      );
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Text(
+      text,
+      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+    ),
+  );
 }
