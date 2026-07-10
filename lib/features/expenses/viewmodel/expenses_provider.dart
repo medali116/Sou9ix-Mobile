@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:sou9ix/features/activity/model/activity_log_entry.dart';
+import 'package:sou9ix/features/activity/viewmodel/activity_log_provider.dart';
 import 'package:sou9ix/features/expenses/model/expense.dart';
 
 List<Expense> _buildMockExpenses() {
@@ -57,9 +59,21 @@ List<Expense> _buildMockExpenses() {
 }
 
 class ExpensesNotifier extends StateNotifier<List<Expense>> {
-  ExpensesNotifier() : super(_buildMockExpenses());
+  ExpensesNotifier(this._ref) : super(_buildMockExpenses());
 
-  void add(Expense expense) => state = [expense, ...state];
+  final Ref _ref;
+
+  void add(Expense expense) {
+    state = [expense, ...state];
+    logActivity(
+      _ref,
+      category: ActivityCategory.depenses,
+      impact: ActivityImpact.ajout,
+      action: 'Dépense ajoutée',
+      targetName: expense.label,
+      montant: expense.montant,
+    );
+  }
 
   void update(Expense expense) {
     state = [
@@ -81,7 +95,7 @@ class ExpensesNotifier extends StateNotifier<List<Expense>> {
 }
 
 final expensesProvider = StateNotifierProvider<ExpensesNotifier, List<Expense>>(
-  (ref) => ExpensesNotifier(),
+  (ref) => ExpensesNotifier(ref),
 );
 
 List<Expense> _forMonth(List<Expense> expenses, int year, int month) => expenses

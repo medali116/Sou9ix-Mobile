@@ -13,7 +13,9 @@ class ClientsNotifier extends StateNotifier<List<Client>> {
     state = [
       for (final c in state)
         if (c.id == clientId)
-          c.copyWith(creditTotal: (c.creditTotal + montant).clamp(0, double.infinity))
+          c.copyWith(
+            creditTotal: (c.creditTotal + montant).clamp(0, double.infinity),
+          )
         else
           c,
     ];
@@ -23,7 +25,9 @@ class ClientsNotifier extends StateNotifier<List<Client>> {
     state = [
       for (final c in state)
         if (c.id == clientId)
-          c.copyWith(creditTotal: (c.creditTotal - montant).clamp(0, double.infinity))
+          c.copyWith(
+            creditTotal: (c.creditTotal - montant).clamp(0, double.infinity),
+          )
         else
           c,
     ];

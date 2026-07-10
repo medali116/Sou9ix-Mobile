@@ -8,6 +8,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:local_auth/local_auth.dart';
 
+import 'package:sou9ix/features/activity/model/activity_log_entry.dart';
+import 'package:sou9ix/features/activity/viewmodel/activity_log_provider.dart';
 import 'package:sou9ix/features/auth/model/user.dart';
 import 'package:sou9ix/features/auth/viewmodel/auth_provider.dart';
 import 'package:sou9ix/core/theme/app_colors.dart';
@@ -293,9 +295,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
   Future<void> _openMagasinEditSheet(BuildContext context) async {
     final settings = ref.read(companySettingsProvider);
-    final nomCtrl = TextEditingController(
-      text: ref.read(authProvider)?.magasin ?? 'Sou9ix',
-    );
+    final oldNom = ref.read(authProvider)?.magasin ?? 'Sou9ix';
+    final nomCtrl = TextEditingController(text: oldNom);
     final adresseCtrl = TextEditingController(text: settings.adresse);
     final telCtrl = TextEditingController(text: settings.telephone);
     final matriculeCtrl = TextEditingController(text: settings.matriculeFiscal);
@@ -390,16 +391,47 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
 
     if (saved == true) {
-      ref
-          .read(authProvider.notifier)
-          .updateProfile(magasin: nomCtrl.text.trim());
+      final newNom = nomCtrl.text.trim();
+      final newAdresse = adresseCtrl.text.trim();
+      final newTel = telCtrl.text.trim();
+      final newMatricule = matriculeCtrl.text.trim();
+
+      ref.read(authProvider.notifier).updateProfile(magasin: newNom);
       ref
           .read(companySettingsProvider.notifier)
           .updateStoreInfo(
-            adresse: adresseCtrl.text.trim(),
-            telephone: telCtrl.text.trim(),
-            matriculeFiscal: matriculeCtrl.text.trim(),
+            adresse: newAdresse,
+            telephone: newTel,
+            matriculeFiscal: newMatricule,
           );
+
+      for (final (champ, ancienne, nouvelle) in [
+        ('Nom', oldNom, newNom),
+        ('Adresse', settings.adresse, newAdresse),
+        ('Téléphone', settings.telephone, newTel),
+        ('Matricule fiscal', settings.matriculeFiscal, newMatricule),
+      ]) {
+        if (ancienne != nouvelle) {
+          ref
+              .read(activityLogProvider.notifier)
+              .log(
+                ActivityLogEntry(
+                  id: '${DateTime.now().microsecondsSinceEpoch}$champ',
+                  date: DateTime.now(),
+                  employeeName: ref.read(authProvider)?.nom ?? 'Inconnu',
+                  category: ActivityCategory.employes,
+                  impact: ActivityImpact.modification,
+                  action: 'Informations du magasin modifiées',
+                  targetName: newNom,
+                  champ: champ,
+                  ancienneValeur: ancienne,
+                  nouvelleValeur: nouvelle,
+                  platform: currentPlatformLabel(),
+                ),
+              );
+        }
+      }
+
       if (context.mounted) {
         _toast(context, 'Informations du magasin mises à jour');
       }
@@ -1406,6 +1438,21 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               icon: Icons.wallet_outlined,
               label: 'Dépenses & charges',
               onTap: () => context.push('/expenses'),
+            ),
+            _MenuTile(
+              icon: Icons.query_stats_rounded,
+              label: 'Centre d\'analyse',
+              onTap: () => context.push('/analytics'),
+            ),
+            _MenuTile(
+              icon: Icons.history_rounded,
+              label: 'Journal d\'activité',
+              onTap: () => context.push('/activity-log'),
+            ),
+            _MenuTile(
+              icon: Icons.delete_outline_rounded,
+              label: 'Corbeille',
+              onTap: () => context.push('/trash'),
             ),
           ],
           const SizedBox(height: 24),

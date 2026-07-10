@@ -49,7 +49,9 @@ class _AddReturnScreenState extends ConsumerState<AddReturnScreen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _submit() async {
@@ -64,13 +66,17 @@ class _AddReturnScreenState extends ConsumerState<AddReturnScreen> {
       return;
     }
     if (quantite > product.stock) {
-      _showError('Quantité supérieure au stock disponible (${product.stock.toStringAsFixed(product.venduAuPoids ? 3 : 0)})');
+      _showError(
+        'Quantité supérieure au stock disponible (${product.stock.toStringAsFixed(product.venduAuPoids ? 3 : 0)})',
+      );
       return;
     }
 
     setState(() => _saving = true);
 
-    ref.read(stockServiceProvider).recordReturn(
+    ref
+        .read(stockServiceProvider)
+        .recordReturn(
           product: product,
           quantite: quantite,
           motif: _motif,
@@ -85,7 +91,11 @@ class _AddReturnScreenState extends ConsumerState<AddReturnScreen> {
   Widget build(BuildContext context) {
     final products = ref.watch(productsProvider);
     final filtered = products
-        .where((p) => _productQuery.isEmpty || p.name.toLowerCase().contains(_productQuery.toLowerCase()))
+        .where(
+          (p) =>
+              _productQuery.isEmpty ||
+              p.name.toLowerCase().contains(_productQuery.toLowerCase()),
+        )
         .toList();
 
     return Scaffold(
@@ -103,52 +113,74 @@ class _AddReturnScreenState extends ConsumerState<AddReturnScreen> {
               ),
             ),
             const SizedBox(height: 10),
-            ...filtered.take(8).map((p) => PressScale(
-                  onTap: () => setState(() => _selectedProduct = p),
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceMuted,
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: Row(
-                      children: [
-                        ProductAvatar(emoji: p.emoji, photoBytes: p.photoBytes, size: 38),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(p.name, style: Theme.of(context).textTheme.titleMedium),
-                              Text(
-                                'Stock actuel : ${p.venduAuPoids ? '${p.stock.toStringAsFixed(3)} kg' : '${p.stock.toInt()} pcs'}',
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                            ],
+            ...filtered
+                .take(8)
+                .map(
+                  (p) => PressScale(
+                    onTap: () => setState(() => _selectedProduct = p),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceMuted,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: Row(
+                        children: [
+                          ProductAvatar(
+                            emoji: p.emoji,
+                            photoBytes: p.photoBytes,
+                            size: 38,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  p.name,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.titleMedium,
+                                ),
+                                Text(
+                                  'Stock actuel : ${p.venduAuPoids ? '${p.stock.toStringAsFixed(3)} kg' : '${p.stock.toInt()} pcs'}',
+                                  style: Theme.of(context).textTheme.bodyMedium,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                )),
+                ),
           ] else
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: AppColors.teal.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                border: Border.all(color: AppColors.teal.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: AppColors.teal.withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 children: [
-                  ProductAvatar(emoji: _selectedProduct!.emoji, photoBytes: _selectedProduct!.photoBytes, size: 42),
+                  ProductAvatar(
+                    emoji: _selectedProduct!.emoji,
+                    photoBytes: _selectedProduct!.photoBytes,
+                    size: 42,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(_selectedProduct!.name, style: Theme.of(context).textTheme.titleMedium),
+                        Text(
+                          _selectedProduct!.name,
+                          style: Theme.of(context).textTheme.titleMedium,
+                        ),
                         Text(
                           'Stock actuel : ${_selectedProduct!.venduAuPoids ? '${_selectedProduct!.stock.toStringAsFixed(3)} kg' : '${_selectedProduct!.stock.toInt()} pcs'}',
                           style: Theme.of(context).textTheme.bodyMedium,
@@ -164,7 +196,11 @@ class _AddReturnScreenState extends ConsumerState<AddReturnScreen> {
               ),
             ),
           const SizedBox(height: 18),
-          _label(_selectedProduct != null && _selectedProduct!.venduAuPoids ? 'Quantité (kg)' : 'Quantité (pièces)'),
+          _label(
+            _selectedProduct != null && _selectedProduct!.venduAuPoids
+                ? 'Quantité (kg)'
+                : 'Quantité (pièces)',
+          ),
           TextField(
             controller: _quantiteCtrl,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -188,22 +224,29 @@ class _AddReturnScreenState extends ConsumerState<AddReturnScreen> {
           TextField(
             controller: _noteCtrl,
             maxLines: 3,
-            decoration: const InputDecoration(hintText: 'Détails supplémentaires…'),
+            decoration: const InputDecoration(
+              hintText: 'Détails supplémentaires…',
+            ),
           ),
           const SizedBox(height: 28),
           SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _saving ? null : _submit,
-              child: _saving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
-                    )
-                  : const Text('Enregistrer le retour'),
-            ),
-          ).animate(target: _saving ? 1 : 0, onPlay: (c) => c.repeat()).shimmer(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _saving ? null : _submit,
+                  child: _saving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Enregistrer le retour'),
+                ),
+              )
+              .animate(target: _saving ? 1 : 0, onPlay: (c) => c.repeat())
+              .shimmer(
                 duration: 1100.ms,
                 color: Colors.white.withValues(alpha: 0.45),
               ),
@@ -213,7 +256,10 @@ class _AddReturnScreenState extends ConsumerState<AddReturnScreen> {
   }
 
   Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(text, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-      );
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Text(
+      text,
+      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+    ),
+  );
 }

@@ -57,7 +57,10 @@ class ClientsScreen extends ConsumerWidget {
                       const SizedBox(height: 4),
                       Text(
                         '${withCredit.length} client${withCredit.length > 1 ? 's' : ''} avec solde dû',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12.5),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 12.5,
+                        ),
                       ),
                     ],
                   ),
@@ -69,7 +72,10 @@ class ClientsScreen extends ConsumerWidget {
                     color: AppColors.gold.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.menu_book_rounded, color: AppColors.gold),
+                  child: const Icon(
+                    Icons.menu_book_rounded,
+                    color: AppColors.gold,
+                  ),
                 ),
               ],
             ),
@@ -79,7 +85,8 @@ class ClientsScreen extends ConsumerWidget {
                 ? const EmptyState(
                     icon: Icons.people_outline_rounded,
                     title: 'Aucun client',
-                    message: 'Ajoutez vos clients réguliers\npour suivre leur crédit.',
+                    message:
+                        'Ajoutez vos clients réguliers\npour suivre leur crédit.',
                   )
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
@@ -87,9 +94,10 @@ class ClientsScreen extends ConsumerWidget {
                     separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final c = clients[index];
-                      return _ClientTile(client: c)
-                          .animate()
-                          .fadeIn(duration: 220.ms, delay: (18 * index).ms);
+                      return _ClientTile(client: c).animate().fadeIn(
+                        duration: 220.ms,
+                        delay: (18 * index).ms,
+                      );
                     },
                   ),
           ),
@@ -119,16 +127,25 @@ class _ClientTile extends ConsumerWidget {
             radius: 22,
             backgroundColor: AppColors.teal.withValues(alpha: 0.12),
             foregroundColor: AppColors.tealDark,
-            child: Text(client.nom.substring(0, 1), style: const TextStyle(fontWeight: FontWeight.w800)),
+            child: Text(
+              client.nom.substring(0, 1),
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(client.nom, style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  client.nom,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 2),
-                Text(client.telephone, style: Theme.of(context).textTheme.bodyMedium),
+                Text(
+                  client.telephone,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
               ],
             ),
           ),
@@ -145,9 +162,14 @@ class _ClientTile extends ConsumerWidget {
               const SizedBox(height: 6),
               if (hasCredit)
                 PressScale(
-                  onTap: () => ref.read(clientsProvider.notifier).settle(client.id, client.creditTotal),
+                  onTap: () => ref
+                      .read(clientsProvider.notifier)
+                      .settle(client.id, client.creditTotal),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.success.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(100),
@@ -155,7 +177,10 @@ class _ClientTile extends ConsumerWidget {
                     child: const Text(
                       'Solder',
                       style: TextStyle(
-                          color: AppColors.success, fontWeight: FontWeight.w700, fontSize: 11),
+                        color: AppColors.success,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 11,
+                      ),
                     ),
                   ),
                 ),

@@ -7,7 +7,11 @@ class NavItemData {
   final IconData activeIcon;
   final String label;
 
-  const NavItemData({required this.icon, required this.activeIcon, required this.label});
+  const NavItemData({
+    required this.icon,
+    required this.activeIcon,
+    required this.label,
+  });
 }
 
 class AnimatedBottomNav extends StatelessWidget {
@@ -60,7 +64,9 @@ class AnimatedBottomNav extends StatelessWidget {
                   children: [
                     Icon(
                       selected ? item.activeIcon : item.icon,
-                      color: selected ? Colors.white : Colors.white.withValues(alpha: 0.45),
+                      color: selected
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.45),
                       size: 22,
                     ),
                     const SizedBox(height: 4),
@@ -72,7 +78,11 @@ class AnimatedBottomNav extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                         color: Colors.white.withValues(alpha: selected ? 1 : 0),
                       ),
-                      child: Text(item.label, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      child: Text(
+                        item.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),

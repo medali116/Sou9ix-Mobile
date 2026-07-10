@@ -35,7 +35,11 @@ class _ClientPickerSheetState extends ConsumerState<ClientPickerSheet> {
   Widget build(BuildContext context) {
     final clients = ref.watch(clientsProvider);
     final filtered = clients
-        .where((c) => _query.isEmpty || c.nom.toLowerCase().contains(_query.toLowerCase()))
+        .where(
+          (c) =>
+              _query.isEmpty ||
+              c.nom.toLowerCase().contains(_query.toLowerCase()),
+        )
         .toList();
 
     return DraggableScrollableSheet(
@@ -47,7 +51,9 @@ class _ClientPickerSheetState extends ConsumerState<ClientPickerSheet> {
         return Container(
           decoration: const BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppRadius.xl),
+            ),
           ),
           child: Column(
             children: [
@@ -57,7 +63,10 @@ class _ClientPickerSheetState extends ConsumerState<ClientPickerSheet> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Scanner client', style: Theme.of(context).textTheme.titleLarge),
+                    Text(
+                      'Scanner client',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                     IconButton(
                       onPressed: () => Navigator.pop(context),
                       icon: const Icon(Icons.close_rounded),
@@ -76,11 +85,18 @@ class _ClientPickerSheetState extends ConsumerState<ClientPickerSheet> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.qr_code_scanner_rounded, color: AppColors.tealLight, size: 22),
+                    const Icon(
+                      Icons.qr_code_scanner_rounded,
+                      color: AppColors.tealLight,
+                      size: 22,
+                    ),
                     const SizedBox(width: 10),
                     Text(
                       'Touchez pour scanner la carte du client',
-                      style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12.5),
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.75),
+                        fontSize: 12.5,
+                      ),
                     ),
                   ],
                 ),
@@ -114,7 +130,9 @@ class _ClientPickerSheetState extends ConsumerState<ClientPickerSheet> {
                         child: Row(
                           children: [
                             CircleAvatar(
-                              backgroundColor: AppColors.teal.withValues(alpha: 0.12),
+                              backgroundColor: AppColors.teal.withValues(
+                                alpha: 0.12,
+                              ),
                               foregroundColor: AppColors.tealDark,
                               child: Text(c.nom.substring(0, 1)),
                             ),
@@ -123,20 +141,36 @@ class _ClientPickerSheetState extends ConsumerState<ClientPickerSheet> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(c.nom, style: Theme.of(context).textTheme.titleMedium),
-                                  Text(c.telephone, style: Theme.of(context).textTheme.bodyMedium),
+                                  Text(
+                                    c.nom,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleMedium,
+                                  ),
+                                  Text(
+                                    c.telephone,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium,
+                                  ),
                                 ],
                               ),
                             ),
                             if (c.creditTotal > 0)
                               Text(
                                 AppFormat.dt(c.creditTotal),
-                                style: const TextStyle(color: AppColors.danger, fontWeight: FontWeight.w700),
+                                style: const TextStyle(
+                                  color: AppColors.danger,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                           ],
                         ),
                       ),
-                    ).animate().fadeIn(duration: 180.ms, delay: (14 * index).ms);
+                    ).animate().fadeIn(
+                      duration: 180.ms,
+                      delay: (14 * index).ms,
+                    );
                   },
                 ),
               ),

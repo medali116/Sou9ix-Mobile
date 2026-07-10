@@ -20,10 +20,12 @@ class PurchaseInvoicesScreen extends ConsumerStatefulWidget {
   const PurchaseInvoicesScreen({super.key});
 
   @override
-  ConsumerState<PurchaseInvoicesScreen> createState() => _PurchaseInvoicesScreenState();
+  ConsumerState<PurchaseInvoicesScreen> createState() =>
+      _PurchaseInvoicesScreenState();
 }
 
-class _PurchaseInvoicesScreenState extends ConsumerState<PurchaseInvoicesScreen> {
+class _PurchaseInvoicesScreenState
+    extends ConsumerState<PurchaseInvoicesScreen> {
   bool _onlyUnsettled = false;
 
   @override
@@ -71,7 +73,10 @@ class _PurchaseInvoicesScreenState extends ConsumerState<PurchaseInvoicesScreen>
                       const SizedBox(height: 4),
                       Text(
                         '${unsettled.length} facture${unsettled.length > 1 ? 's' : ''} non soldée${unsettled.length > 1 ? 's' : ''}',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12.5),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 12.5,
+                        ),
                       ),
                     ],
                   ),
@@ -83,7 +88,10 @@ class _PurchaseInvoicesScreenState extends ConsumerState<PurchaseInvoicesScreen>
                     color: AppColors.warning.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.receipt_long_rounded, color: AppColors.warning),
+                  child: const Icon(
+                    Icons.receipt_long_rounded,
+                    color: AppColors.warning,
+                  ),
                 ),
               ],
             ),
@@ -109,9 +117,10 @@ class _PurchaseInvoicesScreenState extends ConsumerState<PurchaseInvoicesScreen>
                     separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final invoice = invoices[index];
-                      return _InvoiceTile(invoice: invoice)
-                          .animate()
-                          .fadeIn(duration: 220.ms, delay: (18 * index).ms);
+                      return _InvoiceTile(invoice: invoice).animate().fadeIn(
+                        duration: 220.ms,
+                        delay: (18 * index).ms,
+                      );
                     },
                   ),
           ),
@@ -127,7 +136,9 @@ class _InvoiceTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ratio = invoice.montantTotal == 0 ? 1.0 : (invoice.montantPaye / invoice.montantTotal).clamp(0, 1).toDouble();
+    final ratio = invoice.montantTotal == 0
+        ? 1.0
+        : (invoice.montantPaye / invoice.montantTotal).clamp(0, 1).toDouble();
 
     return Container(
       decoration: BoxDecoration(
@@ -144,16 +155,27 @@ class _InvoiceTile extends ConsumerWidget {
           leading: ClipRRect(
             borderRadius: BorderRadius.circular(AppRadius.sm),
             child: invoice.photoBytes != null
-                ? Image.memory(invoice.photoBytes!, width: 44, height: 44, fit: BoxFit.cover)
+                ? Image.memory(
+                    invoice.photoBytes!,
+                    width: 44,
+                    height: 44,
+                    fit: BoxFit.cover,
+                  )
                 : Container(
                     width: 44,
                     height: 44,
                     color: AppColors.surfaceMuted,
-                    child: const Icon(Icons.receipt_outlined, color: AppColors.textFaint, size: 20),
+                    child: const Icon(
+                      Icons.receipt_outlined,
+                      color: AppColors.textFaint,
+                      size: 20,
+                    ),
                   ),
           ),
-          title: Text(invoice.fournisseur ?? 'Fournisseur non précisé',
-              style: Theme.of(context).textTheme.titleMedium),
+          title: Text(
+            invoice.fournisseur ?? 'Fournisseur non précisé',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           subtitle: Text(
             '${DateFormat('dd/MM/yyyy').format(invoice.date)} · ${invoice.lignes.length} produit${invoice.lignes.length > 1 ? 's' : ''} · ${AppFormat.dt(invoice.montantTotal)}',
             style: Theme.of(context).textTheme.bodyMedium,
@@ -169,16 +191,22 @@ class _InvoiceTile extends ConsumerWidget {
                     value: ratio,
                     minHeight: 5,
                     backgroundColor: AppColors.surfaceMuted,
-                    valueColor: AlwaysStoppedAnimation(invoice.soldee ? AppColors.success : AppColors.warning),
+                    valueColor: AlwaysStoppedAnimation(
+                      invoice.soldee ? AppColors.success : AppColors.warning,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  invoice.soldee ? 'Soldée' : 'Reste ${AppFormat.dtShort(invoice.montantRestant)}',
+                  invoice.soldee
+                      ? 'Soldée'
+                      : 'Reste ${AppFormat.dtShort(invoice.montantRestant)}',
                   style: TextStyle(
                     fontSize: 10.5,
                     fontWeight: FontWeight.w700,
-                    color: invoice.soldee ? AppColors.success : AppColors.warning,
+                    color: invoice.soldee
+                        ? AppColors.success
+                        : AppColors.warning,
                   ),
                 ),
               ],
@@ -192,7 +220,10 @@ class _InvoiceTile extends ConsumerWidget {
                   children: [
                     Expanded(
                       flex: 3,
-                      child: Text(line.productName, style: Theme.of(context).textTheme.bodyLarge),
+                      child: Text(
+                        line.productName,
+                        style: Theme.of(context).textTheme.bodyLarge,
+                      ),
                     ),
                     Expanded(
                       flex: 2,
@@ -228,7 +259,11 @@ class _InvoiceTile extends ConsumerWidget {
                     child: const Text(
                       'Régler un paiement',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: AppColors.teal, fontWeight: FontWeight.w700, fontSize: 12.5),
+                      style: TextStyle(
+                        color: AppColors.teal,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12.5,
+                      ),
                     ),
                   ),
                 ),

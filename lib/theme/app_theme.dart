@@ -32,12 +32,12 @@ class AppShadows {
   ];
 
   static List<BoxShadow> colored(Color color) => [
-        BoxShadow(
-          color: color.withValues(alpha: 0.35),
-          blurRadius: 20,
-          offset: const Offset(0, 10),
-        ),
-      ];
+    BoxShadow(
+      color: color.withValues(alpha: 0.35),
+      blurRadius: 20,
+      offset: const Offset(0, 10),
+    ),
+  ];
 }
 
 class AppTheme {
@@ -108,8 +108,10 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surfaceMuted,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
           borderSide: BorderSide.none,
@@ -183,7 +185,10 @@ class _FadeThroughTransitionsBuilder extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
-    final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic);
+    final curved = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+    );
     return FadeTransition(
       opacity: curved,
       child: SlideTransition(

@@ -43,13 +43,19 @@ class ProductTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ProductAvatar(emoji: product.emoji, photoBytes: product.photoBytes, size: 44),
+                  ProductAvatar(
+                    emoji: product.emoji,
+                    photoBytes: product.photoBytes,
+                    size: 44,
+                  ),
                   const SizedBox(height: 10),
                   Text(
                     product.name,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: 13.5),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleMedium?.copyWith(fontSize: 13.5),
                   ),
                   const Spacer(),
                   Row(
@@ -67,7 +73,11 @@ class ProductTile extends StatelessWidget {
                         ),
                       ),
                       if (product.venduAuPoids)
-                        const Icon(Icons.scale_rounded, size: 14, color: AppColors.textFaint),
+                        const Icon(
+                          Icons.scale_rounded,
+                          size: 14,
+                          color: AppColors.textFaint,
+                        ),
                     ],
                   ),
                 ],
@@ -92,7 +102,10 @@ class ProductTile extends StatelessWidget {
                 left: 6,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 3,
+                  ),
                   decoration: BoxDecoration(
                     gradient: AppColors.tealGradient,
                     borderRadius: BorderRadius.circular(100),

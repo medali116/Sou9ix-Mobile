@@ -34,29 +34,36 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     // preselect them here and default straight to crédit (karné) payment.
     final pendingClientId = ref.read(pendingClientProvider);
     _clientId = pendingClientId;
-    _mode = pendingClientId != null ? ModePaiement.credit : ModePaiement.especes;
+    _mode = pendingClientId != null
+        ? ModePaiement.credit
+        : ModePaiement.especes;
   }
 
   Future<void> _confirmer() async {
     final items = ref.read(cartProvider);
     if (items.isEmpty) return;
     if (_mode == ModePaiement.credit && _clientId == null) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Sélectionnez un client pour le crédit')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Sélectionnez un client pour le crédit')),
+      );
       return;
     }
 
     setState(() => _processing = true);
     await Future.delayed(const Duration(milliseconds: 700));
 
-    final sale = ref.read(salesProvider.notifier).recordSale(
+    final sale = ref
+        .read(salesProvider.notifier)
+        .recordSale(
           lignes: items,
           modePaiement: _mode,
           clientId: _clientId,
           employeeId: ref.read(activeEmployeeProvider),
         );
     for (final item in items) {
-      ref.read(productsProvider.notifier).decrementStock(item.product.id, item.quantite);
+      ref
+          .read(productsProvider.notifier)
+          .decrementStock(item.product.id, item.quantite);
     }
     if (_mode == ModePaiement.credit && _clientId != null) {
       ref.read(clientsProvider.notifier).addCredit(_clientId!, sale.total);
@@ -91,24 +98,38 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('${items.length} article${items.length > 1 ? 's' : ''}',
-                        style: Theme.of(context).textTheme.bodyMedium),
-                    Text('Sous-total', style: Theme.of(context).textTheme.bodyMedium),
+                    Text(
+                      '${items.length} article${items.length > 1 ? 's' : ''}',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    Text(
+                      'Sous-total',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
                   ],
                 ),
                 const Divider(height: 24),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Total à payer', style: Theme.of(context).textTheme.titleMedium),
-                    Text(AppFormat.dt(total), style: Theme.of(context).textTheme.displaySmall),
+                    Text(
+                      'Total à payer',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(
+                      AppFormat.dt(total),
+                      style: Theme.of(context).textTheme.displaySmall,
+                    ),
                   ],
                 ),
               ],
             ),
           ).animate().fadeIn(duration: 300.ms).slideY(begin: 0.06, end: 0),
           const SizedBox(height: 24),
-          Text('Mode de paiement', style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            'Mode de paiement',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -142,7 +163,10 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           ),
           if (_mode == ModePaiement.credit) ...[
             const SizedBox(height: 20),
-            Text('Client (karné)', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Client (karné)',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 10),
             ...clients.map((c) {
               final selected = c.id == _clientId;
@@ -152,7 +176,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   margin: const EdgeInsets.only(bottom: 10),
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: selected ? AppColors.teal.withValues(alpha: 0.08) : AppColors.surface,
+                    color: selected
+                        ? AppColors.teal.withValues(alpha: 0.08)
+                        : AppColors.surface,
                     borderRadius: BorderRadius.circular(AppRadius.md),
                     border: Border.all(
                       color: selected ? AppColors.teal : AppColors.border,
@@ -171,14 +197,21 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(c.nom, style: Theme.of(context).textTheme.titleMedium),
-                            Text('Solde dû : ${AppFormat.dt(c.creditTotal)}',
-                                style: Theme.of(context).textTheme.bodyMedium),
+                            Text(
+                              c.nom,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            Text(
+                              'Solde dû : ${AppFormat.dt(c.creditTotal)}',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
                           ],
                         ),
                       ),
                       Icon(
-                        selected ? Icons.check_circle_rounded : Icons.circle_outlined,
+                        selected
+                            ? Icons.check_circle_rounded
+                            : Icons.circle_outlined,
                         color: selected ? AppColors.teal : AppColors.textFaint,
                       ),
                     ],
@@ -200,10 +233,15 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   ? const SizedBox(
                       width: 18,
                       height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Icon(Icons.check_rounded),
-              label: Text(_processing ? 'Traitement…' : 'Confirmer & encaisser'),
+              label: Text(
+                _processing ? 'Traitement…' : 'Confirmer & encaisser',
+              ),
             ),
           ),
         ),
@@ -235,12 +273,20 @@ class _PaymentOption extends StatelessWidget {
         decoration: BoxDecoration(
           color: selected ? AppColors.teal : AppColors.surface,
           borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: selected ? AppColors.teal : AppColors.border),
-          boxShadow: selected ? AppShadows.colored(AppColors.teal) : AppShadows.card,
+          border: Border.all(
+            color: selected ? AppColors.teal : AppColors.border,
+          ),
+          boxShadow: selected
+              ? AppShadows.colored(AppColors.teal)
+              : AppShadows.card,
         ),
         child: Column(
           children: [
-            Icon(icon, color: selected ? Colors.white : AppColors.textSecondary, size: 22),
+            Icon(
+              icon,
+              color: selected ? Colors.white : AppColors.textSecondary,
+              size: 22,
+            ),
             const SizedBox(height: 8),
             Text(
               label,

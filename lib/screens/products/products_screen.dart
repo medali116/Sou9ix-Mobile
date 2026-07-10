@@ -31,7 +31,11 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
     final isAdmin = ref.watch(authProvider)?.role == UserRole.admin;
 
     final filtered = products
-        .where((p) => _query.isEmpty || p.name.toLowerCase().contains(_query.toLowerCase()))
+        .where(
+          (p) =>
+              _query.isEmpty ||
+              p.name.toLowerCase().contains(_query.toLowerCase()),
+        )
         .toList();
 
     return Scaffold(
@@ -80,7 +84,9 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                         orElse: () => categories.first,
                       );
                       return PressScale(
-                        onTap: isAdmin ? () => context.push('/products/edit', extra: p) : () {},
+                        onTap: isAdmin
+                            ? () => context.push('/products/edit', extra: p)
+                            : () {},
                         child: Container(
                           padding: const EdgeInsets.all(14),
                           decoration: BoxDecoration(
@@ -90,26 +96,47 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                           ),
                           child: Row(
                             children: [
-                              ProductAvatar(emoji: p.emoji, photoBytes: p.photoBytes, size: 46),
+                              ProductAvatar(
+                                emoji: p.emoji,
+                                photoBytes: p.photoBytes,
+                                size: 46,
+                              ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(p.name, style: Theme.of(context).textTheme.titleMedium),
+                                    Text(
+                                      p.name,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleMedium,
+                                    ),
                                     const SizedBox(height: 3),
                                     Row(
                                       children: [
-                                        Icon(cat.icon, size: 12, color: AppColors.textFaint),
+                                        Icon(
+                                          cat.icon,
+                                          size: 12,
+                                          color: AppColors.textFaint,
+                                        ),
                                         const SizedBox(width: 4),
-                                        Text(cat.name, style: Theme.of(context).textTheme.bodyMedium),
+                                        Text(
+                                          cat.name,
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodyMedium,
+                                        ),
                                         if (isAdmin) ...[
                                           const SizedBox(width: 8),
-                                          Text('· marge ${p.margePct.toStringAsFixed(0)}%',
-                                              style: const TextStyle(
-                                                  fontSize: 11.5,
-                                                  color: AppColors.success,
-                                                  fontWeight: FontWeight.w700)),
+                                          Text(
+                                            '· marge ${p.margePct.toStringAsFixed(0)}%',
+                                            style: const TextStyle(
+                                              fontSize: 11.5,
+                                              color: AppColors.success,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
                                         ],
                                       ],
                                     ),
@@ -124,7 +151,9 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                                         ? '${AppFormat.dtShort(p.prixVente)}/kg'
                                         : AppFormat.dtShort(p.prixVente),
                                     style: const TextStyle(
-                                        color: AppColors.teal, fontWeight: FontWeight.w800),
+                                      color: AppColors.teal,
+                                      fontWeight: FontWeight.w800,
+                                    ),
                                   ),
                                   const SizedBox(height: 4),
                                   _StockTag(product: p),
@@ -133,7 +162,10 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                             ],
                           ),
                         ),
-                      ).animate().fadeIn(duration: 220.ms, delay: (18 * index).ms);
+                      ).animate().fadeIn(
+                        duration: 220.ms,
+                        delay: (18 * index).ms,
+                      );
                     },
                   ),
           ),
@@ -153,7 +185,9 @@ class _StockTag extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: (low ? AppColors.warning : AppColors.success).withValues(alpha: 0.12),
+        color: (low ? AppColors.warning : AppColors.success).withValues(
+          alpha: 0.12,
+        ),
         borderRadius: BorderRadius.circular(100),
       ),
       child: Text(

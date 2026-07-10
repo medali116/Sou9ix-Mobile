@@ -73,7 +73,8 @@ class _LiveBarcodeScannerState extends State<LiveBarcodeScanner> {
     if (value == null || value.isEmpty) return;
 
     final now = DateTime.now();
-    final isRepeat = value == _lastCode &&
+    final isRepeat =
+        value == _lastCode &&
         _lastDetectedAt != null &&
         now.difference(_lastDetectedAt!) < const Duration(seconds: 2);
     if (isRepeat) return;
@@ -104,7 +105,9 @@ class _LiveBarcodeScannerState extends State<LiveBarcodeScanner> {
               child: FractionallySizedBox(
                 widthFactor: 0.62,
                 heightFactor: 0.5,
-                child: ScanCornerMarks(color: AppColors.gold.withValues(alpha: 0.9)),
+                child: ScanCornerMarks(
+                  color: AppColors.gold.withValues(alpha: 0.9),
+                ),
               ),
             ),
           ),
@@ -165,7 +168,11 @@ class _CameraFallback extends StatelessWidget {
   final VoidCallback onRetry;
   final VoidCallback? onManualFallbackTap;
 
-  const _CameraFallback({required this.error, required this.onRetry, this.onManualFallbackTap});
+  const _CameraFallback({
+    required this.error,
+    required this.onRetry,
+    this.onManualFallbackTap,
+  });
 
   String get _message {
     switch (error.errorCode) {
@@ -186,12 +193,19 @@ class _CameraFallback extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.videocam_off_rounded, color: AppColors.tealLight, size: 32),
+          const Icon(
+            Icons.videocam_off_rounded,
+            color: AppColors.tealLight,
+            size: 32,
+          ),
           const SizedBox(height: 10),
           Text(
             _message,
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12.5),
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.75),
+              fontSize: 12.5,
+            ),
           ),
           const SizedBox(height: 14),
           Row(

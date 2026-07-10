@@ -40,11 +40,19 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     super.initState();
     final p = widget.product;
     _nameCtrl = TextEditingController(text: p?.name ?? '');
-    _prixVenteCtrl = TextEditingController(text: p != null ? p.prixVente.toStringAsFixed(3) : '');
-    _prixAchatCtrl = TextEditingController(text: p != null ? p.prixAchat.toStringAsFixed(3) : '');
+    _prixVenteCtrl = TextEditingController(
+      text: p != null ? p.prixVente.toStringAsFixed(3) : '',
+    );
+    _prixAchatCtrl = TextEditingController(
+      text: p != null ? p.prixAchat.toStringAsFixed(3) : '',
+    );
     _codeCtrl = TextEditingController(text: p?.codeBarres ?? '');
-    _stockCtrl = TextEditingController(text: p != null ? p.stock.toStringAsFixed(2) : '0');
-    _seuilCtrl = TextEditingController(text: p != null ? p.seuilAlerte.toStringAsFixed(2) : '2');
+    _stockCtrl = TextEditingController(
+      text: p != null ? p.stock.toStringAsFixed(2) : '0',
+    );
+    _seuilCtrl = TextEditingController(
+      text: p != null ? p.seuilAlerte.toStringAsFixed(2) : '2',
+    );
     _venduAuPoids = p?.venduAuPoids ?? false;
     _categorieId = p?.categorieId ?? 'epicerie';
     _photoBytes = p?.photoBytes;
@@ -64,26 +72,32 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
 
   Future<void> _scanBarcode() async {
     final code = await Navigator.of(context).push<String>(
-      MaterialPageRoute(builder: (_) => const BarcodeCaptureScreen(), fullscreenDialog: true),
+      MaterialPageRoute(
+        builder: (_) => const BarcodeCaptureScreen(),
+        fullscreenDialog: true,
+      ),
     );
     if (code != null && code.isNotEmpty) {
       setState(() => _codeCtrl.text = code);
     }
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (_nameCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Le nom du produit est requis')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Le nom du produit est requis')),
+      );
       return;
     }
+    final prixVente = double.tryParse(_prixVenteCtrl.text) ?? 0;
+    final prixAchat = double.tryParse(_prixAchatCtrl.text) ?? 0;
     final product = Product(
       id: widget.product?.id ?? 'p${DateTime.now().microsecondsSinceEpoch}',
       name: _nameCtrl.text.trim(),
       emoji: widget.product?.emoji ?? '📦',
       photoBytes: _photoBytes,
-      prixVente: double.tryParse(_prixVenteCtrl.text) ?? 0,
-      prixAchat: double.tryParse(_prixAchatCtrl.text) ?? 0,
+      prixVente: prixVente,
+      prixAchat: prixAchat,
       codeBarres: _codeCtrl.text.trim().isEmpty ? null : _codeCtrl.text.trim(),
       venduAuPoids: _venduAuPoids,
       categorieId: _categorieId,
@@ -91,8 +105,84 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       seuilAlerte: double.tryParse(_seuilCtrl.text) ?? 0,
       datePeremption: _datePeremption,
     );
-    ref.read(productsProvider.notifier).upsert(product);
+
+    String? motifPrix;
+    final old = widget.product;
+    final prixChange =
+        old != null &&
+        (old.prixVente != prixVente || old.prixAchat != prixAchat);
+    if (prixChange) {
+      motifPrix = await _promptMotifPrix(context);
+      if (motifPrix == null) return; // cancelled — required, so bail out
+    }
+
+    ref.read(productsProvider.notifier).upsert(product, motifPrix: motifPrix);
+    if (!mounted) return;
     context.pop();
+  }
+
+  Future<String?> _promptMotifPrix(BuildContext context) async {
+    final ctrl = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('Motif du changement de prix'),
+          content: TextField(
+            controller: ctrl,
+            autofocus: true,
+            onChanged: (_) => setDialogState(() {}),
+            decoration: const InputDecoration(
+              labelText: 'Motif',
+              prefixIcon: Icon(Icons.edit_note_rounded),
+              hintText: 'Ex. Nouveau tarif fournisseur',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Annuler'),
+            ),
+            TextButton(
+              onPressed: ctrl.text.trim().isEmpty
+                  ? null
+                  : () => Navigator.pop(dialogContext, ctrl.text.trim()),
+              child: const Text('Confirmer'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Supprimer ce produit ?'),
+        content: Text(
+          '« ${widget.product!.name} » sera déplacé vers la Corbeille — vous pourrez le restaurer.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Supprimer',
+              style: TextStyle(color: AppColors.danger),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && context.mounted) {
+      ref.read(productsProvider.notifier).remove(widget.product!.id);
+      context.pop();
+    }
   }
 
   @override
@@ -105,11 +195,11 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         actions: [
           if (_isEdit)
             IconButton(
-              onPressed: () {
-                ref.read(productsProvider.notifier).remove(widget.product!.id);
-                context.pop();
-              },
-              icon: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
+              onPressed: () => _confirmDelete(context),
+              icon: const Icon(
+                Icons.delete_outline_rounded,
+                color: AppColors.danger,
+              ),
             ),
         ],
       ),
@@ -126,7 +216,12 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
           ),
           const SizedBox(height: 18),
           _label('Nom du produit'),
-          TextField(controller: _nameCtrl, decoration: const InputDecoration(hintText: 'Ex. Amandes décortiquées')),
+          TextField(
+            controller: _nameCtrl,
+            decoration: const InputDecoration(
+              hintText: 'Ex. Amandes décortiquées',
+            ),
+          ),
           const SizedBox(height: 18),
           _label('Catégorie'),
           Wrap(
@@ -151,7 +246,9 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                     _label('Prix de vente (DT)'),
                     TextField(
                       controller: _prixVenteCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       decoration: const InputDecoration(hintText: '0.000'),
                     ),
                   ],
@@ -165,7 +262,9 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                     _label('Prix d\'achat (DT)'),
                     TextField(
                       controller: _prixAchatCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       decoration: const InputDecoration(hintText: '0.000'),
                     ),
                   ],
@@ -182,7 +281,10 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
               hintText: 'Optionnel — scannez ou saisissez',
               suffixIcon: IconButton(
                 onPressed: _scanBarcode,
-                icon: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.teal),
+                icon: const Icon(
+                  Icons.qr_code_scanner_rounded,
+                  color: AppColors.teal,
+                ),
                 tooltip: 'Scanner le code-barres',
               ),
             ),
@@ -210,10 +312,16 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _label(_venduAuPoids ? 'Stock actuel (kg)' : 'Stock actuel (pcs)'),
+                    _label(
+                      _venduAuPoids
+                          ? 'Stock actuel (kg)'
+                          : 'Stock actuel (pcs)',
+                    ),
                     TextField(
                       controller: _stockCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                     ),
                   ],
                 ),
@@ -226,7 +334,9 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                     _label('Seuil d\'alerte'),
                     TextField(
                       controller: _seuilCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                     ),
                   ],
                 ),
@@ -244,7 +354,11 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: _save,
-              child: Text(_isEdit ? 'Enregistrer les modifications' : 'Ajouter le produit'),
+              child: Text(
+                _isEdit
+                    ? 'Enregistrer les modifications'
+                    : 'Ajouter le produit',
+              ),
             ),
           ),
         ],
@@ -253,7 +367,10 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   }
 
   Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(text, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-      );
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Text(
+      text,
+      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+    ),
+  );
 }

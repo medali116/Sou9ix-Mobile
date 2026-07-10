@@ -59,12 +59,19 @@ class ReturnsScreen extends ConsumerWidget {
                       const SizedBox(height: 6),
                       Text(
                         AppFormat.dt(totalLoss),
-                        style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '${returns.length} retour${returns.length > 1 ? 's' : ''} enregistré${returns.length > 1 ? 's' : ''}',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12.5),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 12.5,
+                        ),
                       ),
                     ],
                   ),
@@ -76,7 +83,10 @@ class ReturnsScreen extends ConsumerWidget {
                     color: AppColors.danger.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.remove_shopping_cart_outlined, color: AppColors.danger),
+                  child: const Icon(
+                    Icons.remove_shopping_cart_outlined,
+                    color: AppColors.danger,
+                  ),
                 ),
               ],
             ),
@@ -86,7 +96,8 @@ class ReturnsScreen extends ConsumerWidget {
                 ? const EmptyState(
                     icon: Icons.remove_shopping_cart_outlined,
                     title: 'Aucun retour enregistré',
-                    message: 'Les produits périmés ou endommagés\nretirés du stock apparaîtront ici.',
+                    message:
+                        'Les produits périmés ou endommagés\nretirés du stock apparaîtront ici.',
                   )
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
@@ -94,9 +105,10 @@ class ReturnsScreen extends ConsumerWidget {
                     separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final r = returns[index];
-                      return _ReturnTile(stockReturn: r)
-                          .animate()
-                          .fadeIn(duration: 220.ms, delay: (18 * index).ms);
+                      return _ReturnTile(stockReturn: r).animate().fadeIn(
+                        duration: 220.ms,
+                        delay: (18 * index).ms,
+                      );
                     },
                   ),
           ),
@@ -138,7 +150,10 @@ class _ReturnTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(stockReturn.productName, style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  stockReturn.productName,
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(height: 4),
                 Text(
                   '${stockReturn.quantite.toStringAsFixed(stockReturn.venduAuPoids ? 3 : 0)} ${stockReturn.unite} · ${DateFormat('dd/MM/yyyy').format(stockReturn.date)}',
@@ -146,24 +161,42 @@ class _ReturnTile extends StatelessWidget {
                 ),
                 if (stockReturn.note != null) ...[
                   const SizedBox(height: 4),
-                  Text(stockReturn.note!, style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontStyle: FontStyle.italic)),
+                  Text(
+                    stockReturn.note!,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
                 ],
                 const SizedBox(height: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: _motifColor.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(100),
                   ),
                   child: Text(
                     stockReturn.motif.label,
-                    style: TextStyle(color: _motifColor, fontWeight: FontWeight.w700, fontSize: 11),
+                    style: TextStyle(
+                      color: _motifColor,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
+                    ),
                   ),
                 ),
               ],
             ),
           ),
-          Text('-${AppFormat.dt(stockReturn.perte)}', style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.danger)),
+          Text(
+            '-${AppFormat.dt(stockReturn.perte)}',
+            style: const TextStyle(
+              fontWeight: FontWeight.w800,
+              color: AppColors.danger,
+            ),
+          ),
         ],
       ),
     );

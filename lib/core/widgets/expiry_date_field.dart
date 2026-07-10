@@ -10,7 +10,11 @@ class ExpiryDateField extends StatelessWidget {
   final DateTime? value;
   final ValueChanged<DateTime?> onChanged;
 
-  const ExpiryDateField({super.key, required this.value, required this.onChanged});
+  const ExpiryDateField({
+    super.key,
+    required this.value,
+    required this.onChanged,
+  });
 
   Future<void> _pick(BuildContext context) async {
     final now = DateTime.now();
@@ -36,21 +40,33 @@ class ExpiryDateField extends StatelessWidget {
         ),
         child: Row(
           children: [
-            const Icon(Icons.event_outlined, size: 19, color: AppColors.textSecondary),
+            const Icon(
+              Icons.event_outlined,
+              size: 19,
+              color: AppColors.textSecondary,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                value != null ? DateFormat('dd/MM/yyyy').format(value!) : 'Aucune',
+                value != null
+                    ? DateFormat('dd/MM/yyyy').format(value!)
+                    : 'Aucune',
                 style: TextStyle(
                   fontWeight: FontWeight.w600,
-                  color: value != null ? AppColors.textPrimary : AppColors.textFaint,
+                  color: value != null
+                      ? AppColors.textPrimary
+                      : AppColors.textFaint,
                 ),
               ),
             ),
             if (value != null)
               GestureDetector(
                 onTap: () => onChanged(null),
-                child: const Icon(Icons.close_rounded, size: 18, color: AppColors.textFaint),
+                child: const Icon(
+                  Icons.close_rounded,
+                  size: 18,
+                  color: AppColors.textFaint,
+                ),
               ),
           ],
         ),

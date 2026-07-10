@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sou9ix/core/models/discount.dart';
+import 'package:sou9ix/features/activity/model/activity_log_entry.dart';
+import 'package:sou9ix/features/activity/viewmodel/activity_log_provider.dart';
+import 'package:sou9ix/features/activity/viewmodel/trash_provider.dart';
 import 'package:sou9ix/features/pos/model/cart_item.dart';
 import 'package:sou9ix/features/sales/model/sale.dart';
 import 'package:sou9ix/features/clients/viewmodel/clients_provider.dart';
@@ -105,9 +108,15 @@ class SaleService {
     _ref.read(salesProvider.notifier).updateSale(updated);
   }
 
+  static String _reference(Sale sale) => sale.id.length > 6
+      ? sale.id.substring(sale.id.length - 6).toUpperCase()
+      : sale.id.toUpperCase();
+
   /// Reverses a sale entirely: restores the stock it consumed, cancels the
-  /// client credit it created (if any), then removes the record.
-  void deleteSale(Sale sale) {
+  /// client credit it created (if any), then removes the record — but
+  /// keeps a copy in the Corbeille (see [restoreSale]) rather than
+  /// destroying it outright.
+  void deleteSale(Sale sale, {required String motif}) {
     for (final l in sale.lignes) {
       _ref
           .read(productsProvider.notifier)
@@ -119,6 +128,42 @@ class SaleService {
           .addCredit(sale.clientId!, -sale.total);
     }
     _ref.read(salesProvider.notifier).removeSale(sale.id);
+    _ref.read(salesTrashProvider.notifier).add(sale);
+
+    logActivity(
+      _ref,
+      category: ActivityCategory.tickets,
+      impact: ActivityImpact.suppression,
+      action: 'Ticket supprimé',
+      targetName: 'Ticket #${_reference(sale)}',
+      montant: sale.total,
+      motif: motif,
+    );
+  }
+
+  /// Brings a deleted ticket back from the Corbeille: reapplies the stock
+  /// and client-credit effects it originally had (mirroring [checkout]),
+  /// then puts the sale itself back with its original id.
+  void restoreSale(Sale sale) {
+    for (final l in sale.lignes) {
+      _ref
+          .read(productsProvider.notifier)
+          .decrementStock(l.product.id, l.quantite);
+    }
+    if (sale.modePaiement == ModePaiement.credit && sale.clientId != null) {
+      _ref.read(clientsProvider.notifier).addCredit(sale.clientId!, sale.total);
+    }
+    _ref.read(salesProvider.notifier).restore(sale);
+    _ref.read(salesTrashProvider.notifier).removeById(sale.id);
+
+    logActivity(
+      _ref,
+      category: ActivityCategory.tickets,
+      impact: ActivityImpact.ajout,
+      action: 'Ticket restauré',
+      targetName: 'Ticket #${_reference(sale)}',
+      montant: sale.total,
+    );
   }
 }
 

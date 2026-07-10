@@ -28,7 +28,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final employees = ref.watch(employeesProvider);
-    var sales = ref.watch(salesProvider).where((s) => s.lignes.isNotEmpty).toList();
+    var sales = ref
+        .watch(salesProvider)
+        .where((s) => s.lignes.isNotEmpty)
+        .toList();
     if (_employeeFilter != null) {
       sales = sales.where((s) => s.employeeId == _employeeFilter).toList();
     }
@@ -52,15 +55,27 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Aujourd\'hui', style: Theme.of(context).textTheme.bodyMedium),
-                    Text(AppFormat.dt(todayTotal), style: Theme.of(context).textTheme.headlineMedium),
+                    Text(
+                      'Aujourd\'hui',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    Text(
+                      AppFormat.dt(todayTotal),
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
                   ],
                 ),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('Tickets', style: Theme.of(context).textTheme.bodyMedium),
-                    Text('${sales.length}', style: Theme.of(context).textTheme.headlineMedium),
+                    Text(
+                      'Tickets',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    Text(
+                      '${sales.length}',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
                   ],
                 ),
               ],
@@ -87,7 +102,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                       child: ChoiceChip(
                         label: Text(e.nom),
                         selected: _employeeFilter == e.id,
-                        onSelected: (_) => setState(() => _employeeFilter = e.id),
+                        onSelected: (_) =>
+                            setState(() => _employeeFilter = e.id),
                       ),
                     ),
                 ],
@@ -98,7 +114,8 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                 ? const EmptyState(
                     icon: Icons.receipt_long_outlined,
                     title: 'Aucune vente',
-                    message: 'Les ventes réalisées à la caisse\napparaîtront ici.',
+                    message:
+                        'Les ventes réalisées à la caisse\napparaîtront ici.',
                   )
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
@@ -106,9 +123,10 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                     separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final sale = sales[index];
-                      return _SaleTile(sale: sale)
-                          .animate()
-                          .fadeIn(duration: 220.ms, delay: (18 * index).ms);
+                      return _SaleTile(sale: sale).animate().fadeIn(
+                        duration: 220.ms,
+                        delay: (18 * index).ms,
+                      );
                     },
                   ),
           ),
@@ -140,7 +158,9 @@ class _SaleTile extends ConsumerWidget {
       builder: (_) => Container(
         decoration: const BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadius.xl),
+          ),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -152,8 +172,14 @@ class _SaleTile extends ConsumerWidget {
               onTap: () => Navigator.pop(context, 'edit'),
             ),
             ListTile(
-              leading: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
-              title: const Text('Supprimer', style: TextStyle(color: AppColors.danger)),
+              leading: const Icon(
+                Icons.delete_outline_rounded,
+                color: AppColors.danger,
+              ),
+              title: const Text(
+                'Supprimer',
+                style: TextStyle(color: AppColors.danger),
+              ),
               onTap: () => Navigator.pop(context, 'delete'),
             ),
             const SizedBox(height: 8),
@@ -179,10 +205,16 @@ class _SaleTile extends ConsumerWidget {
           'Le stock des articles vendus sera restitué et le crédit client (si applicable) annulé. Cette action est irréversible.',
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Supprimer', style: TextStyle(color: AppColors.danger)),
+            child: const Text(
+              'Supprimer',
+              style: TextStyle(color: AppColors.danger),
+            ),
           ),
         ],
       ),
@@ -202,7 +234,9 @@ class _SaleTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     String? employeeName;
     if (sale.employeeId != null) {
-      final matches = ref.watch(employeesProvider).where((e) => e.id == sale.employeeId);
+      final matches = ref
+          .watch(employeesProvider)
+          .where((e) => e.id == sale.employeeId);
       employeeName = matches.isEmpty ? 'Employé supprimé' : matches.first.nom;
     }
 
@@ -234,8 +268,10 @@ class _SaleTile extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Ticket #${sale.id.substring(sale.id.length - 6).toUpperCase()}',
-                        style: Theme.of(context).textTheme.titleMedium),
+                    Text(
+                      'Ticket #${sale.id.substring(sale.id.length - 6).toUpperCase()}',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     Text(
                       '${DateFormat('HH:mm').format(sale.dateHeure)} · ${sale.nombreArticles} article${sale.nombreArticles > 1 ? 's' : ''} · ${sale.modePaiement.label}',
                       style: Theme.of(context).textTheme.bodyMedium,
@@ -243,15 +279,26 @@ class _SaleTile extends ConsumerWidget {
                     if (employeeName != null)
                       Text(
                         employeeName,
-                        style: const TextStyle(fontSize: 11, color: AppColors.textFaint, fontStyle: FontStyle.italic),
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textFaint,
+                          fontStyle: FontStyle.italic,
+                        ),
                       ),
                   ],
                 ),
               ),
-              Text(AppFormat.dt(sale.total), style: const TextStyle(fontWeight: FontWeight.w800)),
+              Text(
+                AppFormat.dt(sale.total),
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
               IconButton(
                 onPressed: () => _openMenu(context, ref),
-                icon: const Icon(Icons.more_vert_rounded, color: AppColors.textFaint, size: 20),
+                icon: const Icon(
+                  Icons.more_vert_rounded,
+                  color: AppColors.textFaint,
+                  size: 20,
+                ),
               ),
             ],
           ),

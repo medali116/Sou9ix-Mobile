@@ -7,9 +7,7 @@ class Discount {
   final DiscountType type;
   final double value;
 
-  const Discount.none()
-      : type = DiscountType.none,
-        value = 0;
+  const Discount.none() : type = DiscountType.none, value = 0;
   const Discount.percent(this.value) : type = DiscountType.percent;
   const Discount.amount(this.value) : type = DiscountType.amount;
 

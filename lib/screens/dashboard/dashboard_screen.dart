@@ -21,11 +21,13 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider);
     final totalAlerts = ref.watch(totalAlertsCountProvider);
-    final trendUp = DashboardMock.todayRevenue >= DashboardMock.yesterdayRevenue;
-    final trendPct = ((DashboardMock.todayRevenue - DashboardMock.yesterdayRevenue) /
-            DashboardMock.yesterdayRevenue *
-            100)
-        .abs();
+    final trendUp =
+        DashboardMock.todayRevenue >= DashboardMock.yesterdayRevenue;
+    final trendPct =
+        ((DashboardMock.todayRevenue - DashboardMock.yesterdayRevenue) /
+                DashboardMock.yesterdayRevenue *
+                100)
+            .abs();
 
     return Scaffold(
       body: SafeArea(
@@ -45,7 +47,10 @@ class DashboardScreen extends ConsumerWidget {
                   alignment: Alignment.center,
                   child: Text(
                     user?.initiales ?? 'S9',
-                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -53,9 +58,14 @@ class DashboardScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Bonjour, ${user?.nom.split(' ').first ?? ''} 👋',
-                          style: Theme.of(context).textTheme.titleLarge),
-                      Text(user?.magasin ?? '', style: Theme.of(context).textTheme.bodyMedium),
+                      Text(
+                        'Bonjour, ${user?.nom.split(' ').first ?? ''} 👋',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      Text(
+                        user?.magasin ?? '',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
                     ],
                   ),
                 ),
@@ -122,71 +132,104 @@ class DashboardScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 14),
             Container(
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-                boxShadow: AppShadows.card,
-              ),
-              child: Column(
-                children: List.generate(DashboardMock.topProducts.length, (i) {
-                  final p = DashboardMock.topProducts[i];
-                  final maxRevenue = DashboardMock.topProducts.first.revenue;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 26,
-                          height: 26,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: i == 0
-                                ? AppColors.gold.withValues(alpha: 0.2)
-                                : AppColors.surfaceMuted,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Text('${i + 1}',
-                              style: TextStyle(
+                  padding: const EdgeInsets.symmetric(vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    boxShadow: AppShadows.card,
+                  ),
+                  child: Column(
+                    children: List.generate(DashboardMock.topProducts.length, (
+                      i,
+                    ) {
+                      final p = DashboardMock.topProducts[i];
+                      final maxRevenue =
+                          DashboardMock.topProducts.first.revenue;
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 26,
+                              height: 26,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: i == 0
+                                    ? AppColors.gold.withValues(alpha: 0.2)
+                                    : AppColors.surfaceMuted,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                '${i + 1}',
+                                style: TextStyle(
                                   fontWeight: FontWeight.w800,
                                   fontSize: 12,
-                                  color: i == 0 ? AppColors.goldDark : AppColors.textSecondary)),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(p.emoji, style: const TextStyle(fontSize: 18)),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(p.name, style: Theme.of(context).textTheme.titleMedium),
-                              const SizedBox(height: 5),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(100),
-                                child: TweenAnimationBuilder<double>(
-                                  tween: Tween(begin: 0, end: p.revenue / maxRevenue),
-                                  duration: const Duration(milliseconds: 700),
-                                  curve: Curves.easeOutCubic,
-                                  builder: (context, value, _) => LinearProgressIndicator(
-                                    value: value,
-                                    minHeight: 6,
-                                    backgroundColor: AppColors.surfaceMuted,
-                                    valueColor: const AlwaysStoppedAnimation(AppColors.teal),
-                                  ),
+                                  color: i == 0
+                                      ? AppColors.goldDark
+                                      : AppColors.textSecondary,
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(p.emoji, style: const TextStyle(fontSize: 18)),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    p.name,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleMedium,
+                                  ),
+                                  const SizedBox(height: 5),
+                                  ClipRRect(
+                                    borderRadius: BorderRadius.circular(100),
+                                    child: TweenAnimationBuilder<double>(
+                                      tween: Tween(
+                                        begin: 0,
+                                        end: p.revenue / maxRevenue,
+                                      ),
+                                      duration: const Duration(
+                                        milliseconds: 700,
+                                      ),
+                                      curve: Curves.easeOutCubic,
+                                      builder: (context, value, _) =>
+                                          LinearProgressIndicator(
+                                            value: value,
+                                            minHeight: 6,
+                                            backgroundColor:
+                                                AppColors.surfaceMuted,
+                                            valueColor:
+                                                const AlwaysStoppedAnimation(
+                                                  AppColors.teal,
+                                                ),
+                                          ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              AppFormat.dtShort(p.revenue),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 10),
-                        Text(AppFormat.dtShort(p.revenue),
-                            style: const TextStyle(fontWeight: FontWeight.w800)),
-                      ],
-                    ),
-                  );
-                }),
-              ),
-            ).animate().fadeIn(duration: 400.ms, delay: 100.ms).slideY(begin: 0.05, end: 0),
+                      );
+                    }),
+                  ),
+                )
+                .animate()
+                .fadeIn(duration: 400.ms, delay: 100.ms)
+                .slideY(begin: 0.05, end: 0),
           ],
         ),
       ),
@@ -210,9 +253,15 @@ class _WeeklyBarChart extends StatelessWidget {
         gridData: const FlGridData(show: false),
         borderData: FlBorderData(show: false),
         titlesData: FlTitlesData(
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
@@ -237,10 +286,15 @@ class _WeeklyBarChart extends StatelessWidget {
         barTouchData: BarTouchData(
           touchTooltipData: BarTouchTooltipData(
             getTooltipColor: (_) => AppColors.ink,
-            getTooltipItem: (group, groupIndex, rod, rodIndex) => BarTooltipItem(
-              AppFormat.dt(rod.toY),
-              const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 11),
-            ),
+            getTooltipItem: (group, groupIndex, rod, rodIndex) =>
+                BarTooltipItem(
+                  AppFormat.dt(rod.toY),
+                  const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 11,
+                  ),
+                ),
           ),
         ),
         barGroups: List.generate(values.length, (i) {

@@ -49,7 +49,7 @@ class AnimatedBottomNav extends StatelessWidget {
             size: 24,
             color: selected
                 ? Colors.white
-                : Colors.white.withValues(alpha: 0.45),
+                : Colors.white.withValues(alpha: 0.3),
           ),
         );
       }),

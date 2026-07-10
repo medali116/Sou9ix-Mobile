@@ -58,17 +58,29 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
                     children: [
                       const Text(
                         'EN SERVICE MAINTENANT',
-                        style: TextStyle(color: AppColors.tealLight, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.2),
+                        style: TextStyle(
+                          color: AppColors.tealLight,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 1.2,
+                        ),
                       ),
                       const SizedBox(height: 6),
                       Text(
                         '${openShifts.length}',
-                        style: const TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         '${employees.where((e) => e.actif).length} employé${employees.where((e) => e.actif).length > 1 ? 's' : ''} actif${employees.where((e) => e.actif).length > 1 ? 's' : ''}',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 12.5),
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.6),
+                          fontSize: 12.5,
+                        ),
                       ),
                     ],
                   ),
@@ -76,8 +88,14 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
                 Container(
                   width: 50,
                   height: 50,
-                  decoration: BoxDecoration(color: AppColors.teal.withValues(alpha: 0.2), shape: BoxShape.circle),
-                  child: const Icon(Icons.badge_outlined, color: AppColors.tealLight),
+                  decoration: BoxDecoration(
+                    color: AppColors.teal.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.badge_outlined,
+                    color: AppColors.tealLight,
+                  ),
                 ),
               ],
             ),
@@ -86,7 +104,15 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
               children: [
-                const Expanded(child: Text('Afficher les employés archivés', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 12.5))),
+                const Expanded(
+                  child: Text(
+                    'Afficher les employés archivés',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12.5,
+                    ),
+                  ),
+                ),
                 Switch(
                   value: _showArchived,
                   activeThumbColor: AppColors.teal,
@@ -100,7 +126,8 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
                 ? const EmptyState(
                     icon: Icons.badge_outlined,
                     title: 'Aucun employé',
-                    message: 'Ajoutez vos employés pour suivre\nleurs ventes et leurs horaires.',
+                    message:
+                        'Ajoutez vos employés pour suivre\nleurs ventes et leurs horaires.',
                   )
                 : ListView.separated(
                     padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
@@ -108,24 +135,32 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
                     separatorBuilder: (_, _) => const SizedBox(height: 10),
                     itemBuilder: (context, index) {
                       final e = list[index];
-                      final onShift = openShifts.any((s) => s.employeeId == e.id);
+                      final onShift = openShifts.any(
+                        (s) => s.employeeId == e.id,
+                      );
                       return _EmployeeTile(
                         employee: e,
                         onShift: onShift,
                         isActive: e.id == activeEmployeeId,
-                        onTap: () => context.push('/employees/detail', extra: e),
+                        onTap: () =>
+                            context.push('/employees/detail', extra: e),
                         onToggleShift: () {
                           if (onShift) {
                             ref.read(shiftsProvider.notifier).clockOut(e.id);
                             if (activeEmployeeId == e.id) {
-                              ref.read(activeEmployeeProvider.notifier).state = null;
+                              ref.read(activeEmployeeProvider.notifier).state =
+                                  null;
                             }
                           } else {
                             ref.read(shiftsProvider.notifier).clockIn(e.id);
-                            ref.read(activeEmployeeProvider.notifier).state = e.id;
+                            ref.read(activeEmployeeProvider.notifier).state =
+                                e.id;
                           }
                         },
-                      ).animate().fadeIn(duration: 220.ms, delay: (18 * index).ms);
+                      ).animate().fadeIn(
+                        duration: 220.ms,
+                        delay: (18 * index).ms,
+                      );
                     },
                   ),
           ),
@@ -160,14 +195,20 @@ class _EmployeeTile extends StatelessWidget {
         onTap: employee.actif ? onTap : null,
         child: Container(
           padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(borderRadius: BorderRadius.circular(AppRadius.md), boxShadow: AppShadows.card),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            boxShadow: AppShadows.card,
+          ),
           child: Row(
             children: [
               CircleAvatar(
                 radius: 22,
                 backgroundColor: AppColors.gold.withValues(alpha: 0.18),
                 foregroundColor: AppColors.goldDark,
-                child: Text(employee.initiales, style: const TextStyle(fontWeight: FontWeight.w800)),
+                child: Text(
+                  employee.initiales,
+                  style: const TextStyle(fontWeight: FontWeight.w800),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -176,22 +217,50 @@ class _EmployeeTile extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Flexible(child: Text(employee.nom, style: Theme.of(context).textTheme.titleMedium, overflow: TextOverflow.ellipsis)),
+                        Flexible(
+                          child: Text(
+                            employee.nom,
+                            style: Theme.of(context).textTheme.titleMedium,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                         if (isActive) ...[
                           const SizedBox(width: 6),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(color: AppColors.teal.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(100)),
-                            child: const Text('En caisse', style: TextStyle(color: AppColors.teal, fontWeight: FontWeight.w700, fontSize: 10)),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.teal.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(100),
+                            ),
+                            child: const Text(
+                              'En caisse',
+                              style: TextStyle(
+                                color: AppColors.teal,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 10,
+                              ),
+                            ),
                           ),
                         ],
                         if (!employee.actif) ...[
                           const SizedBox(width: 6),
-                          const Text('(archivé)', style: TextStyle(color: AppColors.textFaint, fontSize: 11)),
+                          const Text(
+                            '(archivé)',
+                            style: TextStyle(
+                              color: AppColors.textFaint,
+                              fontSize: 11,
+                            ),
+                          ),
                         ],
                       ],
                     ),
-                    Text('${employee.poste} · ${employee.telephone}', style: Theme.of(context).textTheme.bodyMedium),
+                    Text(
+                      '${employee.poste} · ${employee.telephone}',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
                   ],
                 ),
               ),
@@ -199,9 +268,13 @@ class _EmployeeTile extends StatelessWidget {
                 PressScale(
                   onTap: onToggleShift,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
-                      color: (onShift ? AppColors.warning : AppColors.success).withValues(alpha: 0.12),
+                      color: (onShift ? AppColors.warning : AppColors.success)
+                          .withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(100),
                     ),
                     child: Text(

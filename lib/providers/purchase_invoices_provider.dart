@@ -57,7 +57,9 @@ class PurchaseInvoicesNotifier extends StateNotifier<List<PurchaseInvoice>> {
     state = [
       for (final i in state)
         if (i.id == invoiceId)
-          i.copyWith(montantPaye: (i.montantPaye + montant).clamp(0, i.montantTotal))
+          i.copyWith(
+            montantPaye: (i.montantPaye + montant).clamp(0, i.montantTotal),
+          )
         else
           i,
     ];
@@ -66,8 +68,8 @@ class PurchaseInvoicesNotifier extends StateNotifier<List<PurchaseInvoice>> {
 
 final purchaseInvoicesProvider =
     StateNotifierProvider<PurchaseInvoicesNotifier, List<PurchaseInvoice>>(
-  (ref) => PurchaseInvoicesNotifier(),
-);
+      (ref) => PurchaseInvoicesNotifier(),
+    );
 
 final totalUnpaidPurchasesProvider = Provider<double>((ref) {
   final list = ref.watch(purchaseInvoicesProvider);

@@ -8,9 +8,10 @@ class StockReturnsNotifier extends StateNotifier<List<StockReturn>> {
   void add(StockReturn stockReturn) => state = [stockReturn, ...state];
 }
 
-final stockReturnsProvider = StateNotifierProvider<StockReturnsNotifier, List<StockReturn>>(
-  (ref) => StockReturnsNotifier(),
-);
+final stockReturnsProvider =
+    StateNotifierProvider<StockReturnsNotifier, List<StockReturn>>(
+      (ref) => StockReturnsNotifier(),
+    );
 
 final totalLossProvider = Provider<double>((ref) {
   return ref.watch(stockReturnsProvider).fold(0.0, (sum, r) => sum + r.perte);

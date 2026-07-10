@@ -56,7 +56,10 @@ class _BarcodeCaptureScreenState extends State<BarcodeCaptureScreen> {
                   const Spacer(),
                   const Text(
                     'Code-barres du produit',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const Spacer(),
                   const SizedBox(width: 48),
@@ -81,7 +84,11 @@ class _BarcodeCaptureScreenState extends State<BarcodeCaptureScreen> {
                             borderRadius: BorderRadius.circular(AppRadius.lg),
                           ),
                           child: const Center(
-                            child: Icon(Icons.check_circle_rounded, color: AppColors.success, size: 64),
+                            child: Icon(
+                              Icons.check_circle_rounded,
+                              color: AppColors.success,
+                              size: 64,
+                            ),
                           ),
                         ),
                       ),
@@ -110,8 +117,10 @@ class _BarcodeCaptureScreenState extends State<BarcodeCaptureScreen> {
                         hintText: 'Code-barres (EAN)',
                         filled: true,
                         fillColor: Colors.white.withValues(alpha: 0.08),
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppRadius.md),
                           borderSide: BorderSide.none,
@@ -122,7 +131,9 @@ class _BarcodeCaptureScreenState extends State<BarcodeCaptureScreen> {
                   const SizedBox(width: 10),
                   IconButton.filled(
                     onPressed: _submitManual,
-                    style: IconButton.styleFrom(backgroundColor: AppColors.teal),
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.teal,
+                    ),
                     icon: const Icon(Icons.check_rounded),
                   ),
                 ],

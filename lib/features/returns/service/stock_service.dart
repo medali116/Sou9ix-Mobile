@@ -20,17 +20,21 @@ class StockService {
     String? note,
   }) {
     _ref.read(productsProvider.notifier).decrementStock(product.id, quantite);
-    _ref.read(stockReturnsProvider.notifier).add(StockReturn(
-          id: 'ret${DateTime.now().microsecondsSinceEpoch}',
-          date: DateTime.now(),
-          productId: product.id,
-          productName: product.name,
-          quantite: quantite,
-          venduAuPoids: product.venduAuPoids,
-          prixAchatUnitaire: product.prixAchat,
-          motif: motif,
-          note: note,
-        ));
+    _ref
+        .read(stockReturnsProvider.notifier)
+        .add(
+          StockReturn(
+            id: 'ret${DateTime.now().microsecondsSinceEpoch}',
+            date: DateTime.now(),
+            productId: product.id,
+            productName: product.name,
+            quantite: quantite,
+            venduAuPoids: product.venduAuPoids,
+            prixAchatUnitaire: product.prixAchat,
+            motif: motif,
+            note: note,
+          ),
+        );
   }
 }
 

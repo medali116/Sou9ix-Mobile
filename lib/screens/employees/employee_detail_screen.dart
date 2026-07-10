@@ -24,7 +24,8 @@ class EmployeeDetailScreen extends ConsumerStatefulWidget {
   const EmployeeDetailScreen({super.key, required this.employee});
 
   @override
-  ConsumerState<EmployeeDetailScreen> createState() => _EmployeeDetailScreenState();
+  ConsumerState<EmployeeDetailScreen> createState() =>
+      _EmployeeDetailScreenState();
 }
 
 class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> {
@@ -34,7 +35,9 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> {
     final now = DateTime.now();
     switch (_period) {
       case 0:
-        return date.year == now.year && date.month == now.month && date.day == now.day;
+        return date.year == now.year &&
+            date.month == now.month &&
+            date.day == now.day;
       case 2:
         return now.difference(date).inDays <= 30;
       default:
@@ -48,7 +51,11 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> {
     final allSales = ref.watch(employeeSalesProvider(employee.id));
     final sales = allSales.where((s) => _withinPeriod(s.dateHeure)).toList();
     final revenue = sales.fold<double>(0, (sum, s) => sum + s.total);
-    final distinctClients = sales.where((s) => s.clientId != null).map((s) => s.clientId).toSet().length;
+    final distinctClients = sales
+        .where((s) => s.clientId != null)
+        .map((s) => s.clientId)
+        .toSet()
+        .length;
     final shifts = ref.watch(shiftsForEmployeeProvider(employee.id));
 
     return Scaffold(
@@ -76,15 +83,35 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> {
                 CircleAvatar(
                   radius: 26,
                   backgroundColor: Colors.white.withValues(alpha: 0.2),
-                  child: Text(employee.initiales, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+                  child: Text(
+                    employee.initiales,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                    ),
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(employee.poste, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
-                      Text(employee.telephone, style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 12.5)),
+                      Text(
+                        employee.poste,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
+                      Text(
+                        employee.telephone,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 12.5,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -147,7 +174,8 @@ class _ShiftTile extends StatelessWidget {
   final Shift shift;
   const _ShiftTile({required this.shift});
 
-  String _formatDuree(Duration d) => '${d.inHours}h ${(d.inMinutes % 60).toString().padLeft(2, '0')}min';
+  String _formatDuree(Duration d) =>
+      '${d.inHours}h ${(d.inMinutes % 60).toString().padLeft(2, '0')}min';
 
   @override
   Widget build(BuildContext context) {
@@ -165,17 +193,25 @@ class _ShiftTile extends StatelessWidget {
             width: 36,
             height: 36,
             decoration: BoxDecoration(
-              color: (shift.enCours ? AppColors.teal : AppColors.textSecondary).withValues(alpha: 0.1),
+              color: (shift.enCours ? AppColors.teal : AppColors.textSecondary)
+                  .withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
-            child: Icon(Icons.schedule_rounded, size: 18, color: shift.enCours ? AppColors.teal : AppColors.textSecondary),
+            child: Icon(
+              Icons.schedule_rounded,
+              size: 18,
+              color: shift.enCours ? AppColors.teal : AppColors.textSecondary,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(DateFormat('dd/MM/yyyy').format(shift.clockIn), style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  DateFormat('dd/MM/yyyy').format(shift.clockIn),
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 Text(
                   '${DateFormat('HH:mm').format(shift.clockIn)} → ${shift.clockOut != null ? DateFormat('HH:mm').format(shift.clockOut!) : 'en cours'}',
                   style: Theme.of(context).textTheme.bodyMedium,

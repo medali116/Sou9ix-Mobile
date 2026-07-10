@@ -1,6 +1,9 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:sou9ix/features/activity/view/activity_log_screen.dart';
+import 'package:sou9ix/features/activity/view/trash_screen.dart';
+import 'package:sou9ix/features/analytics/view/analytics_screen.dart';
 import 'package:sou9ix/features/employees/model/employee.dart';
 import 'package:sou9ix/features/expenses/view/expenses_screen.dart';
 import 'package:sou9ix/features/products/model/product.dart';
@@ -149,6 +152,15 @@ final appRouter = GoRouter(
       path: '/employees/detail',
       builder: (context, state) =>
           EmployeeDetailScreen(employee: state.extra as Employee),
+    ),
+    GoRoute(
+      path: '/activity-log',
+      builder: (context, state) => const ActivityLogScreen(),
+    ),
+    GoRoute(path: '/trash', builder: (context, state) => const TrashScreen()),
+    GoRoute(
+      path: '/analytics',
+      builder: (context, state) => const AnalyticsScreen(),
     ),
   ],
 );

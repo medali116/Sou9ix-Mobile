@@ -35,7 +35,10 @@ class ProductAvatar extends StatelessWidget {
             : Container(
                 color: AppColors.surfaceMuted,
                 alignment: Alignment.center,
-                child: Text(emoji, style: TextStyle(fontSize: size * emojiScale)),
+                child: Text(
+                  emoji,
+                  style: TextStyle(fontSize: size * emojiScale),
+                ),
               ),
       ),
     );

@@ -42,8 +42,14 @@ class QuantityStepper extends StatelessWidget {
           onSubmitted: (v) => Navigator.pop(context, double.tryParse(v)),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annuler')),
-          TextButton(onPressed: () => Navigator.pop(context, double.tryParse(ctrl.text)), child: const Text('OK')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, double.tryParse(ctrl.text)),
+            child: const Text('OK'),
+          ),
         ],
       ),
     );
@@ -71,7 +77,10 @@ class QuantityStepper extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        _button(icon: Icons.remove_rounded, onTap: () => onChanged(quantite - 1)),
+        _button(
+          icon: Icons.remove_rounded,
+          onTap: () => onChanged(quantite - 1),
+        ),
         SizedBox(
           width: minWidth,
           child: PressScale(

@@ -66,7 +66,10 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                   const Spacer(),
                   const Text(
                     'Scanner un code-barres',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                   const Spacer(),
                   const SizedBox(width: 48),
@@ -104,8 +107,10 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                         hintText: 'Code-barres (EAN)',
                         filled: true,
                         fillColor: Colors.white.withValues(alpha: 0.08),
-                        contentPadding:
-                            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 14,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(AppRadius.md),
                           borderSide: BorderSide.none,
@@ -116,7 +121,9 @@ class _ScannerScreenState extends ConsumerState<ScannerScreen> {
                   const SizedBox(width: 10),
                   IconButton.filled(
                     onPressed: _submitManual,
-                    style: IconButton.styleFrom(backgroundColor: AppColors.teal),
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.teal,
+                    ),
                     icon: const Icon(Icons.arrow_forward_rounded),
                   ),
                 ],

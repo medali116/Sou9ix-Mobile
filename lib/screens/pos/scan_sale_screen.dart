@@ -43,7 +43,8 @@ class ScanSaleScreen extends ConsumerStatefulWidget {
   ConsumerState<ScanSaleScreen> createState() => _ScanSaleScreenState();
 }
 
-class _ScanSaleScreenState extends ConsumerState<ScanSaleScreen> with RouteAware {
+class _ScanSaleScreenState extends ConsumerState<ScanSaleScreen>
+    with RouteAware {
   String? _confirmation;
   bool _confirmationIsError = false;
   int _scanToken = 0;
@@ -92,7 +93,10 @@ class _ScanSaleScreenState extends ConsumerState<ScanSaleScreen> with RouteAware
 
   Future<void> _openFullScanner() async {
     final product = await Navigator.of(context).push<Product>(
-      MaterialPageRoute(builder: (_) => const ScannerScreen(), fullscreenDialog: true),
+      MaterialPageRoute(
+        builder: (_) => const ScannerScreen(),
+        fullscreenDialog: true,
+      ),
     );
     if (product != null) await _handleResolvedProduct(product);
   }
@@ -113,8 +117,14 @@ class _ScanSaleScreenState extends ConsumerState<ScanSaleScreen> with RouteAware
           onSubmitted: (v) => Navigator.pop(context, v),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annuler')),
-          TextButton(onPressed: () => Navigator.pop(context, ctrl.text), child: const Text('Valider')),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, ctrl.text),
+            child: const Text('Valider'),
+          ),
         ],
       ),
     );
@@ -149,11 +159,17 @@ class _ScanSaleScreenState extends ConsumerState<ScanSaleScreen> with RouteAware
 
   Future<void> _pickClient() async {
     final client = await ClientPickerSheet.show(context);
-    if (client != null) ref.read(pendingClientProvider.notifier).state = client.id;
+    if (client != null) {
+      ref.read(pendingClientProvider.notifier).state = client.id;
+    }
   }
 
   Future<void> _editWeight(Product product, double currentKg) async {
-    final updated = await WeightEntrySheet.show(context, product, initialKg: currentKg);
+    final updated = await WeightEntrySheet.show(
+      context,
+      product,
+      initialKg: currentKg,
+    );
     if (updated != null) {
       ref.read(cartProvider.notifier).updateQuantite(product.id, updated);
     }
@@ -185,7 +201,10 @@ class _ScanSaleScreenState extends ConsumerState<ScanSaleScreen> with RouteAware
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Caisse', style: Theme.of(context).textTheme.displaySmall),
+                        Text(
+                          'Caisse',
+                          style: Theme.of(context).textTheme.displaySmall,
+                        ),
                         Text(
                           user?.magasin ?? 'Sou9ix',
                           style: Theme.of(context).textTheme.bodyMedium,
@@ -272,7 +291,8 @@ class _ScanSaleScreenState extends ConsumerState<ScanSaleScreen> with RouteAware
                   ? const EmptyState(
                       icon: Icons.qr_code_scanner_rounded,
                       title: 'Scannez pour commencer',
-                      message: 'Touchez la zone de scan ou ajoutez\nun produit sans code-barres.',
+                      message:
+                          'Touchez la zone de scan ou ajoutez\nun produit sans code-barres.',
                     )
                   : ListView.separated(
                       padding: const EdgeInsets.fromLTRB(20, 4, 20, 190),
@@ -281,22 +301,34 @@ class _ScanSaleScreenState extends ConsumerState<ScanSaleScreen> with RouteAware
                       itemBuilder: (context, index) {
                         final item = cart[index];
                         return _CartRow(
-                          quantite: item.quantite,
-                          sousTotal: item.sousTotal,
-                          emoji: item.product.emoji,
-                          photoBytes: item.product.photoBytes,
-                          name: item.product.name,
-                          prixVente: item.product.prixVente,
-                          venduAuPoids: item.product.venduAuPoids,
-                          onIncrement: () => ref
-                              .read(cartProvider.notifier)
-                              .updateQuantite(item.product.id, item.quantite + 1),
-                          onDecrement: () => ref
-                              .read(cartProvider.notifier)
-                              .updateQuantite(item.product.id, item.quantite - 1),
-                          onEditWeight: () => _editWeight(item.product, item.quantite),
-                          onRemove: () => ref.read(cartProvider.notifier).removeItem(item.product.id),
-                        ).animate().fadeIn(duration: 200.ms).slideX(begin: 0.03, end: 0);
+                              quantite: item.quantite,
+                              sousTotal: item.sousTotal,
+                              emoji: item.product.emoji,
+                              photoBytes: item.product.photoBytes,
+                              name: item.product.name,
+                              prixVente: item.product.prixVente,
+                              venduAuPoids: item.product.venduAuPoids,
+                              onIncrement: () => ref
+                                  .read(cartProvider.notifier)
+                                  .updateQuantite(
+                                    item.product.id,
+                                    item.quantite + 1,
+                                  ),
+                              onDecrement: () => ref
+                                  .read(cartProvider.notifier)
+                                  .updateQuantite(
+                                    item.product.id,
+                                    item.quantite - 1,
+                                  ),
+                              onEditWeight: () =>
+                                  _editWeight(item.product, item.quantite),
+                              onRemove: () => ref
+                                  .read(cartProvider.notifier)
+                                  .removeItem(item.product.id),
+                            )
+                            .animate()
+                            .fadeIn(duration: 200.ms)
+                            .slideX(begin: 0.03, end: 0);
                       },
                     ),
             ),
@@ -305,7 +337,8 @@ class _ScanSaleScreenState extends ConsumerState<ScanSaleScreen> with RouteAware
               total: total,
               client: pendingClient,
               onScanClient: _pickClient,
-              onClearClient: () => ref.read(pendingClientProvider.notifier).state = null,
+              onClearClient: () =>
+                  ref.read(pendingClientProvider.notifier).state = null,
               onPayer: () => context.push('/checkout'),
             ),
           ],
@@ -367,9 +400,14 @@ class _ScanPanel extends StatelessWidget {
                       ? const SizedBox.shrink(key: ValueKey('empty'))
                       : Container(
                           key: ValueKey(confirmation),
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 7,
+                          ),
                           decoration: BoxDecoration(
-                            color: confirmationIsError ? AppColors.danger : AppColors.success,
+                            color: confirmationIsError
+                                ? AppColors.danger
+                                : AppColors.success,
                             borderRadius: BorderRadius.circular(100),
                           ),
                           child: Row(
@@ -385,7 +423,9 @@ class _ScanPanel extends StatelessWidget {
                               const SizedBox(width: 6),
                               Flexible(
                                 child: Text(
-                                  confirmationIsError ? confirmation! : 'Ajouté : $confirmation',
+                                  confirmationIsError
+                                      ? confirmation!
+                                      : 'Ajouté : $confirmation',
                                   overflow: TextOverflow.ellipsis,
                                   style: const TextStyle(
                                     color: Colors.white,
@@ -410,7 +450,11 @@ class _ScanPanel extends StatelessWidget {
                     onTap: onExpand,
                     child: const Padding(
                       padding: EdgeInsets.all(8),
-                      child: Icon(Icons.fullscreen_rounded, color: Colors.white, size: 20),
+                      child: Icon(
+                        Icons.fullscreen_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ),
@@ -467,7 +511,11 @@ class _CartRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: Theme.of(context).textTheme.titleMedium, overflow: TextOverflow.ellipsis),
+                Text(
+                  name,
+                  style: Theme.of(context).textTheme.titleMedium,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 2),
                 Text(
                   venduAuPoids
@@ -482,7 +530,11 @@ class _CartRow extends StatelessWidget {
             Row(
               children: [
                 _smallIconBtn(icon: Icons.edit_rounded, onTap: onEditWeight),
-                _smallIconBtn(icon: Icons.delete_outline_rounded, onTap: onRemove, color: AppColors.danger),
+                _smallIconBtn(
+                  icon: Icons.delete_outline_rounded,
+                  onTap: onRemove,
+                  color: AppColors.danger,
+                ),
               ],
             )
           else
@@ -514,7 +566,11 @@ class _CartRow extends StatelessWidget {
     );
   }
 
-  Widget _smallIconBtn({required IconData icon, required VoidCallback onTap, Color? color}) {
+  Widget _smallIconBtn({
+    required IconData icon,
+    required VoidCallback onTap,
+    Color? color,
+  }) {
     return PressScale(
       onTap: onTap,
       child: Container(
@@ -568,7 +624,10 @@ class _BottomActionBar extends StatelessWidget {
               child: Row(
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 6,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.teal.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(100),
@@ -576,12 +635,19 @@ class _BottomActionBar extends StatelessWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.person_rounded, size: 14, color: AppColors.teal),
+                        const Icon(
+                          Icons.person_rounded,
+                          size: 14,
+                          color: AppColors.teal,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           'Client : ${attachedClient.nom}',
                           style: const TextStyle(
-                              color: AppColors.teal, fontWeight: FontWeight.w700, fontSize: 12),
+                            color: AppColors.teal,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                     ),
@@ -589,7 +655,11 @@ class _BottomActionBar extends StatelessWidget {
                   const SizedBox(width: 8),
                   GestureDetector(
                     onTap: onClearClient,
-                    child: const Icon(Icons.close_rounded, size: 16, color: AppColors.textFaint),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      size: 16,
+                      color: AppColors.textFaint,
+                    ),
                   ),
                 ],
               ),
@@ -604,7 +674,9 @@ class _BottomActionBar extends StatelessWidget {
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 15),
                     side: const BorderSide(color: AppColors.border),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
                   ),
                 ),
               ),
@@ -613,8 +685,12 @@ class _BottomActionBar extends StatelessWidget {
                 flex: 2,
                 child: ElevatedButton(
                   onPressed: cartEmpty ? null : onPayer,
-                  style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 15)),
-                  child: Text('Payer${cartEmpty ? '' : ' · ${AppFormat.dt(total)}'}'),
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                  ),
+                  child: Text(
+                    'Payer${cartEmpty ? '' : ' · ${AppFormat.dt(total)}'}',
+                  ),
                 ),
               ),
             ],
@@ -658,7 +734,11 @@ class _QuickActionButton extends StatelessWidget {
               child: Text(
                 label,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 12.5),
+                style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 12.5,
+                ),
               ),
             ),
           ],

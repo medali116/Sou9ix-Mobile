@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:sou9ix/features/employees/model/employee.dart';
+import 'package:sou9ix/features/employees/model/employee_permission.dart';
 import 'package:sou9ix/features/employees/viewmodel/employees_provider.dart';
 import 'package:sou9ix/core/theme/app_colors.dart';
+import 'package:sou9ix/core/theme/app_theme.dart';
 
 class EmployeeFormScreen extends ConsumerStatefulWidget {
   final Employee? employee;
@@ -19,6 +21,7 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
   late final TextEditingController _nomCtrl;
   late final TextEditingController _telephoneCtrl;
   late final TextEditingController _posteCtrl;
+  late Set<EmployeePermission> _permissions;
 
   bool get _isEdit => widget.employee != null;
 
@@ -29,6 +32,7 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
     _nomCtrl = TextEditingController(text: e?.nom ?? '');
     _telephoneCtrl = TextEditingController(text: e?.telephone ?? '');
     _posteCtrl = TextEditingController(text: e?.poste ?? '');
+    _permissions = {...e?.permissions ?? defaultCashierPermissions};
   }
 
   @override
@@ -41,16 +45,20 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
 
   void _save() {
     if (_nomCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Le nom de l\'employé est requis')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Le nom de l\'employé est requis')),
+      );
       return;
     }
     final employee = Employee(
       id: widget.employee?.id ?? 'e${DateTime.now().microsecondsSinceEpoch}',
       nom: _nomCtrl.text.trim(),
       telephone: _telephoneCtrl.text.trim(),
-      poste: _posteCtrl.text.trim().isEmpty ? 'Vendeur' : _posteCtrl.text.trim(),
+      poste: _posteCtrl.text.trim().isEmpty
+          ? 'Vendeur'
+          : _posteCtrl.text.trim(),
       actif: widget.employee?.actif ?? true,
+      permissions: _permissions,
     );
     ref.read(employeesProvider.notifier).upsert(employee);
     context.pop();
@@ -65,7 +73,9 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
           if (_isEdit)
             IconButton(
               onPressed: () {
-                ref.read(employeesProvider.notifier).archive(widget.employee!.id);
+                ref
+                    .read(employeesProvider.notifier)
+                    .archive(widget.employee!.id);
                 context.pop();
               },
               icon: const Icon(Icons.archive_outlined, color: AppColors.danger),
@@ -77,7 +87,10 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
         children: [
           _label('Nom complet'),
-          TextField(controller: _nomCtrl, decoration: const InputDecoration(hintText: 'Ex. Karim Bouazizi')),
+          TextField(
+            controller: _nomCtrl,
+            decoration: const InputDecoration(hintText: 'Ex. Karim Bouazizi'),
+          ),
           const SizedBox(height: 18),
           _label('Téléphone'),
           TextField(
@@ -87,13 +100,59 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
           ),
           const SizedBox(height: 18),
           _label('Poste'),
-          TextField(controller: _posteCtrl, decoration: const InputDecoration(hintText: 'Ex. Caissier, Vendeur, Gérant')),
+          TextField(
+            controller: _posteCtrl,
+            decoration: const InputDecoration(
+              hintText: 'Ex. Caissier, Vendeur, Gérant',
+            ),
+          ),
+          const SizedBox(height: 24),
+          _label('Permissions'),
+          Text(
+            'Ce que cet employé peut faire dans l\'application',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              boxShadow: AppShadows.card,
+            ),
+            child: Column(
+              children: [
+                for (final p in EmployeePermission.values)
+                  CheckboxListTile(
+                    value: _permissions.contains(p),
+                    onChanged: (checked) => setState(() {
+                      if (checked == true) {
+                        _permissions.add(p);
+                      } else {
+                        _permissions.remove(p);
+                      }
+                    }),
+                    title: Text(
+                      p.label,
+                      style: const TextStyle(fontSize: 13.5),
+                    ),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    activeColor: AppColors.teal,
+                    dense: true,
+                  ),
+              ],
+            ),
+          ),
           const SizedBox(height: 28),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: _save,
-              child: Text(_isEdit ? 'Enregistrer les modifications' : 'Ajouter l\'employé'),
+              child: Text(
+                _isEdit
+                    ? 'Enregistrer les modifications'
+                    : 'Ajouter l\'employé',
+              ),
             ),
           ),
         ],
@@ -102,7 +161,10 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
   }
 
   Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(text, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-      );
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Text(
+      text,
+      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+    ),
+  );
 }

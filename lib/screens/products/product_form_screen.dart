@@ -40,11 +40,19 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     super.initState();
     final p = widget.product;
     _nameCtrl = TextEditingController(text: p?.name ?? '');
-    _prixVenteCtrl = TextEditingController(text: p != null ? p.prixVente.toStringAsFixed(3) : '');
-    _prixAchatCtrl = TextEditingController(text: p != null ? p.prixAchat.toStringAsFixed(3) : '');
+    _prixVenteCtrl = TextEditingController(
+      text: p != null ? p.prixVente.toStringAsFixed(3) : '',
+    );
+    _prixAchatCtrl = TextEditingController(
+      text: p != null ? p.prixAchat.toStringAsFixed(3) : '',
+    );
     _codeCtrl = TextEditingController(text: p?.codeBarres ?? '');
-    _stockCtrl = TextEditingController(text: p != null ? p.stock.toStringAsFixed(2) : '0');
-    _seuilCtrl = TextEditingController(text: p != null ? p.seuilAlerte.toStringAsFixed(2) : '2');
+    _stockCtrl = TextEditingController(
+      text: p != null ? p.stock.toStringAsFixed(2) : '0',
+    );
+    _seuilCtrl = TextEditingController(
+      text: p != null ? p.seuilAlerte.toStringAsFixed(2) : '2',
+    );
     _venduAuPoids = p?.venduAuPoids ?? false;
     _categorieId = p?.categorieId ?? 'epicerie';
     _photoBytes = p?.photoBytes;
@@ -64,7 +72,10 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
 
   Future<void> _scanBarcode() async {
     final code = await Navigator.of(context).push<String>(
-      MaterialPageRoute(builder: (_) => const BarcodeCaptureScreen(), fullscreenDialog: true),
+      MaterialPageRoute(
+        builder: (_) => const BarcodeCaptureScreen(),
+        fullscreenDialog: true,
+      ),
     );
     if (code != null && code.isNotEmpty) {
       setState(() => _codeCtrl.text = code);
@@ -73,8 +84,9 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
 
   void _save() {
     if (_nameCtrl.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Le nom du produit est requis')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Le nom du produit est requis')),
+      );
       return;
     }
     final product = Product(
@@ -109,7 +121,10 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 ref.read(productsProvider.notifier).remove(widget.product!.id);
                 context.pop();
               },
-              icon: const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
+              icon: const Icon(
+                Icons.delete_outline_rounded,
+                color: AppColors.danger,
+              ),
             ),
         ],
       ),
@@ -126,7 +141,12 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
           ),
           const SizedBox(height: 18),
           _label('Nom du produit'),
-          TextField(controller: _nameCtrl, decoration: const InputDecoration(hintText: 'Ex. Amandes décortiquées')),
+          TextField(
+            controller: _nameCtrl,
+            decoration: const InputDecoration(
+              hintText: 'Ex. Amandes décortiquées',
+            ),
+          ),
           const SizedBox(height: 18),
           _label('Catégorie'),
           Wrap(
@@ -151,7 +171,9 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                     _label('Prix de vente (DT)'),
                     TextField(
                       controller: _prixVenteCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       decoration: const InputDecoration(hintText: '0.000'),
                     ),
                   ],
@@ -165,7 +187,9 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                     _label('Prix d\'achat (DT)'),
                     TextField(
                       controller: _prixAchatCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                       decoration: const InputDecoration(hintText: '0.000'),
                     ),
                   ],
@@ -182,7 +206,10 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
               hintText: 'Optionnel — scannez ou saisissez',
               suffixIcon: IconButton(
                 onPressed: _scanBarcode,
-                icon: const Icon(Icons.qr_code_scanner_rounded, color: AppColors.teal),
+                icon: const Icon(
+                  Icons.qr_code_scanner_rounded,
+                  color: AppColors.teal,
+                ),
                 tooltip: 'Scanner le code-barres',
               ),
             ),
@@ -210,10 +237,16 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _label(_venduAuPoids ? 'Stock actuel (kg)' : 'Stock actuel (pcs)'),
+                    _label(
+                      _venduAuPoids
+                          ? 'Stock actuel (kg)'
+                          : 'Stock actuel (pcs)',
+                    ),
                     TextField(
                       controller: _stockCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                     ),
                   ],
                 ),
@@ -226,7 +259,9 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                     _label('Seuil d\'alerte'),
                     TextField(
                       controller: _seuilCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
                     ),
                   ],
                 ),
@@ -244,7 +279,11 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
             width: double.infinity,
             child: ElevatedButton(
               onPressed: _save,
-              child: Text(_isEdit ? 'Enregistrer les modifications' : 'Ajouter le produit'),
+              child: Text(
+                _isEdit
+                    ? 'Enregistrer les modifications'
+                    : 'Ajouter le produit',
+              ),
             ),
           ),
         ],
@@ -253,7 +292,10 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   }
 
   Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(text, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-      );
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Text(
+      text,
+      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+    ),
+  );
 }

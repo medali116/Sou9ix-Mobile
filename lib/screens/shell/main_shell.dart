@@ -29,25 +29,59 @@ class _MainShellState extends ConsumerState<MainShell> {
   int _index = 0;
 
   static const _adminItems = [
-    NavItemData(icon: Icons.grid_view_outlined, activeIcon: Icons.grid_view_rounded, label: 'Accueil'),
     NavItemData(
-        icon: Icons.point_of_sale_outlined, activeIcon: Icons.point_of_sale_rounded, label: 'Caisse'),
+      icon: Icons.grid_view_outlined,
+      activeIcon: Icons.grid_view_rounded,
+      label: 'Accueil',
+    ),
     NavItemData(
-        icon: Icons.inventory_2_outlined, activeIcon: Icons.inventory_2_rounded, label: 'Stock'),
-    NavItemData(icon: Icons.bar_chart_outlined, activeIcon: Icons.bar_chart_rounded, label: 'Stats'),
-    NavItemData(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'Profil'),
+      icon: Icons.point_of_sale_outlined,
+      activeIcon: Icons.point_of_sale_rounded,
+      label: 'Caisse',
+    ),
+    NavItemData(
+      icon: Icons.inventory_2_outlined,
+      activeIcon: Icons.inventory_2_rounded,
+      label: 'Stock',
+    ),
+    NavItemData(
+      icon: Icons.bar_chart_outlined,
+      activeIcon: Icons.bar_chart_rounded,
+      label: 'Stats',
+    ),
+    NavItemData(
+      icon: Icons.person_outline_rounded,
+      activeIcon: Icons.person_rounded,
+      label: 'Profil',
+    ),
   ];
 
   static const _caissierItems = [
     NavItemData(
-        icon: Icons.point_of_sale_outlined, activeIcon: Icons.point_of_sale_rounded, label: 'Caisse'),
+      icon: Icons.point_of_sale_outlined,
+      activeIcon: Icons.point_of_sale_rounded,
+      label: 'Caisse',
+    ),
     NavItemData(
-        icon: Icons.inventory_2_outlined, activeIcon: Icons.inventory_2_rounded, label: 'Produits'),
+      icon: Icons.inventory_2_outlined,
+      activeIcon: Icons.inventory_2_rounded,
+      label: 'Produits',
+    ),
     NavItemData(
-        icon: Icons.warehouse_outlined, activeIcon: Icons.warehouse_rounded, label: 'Stock'),
+      icon: Icons.warehouse_outlined,
+      activeIcon: Icons.warehouse_rounded,
+      label: 'Stock',
+    ),
     NavItemData(
-        icon: Icons.receipt_long_outlined, activeIcon: Icons.receipt_long_rounded, label: 'Historique'),
-    NavItemData(icon: Icons.person_outline_rounded, activeIcon: Icons.person_rounded, label: 'Profil'),
+      icon: Icons.receipt_long_outlined,
+      activeIcon: Icons.receipt_long_rounded,
+      label: 'Historique',
+    ),
+    NavItemData(
+      icon: Icons.person_outline_rounded,
+      activeIcon: Icons.person_rounded,
+      label: 'Profil',
+    ),
   ];
 
   @override

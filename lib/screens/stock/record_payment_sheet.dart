@@ -29,8 +29,9 @@ class RecordPaymentSheet extends ConsumerStatefulWidget {
 }
 
 class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
-  late final TextEditingController _montantCtrl =
-      TextEditingController(text: widget.invoice.montantRestant.toStringAsFixed(3));
+  late final TextEditingController _montantCtrl = TextEditingController(
+    text: widget.invoice.montantRestant.toStringAsFixed(3),
+  );
 
   @override
   void dispose() {
@@ -46,14 +47,18 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
       );
       return;
     }
-    ref.read(purchaseInvoicesProvider.notifier).recordPayment(widget.invoice.id, montant);
+    ref
+        .read(purchaseInvoicesProvider.notifier)
+        .recordPayment(widget.invoice.id, montant);
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       decoration: const BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
@@ -67,7 +72,10 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
             const SizedBox(height: 8),
             Align(
               alignment: Alignment.centerLeft,
-              child: Text('Régler un paiement', style: Theme.of(context).textTheme.titleLarge),
+              child: Text(
+                'Régler un paiement',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
             ),
             const SizedBox(height: 4),
             Align(
@@ -81,7 +89,9 @@ class _RecordPaymentSheetState extends ConsumerState<RecordPaymentSheet> {
             TextField(
               controller: _montantCtrl,
               autofocus: true,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: const InputDecoration(hintText: '0.000'),
             ),
             const SizedBox(height: 20),

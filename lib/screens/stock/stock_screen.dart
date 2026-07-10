@@ -52,16 +52,24 @@ class _StockScreenState extends ConsumerState<StockScreen> {
               decoration: BoxDecoration(
                 color: AppColors.warning.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+                border: Border.all(
+                  color: AppColors.warning.withValues(alpha: 0.3),
+                ),
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.warning_amber_rounded, color: AppColors.warning),
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    color: AppColors.warning,
+                  ),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       '${lowStock.length} produit${lowStock.length > 1 ? 's' : ''} à réapprovisionner',
-                      style: const TextStyle(fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
                     ),
                   ),
                   Switch(
@@ -97,10 +105,19 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                           children: [
                             Row(
                               children: [
-                                ProductAvatar(emoji: p.emoji, photoBytes: p.photoBytes, size: 32),
+                                ProductAvatar(
+                                  emoji: p.emoji,
+                                  photoBytes: p.photoBytes,
+                                  size: 32,
+                                ),
                                 const SizedBox(width: 8),
                                 Expanded(
-                                  child: Text(p.name, style: Theme.of(context).textTheme.titleMedium),
+                                  child: Text(
+                                    p.name,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleMedium,
+                                  ),
                                 ),
                                 Text(
                                   p.venduAuPoids
@@ -108,7 +125,9 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                                       : '${p.stock.toInt()} pcs',
                                   style: TextStyle(
                                     fontWeight: FontWeight.w800,
-                                    color: p.stockFaible ? AppColors.warning : AppColors.textPrimary,
+                                    color: p.stockFaible
+                                        ? AppColors.warning
+                                        : AppColors.textPrimary,
                                   ),
                                 ),
                               ],
@@ -145,7 +164,10 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                             ),
                           ],
                         ),
-                      ).animate().fadeIn(duration: 220.ms, delay: (18 * index).ms);
+                      ).animate().fadeIn(
+                        duration: 220.ms,
+                        delay: (18 * index).ms,
+                      );
                     },
                   ),
           ),

@@ -167,7 +167,8 @@ class _StockScreenState extends ConsumerState<StockScreen> {
           ? p.stock.toStringAsFixed(2)
           : p.stock.toInt().toString(),
     );
-    final result = await showModalBottomSheet<double>(
+    final causeCtrl = TextEditingController();
+    final result = await showModalBottomSheet<(double, String?)>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
@@ -185,54 +186,88 @@ class _StockScreenState extends ConsumerState<StockScreen> {
               top: Radius.circular(AppRadius.xl),
             ),
           ),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Center(child: SheetHandle()),
-                const SizedBox(height: 8),
-                Text(
-                  'Ajuster le stock',
-                  style: Theme.of(context).textTheme.titleLarge,
+          child: StatefulBuilder(
+            builder: (sheetContext, setSheetState) {
+              final newValue = double.tryParse(ctrl.text);
+              final changed = newValue != null && newValue != p.stock;
+              final canSave =
+                  newValue != null &&
+                  (!changed || causeCtrl.text.trim().isNotEmpty);
+
+              return SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Center(child: SheetHandle()),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Ajuster le stock',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    Text(p.name, style: Theme.of(context).textTheme.bodyMedium),
+                    const SizedBox(height: 16),
+                    Text(
+                      p.venduAuPoids
+                          ? 'Nouveau stock (kg)'
+                          : 'Nouveau stock (pcs)',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: ctrl,
+                      autofocus: true,
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      onChanged: (_) => setSheetState(() {}),
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: causeCtrl,
+                      onChanged: (_) => setSheetState(() {}),
+                      decoration: InputDecoration(
+                        labelText: changed
+                            ? 'Cause (obligatoire)'
+                            : 'Cause (optionnel)',
+                        prefixIcon: const Icon(Icons.edit_note_rounded),
+                        hintText: 'Ex. Produit cassé',
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: canSave
+                            ? () {
+                                Navigator.pop(sheetContext, (
+                                  newValue,
+                                  causeCtrl.text.trim().isEmpty
+                                      ? null
+                                      : causeCtrl.text.trim(),
+                                ));
+                              }
+                            : null,
+                        child: const Text('Enregistrer'),
+                      ),
+                    ),
+                  ],
                 ),
-                Text(p.name, style: Theme.of(context).textTheme.bodyMedium),
-                const SizedBox(height: 16),
-                Text(
-                  p.venduAuPoids ? 'Nouveau stock (kg)' : 'Nouveau stock (pcs)',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: ctrl,
-                  autofocus: true,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      final value = double.tryParse(ctrl.text);
-                      if (value != null) Navigator.pop(context, value);
-                    },
-                    child: const Text('Enregistrer'),
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ),
     );
     if (result != null && mounted) {
-      ref.read(productsProvider.notifier).upsert(p.copyWith(stock: result));
+      final (value, cause) = result;
+      ref
+          .read(productsProvider.notifier)
+          .upsert(p.copyWith(stock: value), motifStock: cause);
     }
   }
 

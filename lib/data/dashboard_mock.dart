@@ -3,7 +3,11 @@ class TopProductStat {
   final String name;
   final double revenue;
 
-  const TopProductStat({required this.emoji, required this.name, required this.revenue});
+  const TopProductStat({
+    required this.emoji,
+    required this.name,
+    required this.revenue,
+  });
 }
 
 class DashboardMock {

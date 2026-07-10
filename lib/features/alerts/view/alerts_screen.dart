@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import 'package:sou9ix/core/formatters.dart';
+import 'package:sou9ix/features/activity/model/activity_log_entry.dart';
 import 'package:sou9ix/features/clients/model/client.dart';
 import 'package:sou9ix/features/products/model/product.dart';
 import 'package:sou9ix/features/stock/model/purchase_invoice.dart';
@@ -31,7 +32,15 @@ class AlertsScreen extends ConsumerWidget {
     final expiringSoon = ref.watch(expiringSoonProvider);
     final expired = ref.watch(expiredProductsProvider);
     final unsettled = ref.watch(unsettledInvoicesProvider);
+    final oldUnpaidIds = ref
+        .watch(oldUnpaidInvoicesProvider)
+        .map((i) => i.id)
+        .toSet();
     final overLimit = ref.watch(clientsOverLimitProvider);
+    final lossProducts = ref.watch(lossProductsProvider);
+    final staleProducts = ref.watch(staleProductsProvider);
+    final todayPriceChanges = ref.watch(todayPriceChangesProvider);
+    final frequentDeletions = ref.watch(hasFrequentTicketDeletionsProvider);
     final warningDays = ref.watch(expiryWarningDaysProvider);
 
     final hasAny =
@@ -39,7 +48,11 @@ class AlertsScreen extends ConsumerWidget {
         expiringSoon.isNotEmpty ||
         expired.isNotEmpty ||
         unsettled.isNotEmpty ||
-        overLimit.isNotEmpty;
+        overLimit.isNotEmpty ||
+        lossProducts.isNotEmpty ||
+        staleProducts.isNotEmpty ||
+        todayPriceChanges.isNotEmpty ||
+        frequentDeletions;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Alertes')),
@@ -104,6 +117,38 @@ class AlertsScreen extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 22),
+                if (frequentDeletions) ...[
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.danger.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      border: Border.all(
+                        color: AppColors.danger.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.report_gmailerrorred_rounded,
+                          color: AppColors.danger,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Beaucoup de tickets supprimés récemment (${ref.watch(recentTicketDeletionsProvider).length} en $frequentDeletionWindowDays jours)',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12.5,
+                              color: AppColors.danger,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                ],
                 if (lowStock.isNotEmpty) ...[
                   const SectionHeader(title: 'Stock faible'),
                   const SizedBox(height: 12),
@@ -125,7 +170,12 @@ class AlertsScreen extends ConsumerWidget {
                 if (unsettled.isNotEmpty) ...[
                   const SectionHeader(title: 'Factures fournisseurs impayées'),
                   const SizedBox(height: 12),
-                  ...unsettled.map((i) => _InvoiceAlertTile(invoice: i)),
+                  ...unsettled.map(
+                    (i) => _InvoiceAlertTile(
+                      invoice: i,
+                      isCritical: oldUnpaidIds.contains(i.id),
+                    ),
+                  ),
                   const SizedBox(height: 22),
                 ],
                 if (overLimit.isNotEmpty) ...[
@@ -134,6 +184,26 @@ class AlertsScreen extends ConsumerWidget {
                   ),
                   const SizedBox(height: 12),
                   ...overLimit.map((c) => _ClientAlertTile(client: c)),
+                  const SizedBox(height: 22),
+                ],
+                if (lossProducts.isNotEmpty) ...[
+                  const SectionHeader(title: 'Produits vendus à perte'),
+                  const SizedBox(height: 12),
+                  ...lossProducts.map((p) => _LossProductTile(product: p)),
+                  const SizedBox(height: 22),
+                ],
+                if (staleProducts.isNotEmpty) ...[
+                  SectionHeader(
+                    title: 'Sans vente depuis $staleProductThresholdDays jours',
+                  ),
+                  const SizedBox(height: 12),
+                  ...staleProducts.map((p) => _StaleProductTile(product: p)),
+                  const SizedBox(height: 22),
+                ],
+                if (todayPriceChanges.isNotEmpty) ...[
+                  const SectionHeader(title: 'Prix modifiés aujourd\'hui'),
+                  const SizedBox(height: 12),
+                  ...todayPriceChanges.map((e) => _PriceChangeTile(entry: e)),
                 ],
               ],
             ),
@@ -248,10 +318,12 @@ class _ProductAlertTile extends StatelessWidget {
 
 class _InvoiceAlertTile extends StatelessWidget {
   final PurchaseInvoice invoice;
-  const _InvoiceAlertTile({required this.invoice});
+  final bool isCritical;
+  const _InvoiceAlertTile({required this.invoice, this.isCritical = false});
 
   @override
   Widget build(BuildContext context) {
+    final color = isCritical ? AppColors.danger : AppColors.warning;
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: PressScale(
@@ -262,10 +334,13 @@ class _InvoiceAlertTile extends StatelessWidget {
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(AppRadius.md),
             boxShadow: AppShadows.card,
+            border: isCritical
+                ? Border.all(color: color.withValues(alpha: 0.4))
+                : null,
           ),
           child: Row(
             children: [
-              const Icon(Icons.receipt_long_rounded, color: AppColors.warning),
+              Icon(Icons.receipt_long_rounded, color: color),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -279,18 +354,170 @@ class _InvoiceAlertTile extends StatelessWidget {
                       DateFormat('dd/MM/yyyy').format(invoice.date),
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
+                    if (isCritical)
+                      Text(
+                        'Impayée depuis ${DateTime.now().difference(invoice.date).inDays} jours',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.danger,
+                        ),
+                      ),
                   ],
                 ),
               ),
               Text(
                 'Reste ${AppFormat.dtShort(invoice.montantRestant)}',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.warning,
+                style: TextStyle(fontWeight: FontWeight.w800, color: color),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LossProductTile extends StatelessWidget {
+  final Product product;
+  const _LossProductTile({required this.product});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: PressScale(
+        onTap: () => context.push('/products/edit', extra: product),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            boxShadow: AppShadows.card,
+          ),
+          child: Row(
+            children: [
+              ProductAvatar(
+                emoji: product.emoji,
+                photoBytes: product.photoBytes,
+                size: 32,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.name,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(
+                      'Achat ${AppFormat.dtShort(product.prixAchat)} · Vente ${AppFormat.dtShort(product.prixVente)}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.danger,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.trending_down_rounded, color: AppColors.danger),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StaleProductTile extends StatelessWidget {
+  final Product product;
+  const _StaleProductTile({required this.product});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: PressScale(
+        onTap: () => context.push('/products/edit', extra: product),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            boxShadow: AppShadows.card,
+          ),
+          child: Row(
+            children: [
+              ProductAvatar(
+                emoji: product.emoji,
+                photoBytes: product.photoBytes,
+                size: 32,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.name,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(
+                      'Stock : ${product.stock.toStringAsFixed(product.venduAuPoids ? 1 : 0)} ${product.unite}',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PriceChangeTile extends StatelessWidget {
+  final ActivityLogEntry entry;
+  const _PriceChangeTile({required this.entry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          boxShadow: AppShadows.card,
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.sell_rounded, color: AppColors.info),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    entry.targetName ?? '',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Text(
+                    '${entry.champ} : ${entry.ancienneValeur} → ${entry.nouvelleValeur}',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              DateFormat('HH:mm').format(entry.date),
+              style: const TextStyle(fontSize: 11, color: AppColors.textFaint),
+            ),
+          ],
         ),
       ),
     );

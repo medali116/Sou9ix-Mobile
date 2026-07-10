@@ -38,7 +38,9 @@ class CartSheet extends ConsumerWidget {
         return Container(
           decoration: const BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppRadius.xl),
+            ),
           ),
           child: Column(
             children: [
@@ -48,11 +50,14 @@ class CartSheet extends ConsumerWidget {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Panier · ${items.length} article${items.length > 1 ? 's' : ''}',
-                        style: Theme.of(context).textTheme.titleLarge),
+                    Text(
+                      'Panier · ${items.length} article${items.length > 1 ? 's' : ''}',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                     if (items.isNotEmpty)
                       TextButton(
-                        onPressed: () => ref.read(cartProvider.notifier).clear(),
+                        onPressed: () =>
+                            ref.read(cartProvider.notifier).clear(),
                         child: const Text('Vider'),
                       ),
                   ],
@@ -63,7 +68,8 @@ class CartSheet extends ConsumerWidget {
                     ? const EmptyState(
                         icon: Icons.shopping_basket_outlined,
                         title: 'Panier vide',
-                        message: 'Ajoutez des produits depuis la caisse\npour commencer une vente.',
+                        message:
+                            'Ajoutez des produits depuis la caisse\npour commencer une vente.',
                       )
                     : ListView.separated(
                         controller: scrollController,
@@ -73,87 +79,116 @@ class CartSheet extends ConsumerWidget {
                         itemBuilder: (context, index) {
                           final item = items[index];
                           return Container(
-                            padding: const EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceMuted,
-                              borderRadius: BorderRadius.circular(AppRadius.md),
-                            ),
-                            child: Row(
-                              children: [
-                                ProductAvatar(
-                                  emoji: item.product.emoji,
-                                  photoBytes: item.product.photoBytes,
-                                  size: 42,
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(item.product.name,
-                                          style: Theme.of(context).textTheme.titleMedium),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        item.product.venduAuPoids
-                                            ? '${AppFormat.kg(item.quantite)} × ${AppFormat.dtShort(item.product.prixVente)}'
-                                            : '${item.quantite.toInt()} × ${AppFormat.dtShort(item.product.prixVente)}',
-                                        style: Theme.of(context).textTheme.bodyMedium,
-                                      ),
-                                    ],
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: AppColors.surfaceMuted,
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.md,
                                   ),
                                 ),
-                                if (!item.product.venduAuPoids)
-                                  Row(
-                                    children: [
-                                      _qtyBtn(
-                                        icon: Icons.remove_rounded,
-                                        onTap: () => ref
-                                            .read(cartProvider.notifier)
-                                            .updateQuantite(item.product.id, item.quantite - 1),
+                                child: Row(
+                                  children: [
+                                    ProductAvatar(
+                                      emoji: item.product.emoji,
+                                      photoBytes: item.product.photoBytes,
+                                      size: 42,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            item.product.name,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.titleMedium,
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Text(
+                                            item.product.venduAuPoids
+                                                ? '${AppFormat.kg(item.quantite)} × ${AppFormat.dtShort(item.product.prixVente)}'
+                                                : '${item.quantite.toInt()} × ${AppFormat.dtShort(item.product.prixVente)}',
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodyMedium,
+                                          ),
+                                        ],
                                       ),
-                                      SizedBox(
-                                        width: 26,
-                                        child: Text(
-                                          item.quantite.toInt().toString(),
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(fontWeight: FontWeight.w700),
+                                    ),
+                                    if (!item.product.venduAuPoids)
+                                      Row(
+                                        children: [
+                                          _qtyBtn(
+                                            icon: Icons.remove_rounded,
+                                            onTap: () => ref
+                                                .read(cartProvider.notifier)
+                                                .updateQuantite(
+                                                  item.product.id,
+                                                  item.quantite - 1,
+                                                ),
+                                          ),
+                                          SizedBox(
+                                            width: 26,
+                                            child: Text(
+                                              item.quantite.toInt().toString(),
+                                              textAlign: TextAlign.center,
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                            ),
+                                          ),
+                                          _qtyBtn(
+                                            icon: Icons.add_rounded,
+                                            onTap: () => ref
+                                                .read(cartProvider.notifier)
+                                                .updateQuantite(
+                                                  item.product.id,
+                                                  item.quantite + 1,
+                                                ),
+                                          ),
+                                        ],
+                                      )
+                                    else
+                                      IconButton(
+                                        onPressed: () => ref
+                                            .read(cartProvider.notifier)
+                                            .removeItem(item.product.id),
+                                        icon: const Icon(
+                                          Icons.delete_outline_rounded,
+                                          color: AppColors.danger,
+                                          size: 20,
                                         ),
                                       ),
-                                      _qtyBtn(
-                                        icon: Icons.add_rounded,
-                                        onTap: () => ref
-                                            .read(cartProvider.notifier)
-                                            .updateQuantite(item.product.id, item.quantite + 1),
+                                    const SizedBox(width: 4),
+                                    SizedBox(
+                                      width: 66,
+                                      child: Text(
+                                        AppFormat.dtShort(item.sousTotal),
+                                        textAlign: TextAlign.right,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                        ),
                                       ),
-                                    ],
-                                  )
-                                else
-                                  IconButton(
-                                    onPressed: () => ref
-                                        .read(cartProvider.notifier)
-                                        .removeItem(item.product.id),
-                                    icon: const Icon(Icons.delete_outline_rounded,
-                                        color: AppColors.danger, size: 20),
-                                  ),
-                                const SizedBox(width: 4),
-                                SizedBox(
-                                  width: 66,
-                                  child: Text(
-                                    AppFormat.dtShort(item.sousTotal),
-                                    textAlign: TextAlign.right,
-                                    style: const TextStyle(fontWeight: FontWeight.w800),
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                              ],
-                            ),
-                          ).animate().fadeIn(duration: 220.ms).slideX(begin: 0.04, end: 0);
+                              )
+                              .animate()
+                              .fadeIn(duration: 220.ms)
+                              .slideX(begin: 0.04, end: 0);
                         },
                       ),
               ),
               if (items.isNotEmpty)
                 Container(
                   padding: EdgeInsets.fromLTRB(
-                      20, 16, 20, 16 + MediaQuery.of(context).padding.bottom),
+                    20,
+                    16,
+                    20,
+                    16 + MediaQuery.of(context).padding.bottom,
+                  ),
                   decoration: const BoxDecoration(
                     border: Border(top: BorderSide(color: AppColors.border)),
                   ),
@@ -162,7 +197,10 @@ class CartSheet extends ConsumerWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Total', style: Theme.of(context).textTheme.titleMedium),
+                          Text(
+                            'Total',
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
                           Text(
                             AppFormat.dt(total),
                             style: Theme.of(context).textTheme.headlineMedium,

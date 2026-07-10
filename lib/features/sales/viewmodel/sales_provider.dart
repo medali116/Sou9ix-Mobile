@@ -100,6 +100,9 @@ class SalesNotifier extends StateNotifier<List<Sale>> {
       lignes: lignes,
       modePaiement: modePaiement,
       clientId: clientId,
+      // Alternates between the two seeded staff (e1 Yassine / e2 Rania) so
+      // "Top caissiers" style analytics have something real to aggregate.
+      employeeId: id.isOdd ? 'e1' : 'e2',
     );
   }
 
@@ -360,6 +363,10 @@ class SalesNotifier extends StateNotifier<List<Sale>> {
   void removeSale(String id) {
     state = state.where((s) => s.id != id).toList();
   }
+
+  /// Brings a sale back from the Corbeille, preserving its original id
+  /// (unlike [recordSale], which always mints a new one).
+  void restore(Sale sale) => state = [sale, ...state];
 }
 
 final salesProvider = StateNotifierProvider<SalesNotifier, List<Sale>>(

@@ -17,7 +17,11 @@ class ProductsNotifier extends StateNotifier<List<Product>> {
   /// Adds freshly received quantity to a product's stock, e.g. after a
   /// supplier delivery — optionally updating the purchase price if it
   /// changed since the last restock.
-  void restock(String productId, double quantiteRecue, {double? nouveauPrixAchat}) {
+  void restock(
+    String productId,
+    double quantiteRecue, {
+    double? nouveauPrixAchat,
+  }) {
     state = [
       for (final p in state)
         if (p.id == productId)
@@ -43,7 +47,10 @@ class ProductsNotifier extends StateNotifier<List<Product>> {
   void upsert(Product product) {
     final exists = state.any((p) => p.id == product.id);
     if (exists) {
-      state = [for (final p in state) if (p.id == product.id) product else p];
+      state = [
+        for (final p in state)
+          if (p.id == product.id) product else p,
+      ];
     } else {
       state = [...state, product];
     }
@@ -54,12 +61,13 @@ class ProductsNotifier extends StateNotifier<List<Product>> {
   }
 }
 
-final productsProvider =
-    StateNotifierProvider<ProductsNotifier, List<Product>>(
+final productsProvider = StateNotifierProvider<ProductsNotifier, List<Product>>(
   (ref) => ProductsNotifier(),
 );
 
-final categoriesProvider = Provider<List<ProductCategory>>((ref) => mockCategories);
+final categoriesProvider = Provider<List<ProductCategory>>(
+  (ref) => mockCategories,
+);
 
 final lowStockProvider = Provider<List<Product>>((ref) {
   final products = ref.watch(productsProvider);

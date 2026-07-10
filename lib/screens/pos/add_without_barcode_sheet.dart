@@ -31,10 +31,12 @@ class AddWithoutBarcodeSheet extends ConsumerStatefulWidget {
   }
 
   @override
-  ConsumerState<AddWithoutBarcodeSheet> createState() => _AddWithoutBarcodeSheetState();
+  ConsumerState<AddWithoutBarcodeSheet> createState() =>
+      _AddWithoutBarcodeSheetState();
 }
 
-class _AddWithoutBarcodeSheetState extends ConsumerState<AddWithoutBarcodeSheet> {
+class _AddWithoutBarcodeSheetState
+    extends ConsumerState<AddWithoutBarcodeSheet> {
   bool _freeForm = false;
   String _query = '';
 
@@ -102,7 +104,11 @@ class _AddWithoutBarcodeSheetState extends ConsumerState<AddWithoutBarcodeSheet>
   Widget build(BuildContext context) {
     final products = ref.watch(productsProvider);
     final filtered = products
-        .where((p) => _query.isEmpty || p.name.toLowerCase().contains(_query.toLowerCase()))
+        .where(
+          (p) =>
+              _query.isEmpty ||
+              p.name.toLowerCase().contains(_query.toLowerCase()),
+        )
         .toList();
 
     return DraggableScrollableSheet(
@@ -112,10 +118,14 @@ class _AddWithoutBarcodeSheetState extends ConsumerState<AddWithoutBarcodeSheet>
       expand: false,
       builder: (context, scrollController) {
         return Container(
-          padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
           decoration: const BoxDecoration(
             color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+            borderRadius: BorderRadius.vertical(
+              top: Radius.circular(AppRadius.xl),
+            ),
           ),
           child: Column(
             children: [
@@ -125,7 +135,10 @@ class _AddWithoutBarcodeSheetState extends ConsumerState<AddWithoutBarcodeSheet>
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Ajouter sans code-barres', style: Theme.of(context).textTheme.titleLarge),
+                    Text(
+                      'Ajouter sans code-barres',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
                     IconButton(
                       onPressed: () => Navigator.pop(context),
                       icon: const Icon(Icons.close_rounded),
@@ -143,8 +156,20 @@ class _AddWithoutBarcodeSheetState extends ConsumerState<AddWithoutBarcodeSheet>
                   ),
                   child: Row(
                     children: [
-                      Expanded(child: _ModeTab(label: 'Depuis le catalogue', selected: !_freeForm, onTap: () => setState(() => _freeForm = false))),
-                      Expanded(child: _ModeTab(label: 'Article libre', selected: _freeForm, onTap: () => setState(() => _freeForm = true))),
+                      Expanded(
+                        child: _ModeTab(
+                          label: 'Depuis le catalogue',
+                          selected: !_freeForm,
+                          onTap: () => setState(() => _freeForm = false),
+                        ),
+                      ),
+                      Expanded(
+                        child: _ModeTab(
+                          label: 'Article libre',
+                          selected: _freeForm,
+                          onTap: () => setState(() => _freeForm = true),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -162,7 +187,10 @@ class _AddWithoutBarcodeSheetState extends ConsumerState<AddWithoutBarcodeSheet>
     );
   }
 
-  Widget _buildCatalogueSearch(ScrollController scrollController, List<Product> filtered) {
+  Widget _buildCatalogueSearch(
+    ScrollController scrollController,
+    List<Product> filtered,
+  ) {
     return Column(
       children: [
         Padding(
@@ -200,27 +228,44 @@ class _AddWithoutBarcodeSheetState extends ConsumerState<AddWithoutBarcodeSheet>
                         ),
                         child: Row(
                           children: [
-                            ProductAvatar(emoji: p.emoji, photoBytes: p.photoBytes, size: 40),
+                            ProductAvatar(
+                              emoji: p.emoji,
+                              photoBytes: p.photoBytes,
+                              size: 40,
+                            ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(p.name, style: Theme.of(context).textTheme.titleMedium),
+                                  Text(
+                                    p.name,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleMedium,
+                                  ),
                                   Text(
                                     p.venduAuPoids
                                         ? '${AppFormat.dtShort(p.prixVente)}/kg'
                                         : AppFormat.dtShort(p.prixVente),
-                                    style: Theme.of(context).textTheme.bodyMedium,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium,
                                   ),
                                 ],
                               ),
                             ),
-                            const Icon(Icons.add_circle_rounded, color: AppColors.teal),
+                            const Icon(
+                              Icons.add_circle_rounded,
+                              color: AppColors.teal,
+                            ),
                           ],
                         ),
                       ),
-                    ).animate().fadeIn(duration: 180.ms, delay: (14 * index).ms);
+                    ).animate().fadeIn(
+                      duration: 180.ms,
+                      delay: (14 * index).ms,
+                    );
                   },
                 ),
         ),
@@ -246,11 +291,16 @@ class _AddWithoutBarcodeSheetState extends ConsumerState<AddWithoutBarcodeSheet>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Prix (DT)', style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    'Prix (DT)',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _priceCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                     decoration: const InputDecoration(hintText: '0.000'),
                   ),
                 ],
@@ -261,11 +311,16 @@ class _AddWithoutBarcodeSheetState extends ConsumerState<AddWithoutBarcodeSheet>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_venduAuPoids ? 'Poids (kg)' : 'Quantité', style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    _venduAuPoids ? 'Poids (kg)' : 'Quantité',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 8),
                   TextField(
                     controller: _qtyCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
                   ),
                 ],
               ),
@@ -306,7 +361,11 @@ class _ModeTab extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _ModeTab({required this.label, required this.selected, required this.onTap});
+  const _ModeTab({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {

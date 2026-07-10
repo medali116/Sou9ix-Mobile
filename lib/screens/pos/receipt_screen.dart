@@ -24,21 +24,26 @@ class ReceiptScreen extends StatelessWidget {
           children: [
             const SizedBox(height: 28),
             Container(
-              width: 84,
-              height: 84,
-              decoration: BoxDecoration(
-                color: AppColors.success.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.check_rounded, color: AppColors.success, size: 44),
-            )
+                  width: 84,
+                  height: 84,
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.check_rounded,
+                    color: AppColors.success,
+                    size: 44,
+                  ),
+                )
                 .animate()
                 .scale(duration: 450.ms, curve: Curves.elasticOut)
                 .fadeIn(duration: 200.ms),
             const SizedBox(height: 16),
-            Text('Vente enregistrée', style: Theme.of(context).textTheme.headlineMedium)
-                .animate()
-                .fadeIn(delay: 150.ms),
+            Text(
+              'Vente enregistrée',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ).animate().fadeIn(delay: 150.ms),
             const SizedBox(height: 4),
             Text(
               'Ticket #${sale.id.substring(sale.id.length - 6).toUpperCase()}',
@@ -46,107 +51,158 @@ class ReceiptScreen extends StatelessWidget {
             ).animate().fadeIn(delay: 200.ms),
             const SizedBox(height: 24),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(AppRadius.lg),
-                    boxShadow: AppShadows.card,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Center(
-                        child: Column(
-                          children: [
-                            Text('Sou9ix',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleLarge
-                                    ?.copyWith(color: AppColors.teal)),
-                            const SizedBox(height: 2),
-                            Text('Épicerie El Baraka — La Marsa',
-                                style: Theme.of(context).textTheme.bodyMedium),
-                            Text(dateStr, style: Theme.of(context).textTheme.bodyMedium),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      const _DashedDivider(),
-                      const SizedBox(height: 12),
-                      if (sale.lignes.isEmpty)
-                        Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          child: Text('Détails de vente indisponibles pour cette démo.',
-                              style: Theme.of(context).textTheme.bodyMedium),
-                        )
-                      else
-                        ...sale.lignes.map((l) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 5),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    flex: 3,
-                                    child: Text(l.product.name,
-                                        style: Theme.of(context).textTheme.bodyLarge),
+              child:
+                  SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(AppRadius.lg),
+                            boxShadow: AppShadows.card,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              Center(
+                                child: Column(
+                                  children: [
+                                    Text(
+                                      'Sou9ix',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleLarge
+                                          ?.copyWith(color: AppColors.teal),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Épicerie El Baraka — La Marsa',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium,
+                                    ),
+                                    Text(
+                                      dateStr,
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 16),
+                              const _DashedDivider(),
+                              const SizedBox(height: 12),
+                              if (sale.lignes.isEmpty)
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 8,
                                   ),
-                                  Expanded(
-                                    flex: 2,
-                                    child: Text(
-                                      l.product.venduAuPoids
-                                          ? AppFormat.kg(l.quantite)
-                                          : '× ${l.quantite.toInt()}',
-                                      textAlign: TextAlign.center,
-                                      style: Theme.of(context).textTheme.bodyMedium,
+                                  child: Text(
+                                    'Détails de vente indisponibles pour cette démo.',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium,
+                                  ),
+                                )
+                              else
+                                ...sale.lignes.map(
+                                  (l) => Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 5,
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          flex: 3,
+                                          child: Text(
+                                            l.product.name,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodyLarge,
+                                          ),
+                                        ),
+                                        Expanded(
+                                          flex: 2,
+                                          child: Text(
+                                            l.product.venduAuPoids
+                                                ? AppFormat.kg(l.quantite)
+                                                : '× ${l.quantite.toInt()}',
+                                            textAlign: TextAlign.center,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.bodyMedium,
+                                          ),
+                                        ),
+                                        Expanded(
+                                          flex: 2,
+                                          child: Text(
+                                            AppFormat.dtShort(l.sousTotal),
+                                            textAlign: TextAlign.right,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  Expanded(
-                                    flex: 2,
-                                    child: Text(
-                                      AppFormat.dtShort(l.sousTotal),
-                                      textAlign: TextAlign.right,
-                                      style: const TextStyle(fontWeight: FontWeight.w700),
+                                ),
+                              const SizedBox(height: 8),
+                              const _DashedDivider(),
+                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Mode de paiement',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium,
+                                  ),
+                                  Text(
+                                    sale.modePaiement.label,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                 ],
                               ),
-                            )),
-                      const SizedBox(height: 8),
-                      const _DashedDivider(),
-                      const SizedBox(height: 12),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Mode de paiement', style: Theme.of(context).textTheme.bodyMedium),
-                          Text(sale.modePaiement.label,
-                              style: const TextStyle(fontWeight: FontWeight.w700)),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text('Total TTC', style: Theme.of(context).textTheme.titleMedium),
-                          Text(AppFormat.dt(sale.total),
-                              style: Theme.of(context).textTheme.headlineMedium),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Center(
-                        child: Text(
-                          'Merci de votre visite !',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(fontStyle: FontStyle.italic),
+                              const SizedBox(height: 6),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Total TTC',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.titleMedium,
+                                  ),
+                                  Text(
+                                    AppFormat.dt(sale.total),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.headlineMedium,
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Center(
+                                child: Text(
+                                  'Merci de votre visite !',
+                                  style: Theme.of(context).textTheme.bodyMedium
+                                      ?.copyWith(fontStyle: FontStyle.italic),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ).animate().fadeIn(delay: 250.ms, duration: 350.ms).slideY(begin: 0.06, end: 0),
+                      )
+                      .animate()
+                      .fadeIn(delay: 250.ms, duration: 350.ms)
+                      .slideY(begin: 0.06, end: 0),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
@@ -156,7 +212,11 @@ class ReceiptScreen extends StatelessWidget {
                     child: OutlinedButton.icon(
                       onPressed: () {
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Impression envoyée (ESC/POS Bluetooth)')),
+                          const SnackBar(
+                            content: Text(
+                              'Impression envoyée (ESC/POS Bluetooth)',
+                            ),
+                          ),
                         );
                       },
                       icon: const Icon(Icons.print_outlined),
@@ -202,7 +262,11 @@ class _DashedDivider extends StatelessWidget {
             children: List.generate(
               count,
               (_) => Expanded(
-                child: Container(height: 1, color: AppColors.border, margin: const EdgeInsets.only(right: 4)),
+                child: Container(
+                  height: 1,
+                  color: AppColors.border,
+                  margin: const EdgeInsets.only(right: 4),
+                ),
               ),
             ),
           );

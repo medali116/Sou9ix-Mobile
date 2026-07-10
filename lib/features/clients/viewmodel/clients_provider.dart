@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:sou9ix/features/activity/model/activity_log_entry.dart';
+import 'package:sou9ix/features/activity/viewmodel/activity_log_provider.dart';
+import 'package:sou9ix/features/activity/viewmodel/trash_provider.dart';
 import 'package:sou9ix/features/clients/model/client.dart';
 import 'package:sou9ix/features/sales/model/sale.dart';
 
@@ -36,7 +39,12 @@ List<Client> _buildMockClients() => [
 ];
 
 class ClientsNotifier extends StateNotifier<List<Client>> {
-  ClientsNotifier() : super(_buildMockClients());
+  ClientsNotifier(this._ref) : super(_buildMockClients());
+
+  final Ref _ref;
+
+  /// Brings a client back from the Corbeille.
+  void restore(Client client) => state = [...state, client];
 
   /// Registers a new client on the fly (e.g. from the checkout screen when
   /// a credit customer isn't in the karné yet) and returns it so the caller
@@ -50,6 +58,13 @@ class ClientsNotifier extends StateNotifier<List<Client>> {
       dernierAchat: DateTime.now(),
     );
     state = [...state, client];
+    logActivity(
+      _ref,
+      category: ActivityCategory.clients,
+      impact: ActivityImpact.ajout,
+      action: 'Nouveau client',
+      targetName: client.nom,
+    );
     return client;
   }
 
@@ -132,6 +147,16 @@ class ClientsNotifier extends StateNotifier<List<Client>> {
         else
           c,
     ];
+    final client = state.where((c) => c.id == clientId);
+    logActivity(
+      _ref,
+      category: ActivityCategory.clients,
+      impact: ActivityImpact.paiement,
+      action: 'Paiement client',
+      targetName: client.isEmpty ? null : client.first.nom,
+      montant: montant,
+      motif: notes,
+    );
   }
 
   List<PaymentAllocation> _allocateFifo(
@@ -167,6 +192,8 @@ class ClientsNotifier extends StateNotifier<List<Client>> {
     String? notes,
     double? limiteCredit,
   }) {
+    final matches = state.where((c) => c.id == id);
+    final old = matches.isEmpty ? null : matches.first;
     state = [
       for (final c in state)
         if (c.id == id)
@@ -180,14 +207,65 @@ class ClientsNotifier extends StateNotifier<List<Client>> {
         else
           c,
     ];
+    if (old != null) {
+      if (old.nom != nom) {
+        logActivity(
+          _ref,
+          category: ActivityCategory.clients,
+          impact: ActivityImpact.modification,
+          action: 'Client modifié',
+          targetName: nom,
+          champ: 'Nom',
+          ancienneValeur: old.nom,
+          nouvelleValeur: nom,
+        );
+      }
+      if (old.telephone != telephone) {
+        logActivity(
+          _ref,
+          category: ActivityCategory.clients,
+          impact: ActivityImpact.modification,
+          action: 'Client modifié',
+          targetName: nom,
+          champ: 'Téléphone',
+          ancienneValeur: old.telephone,
+          nouvelleValeur: telephone,
+        );
+      }
+      if (old.adresse != adresse) {
+        logActivity(
+          _ref,
+          category: ActivityCategory.clients,
+          impact: ActivityImpact.modification,
+          action: 'Client modifié',
+          targetName: nom,
+          champ: 'Adresse',
+          ancienneValeur: old.adresse ?? '—',
+          nouvelleValeur: adresse ?? '—',
+        );
+      }
+    }
   }
 
-  void removeClient(String id) =>
-      state = state.where((c) => c.id != id).toList();
+  void removeClient(String id) {
+    final matches = state.where((c) => c.id == id);
+    final client = matches.isEmpty ? null : matches.first;
+    state = state.where((c) => c.id != id).toList();
+    if (client != null) {
+      _ref.read(clientsTrashProvider.notifier).add(client);
+      logActivity(
+        _ref,
+        category: ActivityCategory.clients,
+        impact: ActivityImpact.suppression,
+        action: 'Client supprimé',
+        targetName: client.nom,
+      );
+    }
+  }
 }
 
 final clientsProvider = StateNotifierProvider<ClientsNotifier, List<Client>>(
-  (ref) => ClientsNotifier(),
+  (ref) => ClientsNotifier(ref),
 );
 
 final totalCreditProvider = Provider<double>((ref) {

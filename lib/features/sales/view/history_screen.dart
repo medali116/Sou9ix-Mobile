@@ -786,31 +786,55 @@ class _SaleTile extends ConsumerWidget {
   }
 
   Future<void> _confirmCancel(BuildContext context, WidgetRef ref) async {
+    final motifCtrl = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Annuler cette vente ?'),
-        content: const Text(
-          'Le stock des articles vendus sera restitué et le crédit client (si applicable) annulé. Cette action est irréversible.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Retour'),
+      builder: (_) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('Annuler cette vente ?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Le stock des articles vendus sera restitué et le crédit client (si applicable) annulé. Cette action est irréversible.',
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: motifCtrl,
+                autofocus: true,
+                onChanged: (_) => setDialogState(() {}),
+                decoration: const InputDecoration(
+                  labelText: 'Motif (obligatoire)',
+                  prefixIcon: Icon(Icons.edit_note_rounded),
+                  hintText: 'Ex. Erreur de saisie',
+                ),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Annuler la vente',
-              style: TextStyle(color: AppColors.danger),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Retour'),
             ),
-          ),
-        ],
+            TextButton(
+              onPressed: motifCtrl.text.trim().isEmpty
+                  ? null
+                  : () => Navigator.pop(dialogContext, true),
+              child: const Text(
+                'Annuler la vente',
+                style: TextStyle(color: AppColors.danger),
+              ),
+            ),
+          ],
+        ),
       ),
     );
     if (confirmed != true) return;
 
-    ref.read(saleServiceProvider).deleteSale(sale);
+    ref
+        .read(saleServiceProvider)
+        .deleteSale(sale, motif: motifCtrl.text.trim());
   }
 
   @override

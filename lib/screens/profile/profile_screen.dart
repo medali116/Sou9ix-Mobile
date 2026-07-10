@@ -46,7 +46,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   child: Text(
                     user?.initiales ?? '',
                     style: const TextStyle(
-                        color: Colors.white, fontWeight: FontWeight.w800, fontSize: 20),
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 20,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -54,15 +57,28 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(user?.nom ?? '',
-                          style: const TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.w800, fontSize: 17)),
+                      Text(
+                        user?.nom ?? '',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 17,
+                        ),
+                      ),
                       const SizedBox(height: 2),
-                      Text(user?.email ?? '',
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 12.5)),
+                      Text(
+                        user?.email ?? '',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 12.5,
+                        ),
+                      ),
                       const SizedBox(height: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white.withValues(alpha: 0.18),
                           borderRadius: BorderRadius.circular(100),
@@ -70,7 +86,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                         child: Text(
                           isAdmin ? 'Administrateur' : 'Caissier',
                           style: const TextStyle(
-                              color: Colors.white, fontWeight: FontWeight.w700, fontSize: 11),
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 11,
+                          ),
                         ),
                       ),
                     ],
@@ -151,8 +170,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           const SizedBox(height: 24),
           Text('Assistance', style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 12),
-          _MenuTile(icon: Icons.help_outline_rounded, label: 'Centre d\'aide', onTap: () {}),
-          _MenuTile(icon: Icons.info_outline_rounded, label: 'À propos de Sou9ix', onTap: () {}),
+          _MenuTile(
+            icon: Icons.help_outline_rounded,
+            label: 'Centre d\'aide',
+            onTap: () {},
+          ),
+          _MenuTile(
+            icon: Icons.info_outline_rounded,
+            label: 'À propos de Sou9ix',
+            onTap: () {},
+          ),
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
@@ -162,11 +189,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 context.go('/login');
               },
               icon: const Icon(Icons.logout_rounded, color: AppColors.danger),
-              label: const Text('Se déconnecter', style: TextStyle(color: AppColors.danger)),
+              label: const Text(
+                'Se déconnecter',
+                style: TextStyle(color: AppColors.danger),
+              ),
               style: OutlinedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 side: const BorderSide(color: AppColors.danger),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
               ),
             ),
           ),
@@ -181,7 +213,11 @@ class _MenuTile extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
 
-  const _MenuTile({required this.icon, required this.label, required this.onTap});
+  const _MenuTile({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -208,8 +244,17 @@ class _MenuTile extends StatelessWidget {
                 child: Icon(icon, size: 19, color: AppColors.textPrimary),
               ),
               const SizedBox(width: 14),
-              Expanded(child: Text(label, style: Theme.of(context).textTheme.bodyLarge)),
-              const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textFaint),
+              Expanded(
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 14,
+                color: AppColors.textFaint,
+              ),
             ],
           ),
         ),
@@ -256,7 +301,10 @@ class _SwitchTile extends StatelessWidget {
             child: Icon(icon, size: 19, color: AppColors.textPrimary),
           ),
           title: Text(label, style: Theme.of(context).textTheme.bodyLarge),
-          subtitle: Text(subtitle, style: Theme.of(context).textTheme.bodyMedium),
+          subtitle: Text(
+            subtitle,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
           value: value,
           activeThumbColor: AppColors.teal,
           onChanged: onChanged,

@@ -8,7 +8,11 @@ class ShiftsNotifier extends StateNotifier<List<Shift>> {
   void clockIn(String employeeId) {
     if (state.any((s) => s.employeeId == employeeId && s.enCours)) return;
     state = [
-      Shift(id: 'sh${DateTime.now().microsecondsSinceEpoch}', employeeId: employeeId, clockIn: DateTime.now()),
+      Shift(
+        id: 'sh${DateTime.now().microsecondsSinceEpoch}',
+        employeeId: employeeId,
+        clockIn: DateTime.now(),
+      ),
       ...state,
     ];
   }
@@ -17,7 +21,12 @@ class ShiftsNotifier extends StateNotifier<List<Shift>> {
     state = [
       for (final s in state)
         if (s.employeeId == employeeId && s.enCours)
-          Shift(id: s.id, employeeId: s.employeeId, clockIn: s.clockIn, clockOut: DateTime.now())
+          Shift(
+            id: s.id,
+            employeeId: s.employeeId,
+            clockIn: s.clockIn,
+            clockOut: DateTime.now(),
+          )
         else
           s,
     ];
@@ -32,8 +41,14 @@ final openShiftsProvider = Provider<List<Shift>>((ref) {
   return ref.watch(shiftsProvider).where((s) => s.enCours).toList();
 });
 
-final shiftsForEmployeeProvider = Provider.family<List<Shift>, String>((ref, employeeId) {
-  return ref.watch(shiftsProvider).where((s) => s.employeeId == employeeId).toList();
+final shiftsForEmployeeProvider = Provider.family<List<Shift>, String>((
+  ref,
+  employeeId,
+) {
+  return ref
+      .watch(shiftsProvider)
+      .where((s) => s.employeeId == employeeId)
+      .toList();
 });
 
 /// Who sales get attributed to right now — set on clock-in, cleared on

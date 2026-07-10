@@ -33,7 +33,11 @@ class SectionHeader extends StatelessWidget {
                     fontSize: 13,
                   ),
                 ),
-                const Icon(Icons.arrow_forward_ios_rounded, size: 12, color: AppColors.teal),
+                const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 12,
+                  color: AppColors.teal,
+                ),
               ],
             ),
           ),

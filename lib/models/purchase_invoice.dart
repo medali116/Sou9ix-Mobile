@@ -25,16 +25,17 @@ class PurchaseInvoice {
   });
 
   double get montantTotal => lignes.fold(0, (sum, l) => sum + l.montant);
-  double get montantRestant => (montantTotal - montantPaye).clamp(0, double.infinity);
+  double get montantRestant =>
+      (montantTotal - montantPaye).clamp(0, double.infinity);
   // Epsilon-compared to absorb floating-point drift from repeated partial payments.
   bool get soldee => montantRestant <= 0.001;
 
   PurchaseInvoice copyWith({double? montantPaye}) => PurchaseInvoice(
-        id: id,
-        date: date,
-        fournisseur: fournisseur,
-        photoBytes: photoBytes,
-        lignes: lignes,
-        montantPaye: montantPaye ?? this.montantPaye,
-      );
+    id: id,
+    date: date,
+    fournisseur: fournisseur,
+    photoBytes: photoBytes,
+    lignes: lignes,
+    montantPaye: montantPaye ?? this.montantPaye,
+  );
 }

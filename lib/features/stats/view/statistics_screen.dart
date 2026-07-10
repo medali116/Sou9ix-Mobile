@@ -61,7 +61,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       duration: const Duration(milliseconds: 220),
                       padding: const EdgeInsets.symmetric(vertical: 11),
                       decoration: BoxDecoration(
-                        color: selected ? AppColors.surface : Colors.transparent,
+                        color: selected
+                            ? AppColors.surface
+                            : Colors.transparent,
                         borderRadius: BorderRadius.circular(AppRadius.sm),
                         boxShadow: selected ? AppShadows.card : null,
                       ),
@@ -71,7 +73,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 13,
-                          color: selected ? AppColors.teal : AppColors.textSecondary,
+                          color: selected
+                              ? AppColors.teal
+                              : AppColors.textSecondary,
                         ),
                       ),
                     ),
@@ -101,7 +105,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             ],
           ),
           const SizedBox(height: 26),
-          Text('Répartition par catégorie', style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            'Répartition par catégorie',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(20),
@@ -120,12 +127,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       sectionsSpace: 3,
                       centerSpaceRadius: 34,
                       sections: _categoryBreakdown
-                          .map((c) => PieChartSectionData(
-                                value: c.value,
-                                color: c.color,
-                                title: '',
-                                radius: 20,
-                              ))
+                          .map(
+                            (c) => PieChartSectionData(
+                              value: c.value,
+                              color: c.color,
+                              title: '',
+                              radius: 20,
+                            ),
+                          )
                           .toList(),
                     ),
                   ),
@@ -135,26 +144,38 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: _categoryBreakdown
-                        .map((c) => Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 5),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 9,
-                                    height: 9,
-                                    decoration: BoxDecoration(
-                                        color: c.color, shape: BoxShape.circle),
+                        .map(
+                          (c) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 5),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 9,
+                                  height: 9,
+                                  decoration: BoxDecoration(
+                                    color: c.color,
+                                    shape: BoxShape.circle,
                                   ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: Text(c.label,
-                                        style: Theme.of(context).textTheme.bodyLarge),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    c.label,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyLarge,
                                   ),
-                                  Text('${c.value.toInt()}%',
-                                      style: const TextStyle(fontWeight: FontWeight.w800)),
-                                ],
-                              ),
-                            ))
+                                ),
+                                Text(
+                                  '${c.value.toInt()}%',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
                         .toList(),
                   ),
                 ),
@@ -162,49 +183,58 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             ),
           ).animate().fadeIn(duration: 380.ms).slideY(begin: 0.05, end: 0),
           const SizedBox(height: 26),
-          Text('Historique des recettes', style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            'Historique des recettes',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
           const SizedBox(height: 16),
           Container(
-            height: 180,
-            padding: const EdgeInsets.fromLTRB(8, 20, 20, 8),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-              boxShadow: AppShadows.card,
-            ),
-            child: LineChart(
-              LineChartData(
-                gridData: const FlGridData(show: false),
-                borderData: FlBorderData(show: false),
-                titlesData: const FlTitlesData(show: false),
-                lineTouchData: const LineTouchData(enabled: true),
-                minY: 0,
-                lineBarsData: [
-                  LineChartBarData(
-                    isCurved: true,
-                    color: AppColors.teal,
-                    barWidth: 3,
-                    dotData: const FlDotData(show: false),
-                    belowBarData: BarAreaData(
-                      show: true,
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          AppColors.teal.withValues(alpha: 0.22),
-                          AppColors.teal.withValues(alpha: 0.0),
-                        ],
+                height: 180,
+                padding: const EdgeInsets.fromLTRB(8, 20, 20, 8),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  boxShadow: AppShadows.card,
+                ),
+                child: LineChart(
+                  LineChartData(
+                    gridData: const FlGridData(show: false),
+                    borderData: FlBorderData(show: false),
+                    titlesData: const FlTitlesData(show: false),
+                    lineTouchData: const LineTouchData(enabled: true),
+                    minY: 0,
+                    lineBarsData: [
+                      LineChartBarData(
+                        isCurved: true,
+                        color: AppColors.teal,
+                        barWidth: 3,
+                        dotData: const FlDotData(show: false),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              AppColors.teal.withValues(alpha: 0.22),
+                              AppColors.teal.withValues(alpha: 0.0),
+                            ],
+                          ),
+                        ),
+                        spots: List.generate(
+                          DashboardMock.weeklyRevenue.length,
+                          (i) => FlSpot(
+                            i.toDouble(),
+                            DashboardMock.weeklyRevenue[i],
+                          ),
+                        ),
                       ),
-                    ),
-                    spots: List.generate(
-                      DashboardMock.weeklyRevenue.length,
-                      (i) => FlSpot(i.toDouble(), DashboardMock.weeklyRevenue[i]),
-                    ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          ).animate().fadeIn(duration: 380.ms, delay: 100.ms).slideY(begin: 0.05, end: 0),
+                ),
+              )
+              .animate()
+              .fadeIn(duration: 380.ms, delay: 100.ms)
+              .slideY(begin: 0.05, end: 0),
         ],
       ),
     );
@@ -216,7 +246,11 @@ class _MiniStat extends StatelessWidget {
   final String value;
   final Color color;
 
-  const _MiniStat({required this.label, required this.value, required this.color});
+  const _MiniStat({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {

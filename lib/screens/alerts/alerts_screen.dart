@@ -32,7 +32,11 @@ class AlertsScreen extends ConsumerWidget {
     final unsettled = ref.watch(unsettledInvoicesProvider);
     final warningDays = ref.watch(expiryWarningDaysProvider);
 
-    final hasAny = lowStock.isNotEmpty || expiringSoon.isNotEmpty || expired.isNotEmpty || unsettled.isNotEmpty;
+    final hasAny =
+        lowStock.isNotEmpty ||
+        expiringSoon.isNotEmpty ||
+        expired.isNotEmpty ||
+        unsettled.isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Alertes')),
@@ -40,13 +44,17 @@ class AlertsScreen extends ConsumerWidget {
           ? const EmptyState(
               icon: Icons.notifications_off_outlined,
               title: 'Tout est en ordre',
-              message: 'Aucune alerte de stock, de péremption\nou de facture en attente.',
+              message:
+                  'Aucune alerte de stock, de péremption\nou de facture en attente.',
             )
           : ListView(
               padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(AppRadius.md),
@@ -55,21 +63,39 @@ class AlertsScreen extends ConsumerWidget {
                   child: Row(
                     children: [
                       const Expanded(
-                        child: Text('Alerter avant péremption (jours)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12.5)),
+                        child: Text(
+                          'Alerter avant péremption (jours)',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12.5,
+                          ),
+                        ),
                       ),
                       _StepperButton(
                         icon: Icons.remove_rounded,
                         onTap: warningDays > 1
-                            ? () => ref.read(expiryWarningDaysProvider.notifier).state = warningDays - 1
+                            ? () =>
+                                  ref
+                                          .read(
+                                            expiryWarningDaysProvider.notifier,
+                                          )
+                                          .state =
+                                      warningDays - 1
                             : null,
                       ),
                       SizedBox(
                         width: 28,
-                        child: Text('$warningDays', textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w800)),
+                        child: Text(
+                          '$warningDays',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
                       ),
                       _StepperButton(
                         icon: Icons.add_rounded,
-                        onTap: () => ref.read(expiryWarningDaysProvider.notifier).state = warningDays + 1,
+                        onTap: () =>
+                            ref.read(expiryWarningDaysProvider.notifier).state =
+                                warningDays + 1,
                       ),
                     ],
                   ),
@@ -126,13 +152,25 @@ class _ProductAlertTile extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  ProductAvatar(emoji: product.emoji, photoBytes: product.photoBytes, size: 32),
+                  ProductAvatar(
+                    emoji: product.emoji,
+                    photoBytes: product.photoBytes,
+                    size: 32,
+                  ),
                   const SizedBox(width: 10),
-                  Expanded(child: Text(product.name, style: Theme.of(context).textTheme.titleMedium)),
+                  Expanded(
+                    child: Text(
+                      product.name,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
                   if (product.datePeremption != null)
                     Text(
                       DateFormat('dd/MM/yyyy').format(product.datePeremption!),
-                      style: const TextStyle(fontSize: 11, color: AppColors.textFaint),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textFaint,
+                      ),
                     ),
                 ],
               ),
@@ -171,14 +209,23 @@ class _InvoiceAlertTile extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(invoice.fournisseur ?? 'Fournisseur non précisé', style: Theme.of(context).textTheme.titleMedium),
-                    Text(DateFormat('dd/MM/yyyy').format(invoice.date), style: Theme.of(context).textTheme.bodyMedium),
+                    Text(
+                      invoice.fournisseur ?? 'Fournisseur non précisé',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    Text(
+                      DateFormat('dd/MM/yyyy').format(invoice.date),
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
                   ],
                 ),
               ),
               Text(
                 'Reste ${AppFormat.dtShort(invoice.montantRestant)}',
-                style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.warning),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.warning,
+                ),
               ),
             ],
           ),
@@ -201,10 +248,16 @@ class _StepperButton extends StatelessWidget {
         width: 28,
         height: 28,
         decoration: BoxDecoration(
-          color: onTap == null ? AppColors.surfaceMuted.withValues(alpha: 0.5) : AppColors.surfaceMuted,
+          color: onTap == null
+              ? AppColors.surfaceMuted.withValues(alpha: 0.5)
+              : AppColors.surfaceMuted,
           borderRadius: BorderRadius.circular(8),
         ),
-        child: Icon(icon, size: 15, color: onTap == null ? AppColors.textFaint : AppColors.textPrimary),
+        child: Icon(
+          icon,
+          size: 15,
+          color: onTap == null ? AppColors.textFaint : AppColors.textPrimary,
+        ),
       ),
     );
   }

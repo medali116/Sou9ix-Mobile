@@ -1,10 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:sou9ix/features/activity/model/activity_log_entry.dart';
+import 'package:sou9ix/features/activity/viewmodel/activity_log_provider.dart';
 import 'package:sou9ix/features/stock/model/purchase_invoice.dart';
 import 'package:sou9ix/features/stock/model/purchase_invoice_line.dart';
 
 class PurchaseInvoicesNotifier extends StateNotifier<List<PurchaseInvoice>> {
-  PurchaseInvoicesNotifier() : super(_seed());
+  PurchaseInvoicesNotifier(this._ref) : super(_seed());
+
+  final Ref _ref;
 
   static List<PurchaseInvoice> _seed() {
     final now = DateTime.now();
@@ -97,12 +101,21 @@ class PurchaseInvoicesNotifier extends StateNotifier<List<PurchaseInvoice>> {
         else
           i,
     ];
+    final matches = state.where((i) => i.id == invoiceId);
+    logActivity(
+      _ref,
+      category: ActivityCategory.fournisseurs,
+      impact: ActivityImpact.paiement,
+      action: 'Paiement fournisseur',
+      targetName: matches.isEmpty ? null : matches.first.fournisseurNom,
+      montant: montant,
+    );
   }
 }
 
 final purchaseInvoicesProvider =
     StateNotifierProvider<PurchaseInvoicesNotifier, List<PurchaseInvoice>>(
-      (ref) => PurchaseInvoicesNotifier(),
+      (ref) => PurchaseInvoicesNotifier(ref),
     );
 
 final totalUnpaidPurchasesProvider = Provider<double>((ref) {

@@ -1,9 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:sou9ix/features/activity/model/activity_log_entry.dart';
+import 'package:sou9ix/features/activity/viewmodel/activity_log_provider.dart';
 import 'package:sou9ix/features/suppliers/model/supplier.dart';
 
 class SuppliersNotifier extends StateNotifier<List<Supplier>> {
-  SuppliersNotifier() : super(_seed());
+  SuppliersNotifier(this._ref) : super(_seed());
+
+  final Ref _ref;
 
   static List<Supplier> _seed() => const [
     Supplier(
@@ -23,12 +27,56 @@ class SuppliersNotifier extends StateNotifier<List<Supplier>> {
   void upsert(Supplier supplier) {
     final exists = state.any((s) => s.id == supplier.id);
     if (exists) {
+      final old = state.firstWhere((s) => s.id == supplier.id);
+      if (old.nom != supplier.nom) {
+        logActivity(
+          _ref,
+          category: ActivityCategory.fournisseurs,
+          impact: ActivityImpact.modification,
+          action: 'Fournisseur modifié',
+          targetName: supplier.nom,
+          champ: 'Nom',
+          ancienneValeur: old.nom,
+          nouvelleValeur: supplier.nom,
+        );
+      }
+      if (old.telephone != supplier.telephone) {
+        logActivity(
+          _ref,
+          category: ActivityCategory.fournisseurs,
+          impact: ActivityImpact.modification,
+          action: 'Fournisseur modifié',
+          targetName: supplier.nom,
+          champ: 'Téléphone',
+          ancienneValeur: old.telephone,
+          nouvelleValeur: supplier.telephone,
+        );
+      }
+      if (old.adresse != supplier.adresse) {
+        logActivity(
+          _ref,
+          category: ActivityCategory.fournisseurs,
+          impact: ActivityImpact.modification,
+          action: 'Fournisseur modifié',
+          targetName: supplier.nom,
+          champ: 'Adresse',
+          ancienneValeur: old.adresse,
+          nouvelleValeur: supplier.adresse,
+        );
+      }
       state = [
         for (final s in state)
           if (s.id == supplier.id) supplier else s,
       ];
     } else {
       state = [...state, supplier];
+      logActivity(
+        _ref,
+        category: ActivityCategory.fournisseurs,
+        impact: ActivityImpact.ajout,
+        action: 'Nouveau fournisseur',
+        targetName: supplier.nom,
+      );
     }
   }
 
@@ -39,5 +87,5 @@ class SuppliersNotifier extends StateNotifier<List<Supplier>> {
 
 final suppliersProvider =
     StateNotifierProvider<SuppliersNotifier, List<Supplier>>(
-      (ref) => SuppliersNotifier(),
+      (ref) => SuppliersNotifier(ref),
     );

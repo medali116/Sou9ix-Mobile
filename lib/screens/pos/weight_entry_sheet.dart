@@ -17,7 +17,11 @@ class WeightEntrySheet extends StatefulWidget {
 
   const WeightEntrySheet({super.key, required this.product, this.initialKg});
 
-  static Future<double?> show(BuildContext context, Product product, {double? initialKg}) {
+  static Future<double?> show(
+    BuildContext context,
+    Product product, {
+    double? initialKg,
+  }) {
     return showModalBottomSheet<double>(
       context: context,
       isScrollControlled: true,
@@ -49,7 +53,9 @@ class _WeightEntrySheetState extends State<WeightEntrySheet> {
   void _tapKey(String key) {
     setState(() {
       if (key == 'back') {
-        _input = _input.length > 1 ? _input.substring(0, _input.length - 1) : '0';
+        _input = _input.length > 1
+            ? _input.substring(0, _input.length - 1)
+            : '0';
         return;
       }
       if (key == '.') {
@@ -69,7 +75,9 @@ class _WeightEntrySheetState extends State<WeightEntrySheet> {
   Widget build(BuildContext context) {
     final product = widget.product;
     return Container(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       decoration: const BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
@@ -82,13 +90,20 @@ class _WeightEntrySheetState extends State<WeightEntrySheet> {
             padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
             child: Row(
               children: [
-                ProductAvatar(emoji: product.emoji, photoBytes: product.photoBytes, size: 44),
+                ProductAvatar(
+                  emoji: product.emoji,
+                  photoBytes: product.photoBytes,
+                  size: 44,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(product.name, style: Theme.of(context).textTheme.titleMedium),
+                      Text(
+                        product.name,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
                       Text(
                         '${AppFormat.dtShort(product.prixVente)} / kg',
                         style: Theme.of(context).textTheme.bodyMedium,
@@ -136,7 +151,10 @@ class _WeightEntrySheetState extends State<WeightEntrySheet> {
                   duration: const Duration(milliseconds: 200),
                   child: Container(
                     key: ValueKey(_montant),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(100),
@@ -185,7 +203,20 @@ class _NumPad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'back'];
+    const keys = [
+      '1',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+      '8',
+      '9',
+      '.',
+      '0',
+      'back',
+    ];
     return GridView.count(
       crossAxisCount: 3,
       shrinkWrap: true,
@@ -203,10 +234,17 @@ class _NumPad extends StatelessWidget {
             ),
             alignment: Alignment.center,
             child: k == 'back'
-                ? const Icon(Icons.backspace_outlined, size: 19, color: AppColors.textPrimary)
+                ? const Icon(
+                    Icons.backspace_outlined,
+                    size: 19,
+                    color: AppColors.textPrimary,
+                  )
                 : Text(
                     k,
-                    style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
           ),
         );

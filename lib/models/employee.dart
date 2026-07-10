@@ -18,14 +18,20 @@ class Employee {
   String get initiales {
     final parts = nom.trim().split(RegExp(r'\s+'));
     if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-    return (parts.first.substring(0, 1) + parts.last.substring(0, 1)).toUpperCase();
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
+        .toUpperCase();
   }
 
-  Employee copyWith({String? nom, String? telephone, String? poste, bool? actif}) => Employee(
-        id: id,
-        nom: nom ?? this.nom,
-        telephone: telephone ?? this.telephone,
-        poste: poste ?? this.poste,
-        actif: actif ?? this.actif,
-      );
+  Employee copyWith({
+    String? nom,
+    String? telephone,
+    String? poste,
+    bool? actif,
+  }) => Employee(
+    id: id,
+    nom: nom ?? this.nom,
+    telephone: telephone ?? this.telephone,
+    poste: poste ?? this.poste,
+    actif: actif ?? this.actif,
+  );
 }

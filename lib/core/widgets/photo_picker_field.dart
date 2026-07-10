@@ -34,7 +34,10 @@ class PhotoPickerField extends StatelessWidget {
       builder: (_) => const _PhotoSourceSheet(),
     );
     if (source == null) return;
-    final file = await ImagePicker().pickImage(source: source, imageQuality: 80);
+    final file = await ImagePicker().pickImage(
+      source: source,
+      imageQuality: 80,
+    );
     if (file == null) return;
     final bytes = await file.readAsBytes();
     onChanged(bytes);
@@ -61,7 +64,10 @@ class PhotoPickerField extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     placeholderLabel,
-                    style: const TextStyle(color: AppColors.textFaint, fontSize: 12.5),
+                    style: const TextStyle(
+                      color: AppColors.textFaint,
+                      fontSize: 12.5,
+                    ),
                   ),
                 ],
               )
@@ -80,7 +86,11 @@ class PhotoPickerField extends StatelessWidget {
                         onTap: () => onChanged(null),
                         child: const Padding(
                           padding: EdgeInsets.all(6),
-                          child: Icon(Icons.close_rounded, color: Colors.white, size: 16),
+                          child: Icon(
+                            Icons.close_rounded,
+                            color: Colors.white,
+                            size: 16,
+                          ),
                         ),
                       ),
                     ),
@@ -109,12 +119,18 @@ class _PhotoSourceSheet extends StatelessWidget {
           const SheetHandle(),
           const SizedBox(height: 8),
           ListTile(
-            leading: const Icon(Icons.photo_camera_outlined, color: AppColors.teal),
+            leading: const Icon(
+              Icons.photo_camera_outlined,
+              color: AppColors.teal,
+            ),
             title: const Text('Prendre une photo'),
             onTap: () => Navigator.pop(context, ImageSource.camera),
           ),
           ListTile(
-            leading: const Icon(Icons.photo_library_outlined, color: AppColors.teal),
+            leading: const Icon(
+              Icons.photo_library_outlined,
+              color: AppColors.teal,
+            ),
             title: const Text('Choisir depuis la galerie'),
             onTap: () => Navigator.pop(context, ImageSource.gallery),
           ),

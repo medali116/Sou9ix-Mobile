@@ -14,7 +14,10 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
       final item = state[index];
       state = [
         for (var i = 0; i < state.length; i++)
-          if (i == index) item.copyWith(quantite: item.quantite + 1) else state[i],
+          if (i == index)
+            item.copyWith(quantite: item.quantite + 1)
+          else
+            state[i],
       ];
     }
   }

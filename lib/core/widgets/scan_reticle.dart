@@ -8,7 +8,12 @@ class ScanCornerMarks extends StatelessWidget {
   final double size;
   final double thickness;
 
-  const ScanCornerMarks({super.key, this.color = AppColors.gold, this.size = 26, this.thickness = 5});
+  const ScanCornerMarks({
+    super.key,
+    this.color = AppColors.gold,
+    this.size = 26,
+    this.thickness = 5,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -26,10 +31,18 @@ class ScanCornerMarks extends StatelessWidget {
             height: size,
             decoration: BoxDecoration(
               border: Border(
-                top: isTop ? BorderSide(color: color, width: thickness) : BorderSide.none,
-                bottom: !isTop ? BorderSide(color: color, width: thickness) : BorderSide.none,
-                left: isLeft ? BorderSide(color: color, width: thickness) : BorderSide.none,
-                right: !isLeft ? BorderSide(color: color, width: thickness) : BorderSide.none,
+                top: isTop
+                    ? BorderSide(color: color, width: thickness)
+                    : BorderSide.none,
+                bottom: !isTop
+                    ? BorderSide(color: color, width: thickness)
+                    : BorderSide.none,
+                left: isLeft
+                    ? BorderSide(color: color, width: thickness)
+                    : BorderSide.none,
+                right: !isLeft
+                    ? BorderSide(color: color, width: thickness)
+                    : BorderSide.none,
               ),
             ),
           ),

@@ -49,7 +49,9 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
   }
 
   void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _submit() async {
@@ -57,7 +59,8 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
       _showError('Ajoutez au moins une ligne à la facture');
       return;
     }
-    final montantPaye = double.tryParse(_montantVerseCtrl.text.replaceAll(',', '.')) ?? 0;
+    final montantPaye =
+        double.tryParse(_montantVerseCtrl.text.replaceAll(',', '.')) ?? 0;
 
     setState(() => _saving = true);
     await Future.delayed(const Duration(milliseconds: 500));
@@ -65,36 +68,46 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
     final invoiceLines = <PurchaseInvoiceLine>[];
     for (final line in _lines) {
       if (line.existingProduct != null) {
-        ref.read(productsProvider.notifier).restock(
+        ref
+            .read(productsProvider.notifier)
+            .restock(
               line.existingProduct!.id,
               line.quantite,
               nouveauPrixAchat: line.prixAchatUnitaire,
             );
-        invoiceLines.add(PurchaseInvoiceLine(
-          productId: line.existingProduct!.id,
-          productName: line.existingProduct!.name,
-          quantite: line.quantite,
-          venduAuPoids: line.venduAuPoids,
-          prixAchatUnitaire: line.prixAchatUnitaire,
-        ));
+        invoiceLines.add(
+          PurchaseInvoiceLine(
+            productId: line.existingProduct!.id,
+            productName: line.existingProduct!.name,
+            quantite: line.quantite,
+            venduAuPoids: line.venduAuPoids,
+            prixAchatUnitaire: line.prixAchatUnitaire,
+          ),
+        );
       } else {
         final product = line.newProductDraft!;
         ref.read(productsProvider.notifier).upsert(product);
-        invoiceLines.add(PurchaseInvoiceLine(
-          productId: product.id,
-          productName: product.name,
-          quantite: line.quantite,
-          venduAuPoids: line.venduAuPoids,
-          prixAchatUnitaire: line.prixAchatUnitaire,
-        ));
+        invoiceLines.add(
+          PurchaseInvoiceLine(
+            productId: product.id,
+            productName: product.name,
+            quantite: line.quantite,
+            venduAuPoids: line.venduAuPoids,
+            prixAchatUnitaire: line.prixAchatUnitaire,
+          ),
+        );
       }
     }
 
-    ref.read(purchaseInvoicesProvider.notifier).add(
+    ref
+        .read(purchaseInvoicesProvider.notifier)
+        .add(
           PurchaseInvoice(
             id: 'ach${DateTime.now().microsecondsSinceEpoch}',
             date: DateTime.now(),
-            fournisseur: _fournisseurCtrl.text.trim().isEmpty ? null : _fournisseurCtrl.text.trim(),
+            fournisseur: _fournisseurCtrl.text.trim().isEmpty
+                ? null
+                : _fournisseurCtrl.text.trim(),
             photoBytes: _invoicePhotoBytes,
             lignes: invoiceLines,
             montantPaye: montantPaye.clamp(0, double.infinity),
@@ -103,7 +116,11 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
 
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Facture enregistrée : ${_lines.length} produit${_lines.length > 1 ? 's' : ''}')),
+      SnackBar(
+        content: Text(
+          'Facture enregistrée : ${_lines.length} produit${_lines.length > 1 ? 's' : ''}',
+        ),
+      ),
     );
     context.pop();
   }
@@ -150,13 +167,20 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
                 ),
                 child: Row(
                   children: [
-                    ProductAvatar(emoji: line.emoji, photoBytes: line.photoBytes, size: 38),
+                    ProductAvatar(
+                      emoji: line.emoji,
+                      photoBytes: line.photoBytes,
+                      size: 38,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(line.productName, style: Theme.of(context).textTheme.titleMedium),
+                          Text(
+                            line.productName,
+                            style: Theme.of(context).textTheme.titleMedium,
+                          ),
                           Text(
                             '${line.quantite.toStringAsFixed(line.venduAuPoids ? 3 : 0)} ${line.venduAuPoids ? 'kg' : 'pcs'} × ${AppFormat.dtShort(line.prixAchatUnitaire)}',
                             style: Theme.of(context).textTheme.bodyMedium,
@@ -164,10 +188,17 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
                         ],
                       ),
                     ),
-                    Text(AppFormat.dtShort(line.montant), style: const TextStyle(fontWeight: FontWeight.w800)),
+                    Text(
+                      AppFormat.dtShort(line.montant),
+                      style: const TextStyle(fontWeight: FontWeight.w800),
+                    ),
                     IconButton(
                       onPressed: () => setState(() => _lines.removeAt(index)),
-                      icon: const Icon(Icons.close_rounded, color: AppColors.danger, size: 18),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: AppColors.danger,
+                        size: 18,
+                      ),
                     ),
                   ],
                 ),
@@ -188,7 +219,13 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
                 children: [
                   Icon(Icons.add_rounded, color: AppColors.teal, size: 18),
                   SizedBox(width: 6),
-                  Text('Ajouter une ligne', style: TextStyle(color: AppColors.teal, fontWeight: FontWeight.w700)),
+                  Text(
+                    'Ajouter une ligne',
+                    style: TextStyle(
+                      color: AppColors.teal,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -204,8 +241,22 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text('TOTAL FACTURE', style: TextStyle(color: AppColors.tealLight, fontWeight: FontWeight.w700, fontSize: 12)),
-                  Text(AppFormat.dt(_total), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18)),
+                  const Text(
+                    'TOTAL FACTURE',
+                    style: TextStyle(
+                      color: AppColors.tealLight,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                    ),
+                  ),
+                  Text(
+                    AppFormat.dt(_total),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -213,7 +264,9 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
           _label('Fournisseur (optionnel)'),
           TextField(
             controller: _fournisseurCtrl,
-            decoration: const InputDecoration(hintText: 'Ex. Grossiste Fruits Secs Sfax'),
+            decoration: const InputDecoration(
+              hintText: 'Ex. Grossiste Fruits Secs Sfax',
+            ),
           ),
           const SizedBox(height: 18),
           _label('Photo de la facture'),
@@ -228,7 +281,9 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
             children: [
               Expanded(
                 child: OutlinedButton(
-                  onPressed: () => setState(() => _montantVerseCtrl.text = _total.toStringAsFixed(3)),
+                  onPressed: () => setState(
+                    () => _montantVerseCtrl.text = _total.toStringAsFixed(3),
+                  ),
                   child: const Text('Payée intégralement'),
                 ),
               ),
@@ -257,7 +312,10 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
                   ? const SizedBox(
                       width: 20,
                       height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2.2, color: Colors.white),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.2,
+                        color: Colors.white,
+                      ),
                     )
                   : const Text('Enregistrer la facture'),
             ),
@@ -268,7 +326,10 @@ class _StockReceiptScreenState extends ConsumerState<StockReceiptScreen> {
   }
 
   Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(text, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-      );
+    padding: const EdgeInsets.only(bottom: 8),
+    child: Text(
+      text,
+      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
+    ),
+  );
 }

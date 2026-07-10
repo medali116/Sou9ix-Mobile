@@ -14,10 +14,10 @@ class Client {
   });
 
   Client copyWith({double? creditTotal}) => Client(
-        id: id,
-        nom: nom,
-        telephone: telephone,
-        creditTotal: creditTotal ?? this.creditTotal,
-        dernierAchat: dernierAchat,
-      );
+    id: id,
+    nom: nom,
+    telephone: telephone,
+    creditTotal: creditTotal ?? this.creditTotal,
+    dernierAchat: dernierAchat,
+  );
 }

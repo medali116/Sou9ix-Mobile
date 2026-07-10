@@ -37,7 +37,10 @@ class SalesNotifier extends StateNotifier<List<Sale>> {
   }
 
   Sale updateSale(Sale updated) {
-    state = [for (final s in state) if (s.id == updated.id) updated else s];
+    state = [
+      for (final s in state)
+        if (s.id == updated.id) updated else s,
+    ];
     return updated;
   }
 
@@ -54,13 +57,21 @@ final todayRevenueProvider = Provider<double>((ref) {
   final sales = ref.watch(salesProvider);
   final now = DateTime.now();
   return sales
-      .where((s) =>
-          s.dateHeure.year == now.year &&
-          s.dateHeure.month == now.month &&
-          s.dateHeure.day == now.day)
+      .where(
+        (s) =>
+            s.dateHeure.year == now.year &&
+            s.dateHeure.month == now.month &&
+            s.dateHeure.day == now.day,
+      )
       .fold(0.0, (sum, s) => sum + s.total);
 });
 
-final employeeSalesProvider = Provider.family<List<Sale>, String>((ref, employeeId) {
-  return ref.watch(salesProvider).where((s) => s.employeeId == employeeId).toList();
+final employeeSalesProvider = Provider.family<List<Sale>, String>((
+  ref,
+  employeeId,
+) {
+  return ref
+      .watch(salesProvider)
+      .where((s) => s.employeeId == employeeId)
+      .toList();
 });
