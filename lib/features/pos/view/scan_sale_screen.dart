@@ -12,6 +12,11 @@ import 'package:sou9ix/features/clients/model/client.dart';
 import 'package:sou9ix/features/products/model/product.dart';
 import 'package:sou9ix/features/alerts/viewmodel/alerts_provider.dart';
 import 'package:sou9ix/features/auth/viewmodel/auth_provider.dart';
+import 'package:sou9ix/features/caisse/view/ma_caisse_sheet.dart';
+import 'package:sou9ix/features/employees/model/employee.dart';
+import 'package:sou9ix/features/employees/model/shift.dart';
+import 'package:sou9ix/features/employees/viewmodel/employees_provider.dart';
+import 'package:sou9ix/features/employees/viewmodel/shifts_provider.dart';
 import 'package:sou9ix/features/pos/viewmodel/cart_provider.dart';
 import 'package:sou9ix/features/clients/viewmodel/clients_provider.dart';
 import 'package:sou9ix/features/pos/viewmodel/pending_sale_provider.dart';
@@ -191,6 +196,24 @@ class _ScanSaleScreenState extends ConsumerState<ScanSaleScreen>
       pendingClient = matches.isEmpty ? null : matches.first;
     }
 
+    final activeEmployeeId = ref.watch(activeEmployeeProvider);
+    Shift? openShift;
+    Employee? activeEmployee;
+    if (activeEmployeeId != null) {
+      for (final s in ref.watch(shiftsProvider)) {
+        if (s.employeeId == activeEmployeeId && s.enCours) {
+          openShift = s;
+          break;
+        }
+      }
+      for (final e in ref.watch(employeesProvider)) {
+        if (e.id == activeEmployeeId) {
+          activeEmployee = e;
+          break;
+        }
+      }
+    }
+
     return Scaffold(
       body: SafeArea(
         bottom: false,
@@ -216,6 +239,17 @@ class _ScanSaleScreenState extends ConsumerState<ScanSaleScreen>
                       ],
                     ),
                   ),
+                  if (openShift != null && activeEmployee != null) ...[
+                    _RoundIconButton(
+                      icon: Icons.point_of_sale_rounded,
+                      onTap: () => showMaCaisseSheet(
+                        context,
+                        openShift!,
+                        activeEmployee!,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                  ],
                   _RoundIconButton(
                     icon: Icons.grid_view_rounded,
                     onTap: () => Navigator.of(context).push(

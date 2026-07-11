@@ -4,8 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import 'package:sou9ix/core/formatters.dart';
+import 'package:sou9ix/features/caisse/viewmodel/cash_session_provider.dart';
 import 'package:sou9ix/features/employees/model/employee.dart';
 import 'package:sou9ix/features/employees/model/shift.dart';
+import 'package:sou9ix/features/sales/model/sale.dart';
 import 'package:sou9ix/features/sales/viewmodel/sales_provider.dart';
 import 'package:sou9ix/features/employees/viewmodel/shifts_provider.dart';
 import 'package:sou9ix/core/theme/app_colors.dart';
@@ -56,7 +58,32 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> {
         .map((s) => s.clientId)
         .toSet()
         .length;
+    final panierMoyen = sales.isEmpty ? null : revenue / sales.length;
+    final articlesParTicket = sales.isEmpty
+        ? null
+        : sales.fold<int>(0, (sum, s) => sum + s.lignes.length) / sales.length;
+    final especes = sales
+        .where((s) => s.modePaiement == ModePaiement.especes)
+        .fold<double>(0, (sum, s) => sum + s.total);
+    final carte = sales
+        .where((s) => s.modePaiement == ModePaiement.carte)
+        .fold<double>(0, (sum, s) => sum + s.total);
+    final credit = sales
+        .where((s) => s.modePaiement == ModePaiement.credit)
+        .fold<double>(0, (sum, s) => sum + s.total);
+
     final shifts = ref.watch(shiftsForEmployeeProvider(employee.id));
+    final shiftsInPeriod = shifts
+        .where((s) => _withinPeriod(s.clockIn))
+        .toList();
+    final closedShifts = shiftsInPeriod.where((s) => !s.enCours).toList();
+    var ecartsCount = 0;
+    var ecartTotal = 0.0;
+    for (final s in closedShifts) {
+      final ecart = ref.watch(cashDiscrepancyForShiftProvider(s)) ?? 0;
+      if (ecart.abs() > 0.001) ecartsCount++;
+      ecartTotal += ecart;
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -147,11 +174,90 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> {
             ],
           ),
           const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: StatCard(
+                  label: 'Panier moyen',
+                  value: panierMoyen != null
+                      ? AppFormat.dtShort(panierMoyen)
+                      : '—',
+                  icon: Icons.shopping_basket_outlined,
+                  color: AppColors.goldDark,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: StatCard(
+                  label: 'Articles / ticket',
+                  value: articlesParTicket != null
+                      ? articlesParTicket.toStringAsFixed(1)
+                      : '—',
+                  icon: Icons.category_outlined,
+                  color: AppColors.info,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           StatCard(
             label: 'Clients servis (distincts)',
             value: '$distinctClients',
             icon: Icons.people_alt_rounded,
             color: AppColors.goldDark,
+          ),
+          const SizedBox(height: 26),
+          const SectionHeader(title: 'Paiements encaissés'),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              boxShadow: AppShadows.card,
+            ),
+            child: Column(
+              children: [
+                _paymentRow(context, 'Espèces', especes),
+                _paymentRow(context, 'Carte', carte),
+                _paymentRow(context, 'Crédit', credit, isLast: true),
+              ],
+            ),
+          ),
+          const SizedBox(height: 26),
+          const SectionHeader(title: 'Sessions de caisse'),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: StatCard(
+                  label: 'Sessions clôturées',
+                  value: '${closedShifts.length}',
+                  icon: Icons.point_of_sale_rounded,
+                  color: AppColors.teal,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: StatCard(
+                  label: 'Écarts de caisse',
+                  value: '$ecartsCount',
+                  icon: Icons.warning_amber_rounded,
+                  color: ecartsCount > 0
+                      ? AppColors.warning
+                      : AppColors.success,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          StatCard(
+            label: 'Écart total',
+            value: '${ecartTotal >= 0 ? '+' : ''}${AppFormat.dt(ecartTotal)}',
+            icon: Icons.balance_rounded,
+            color: ecartTotal.abs() < 0.001
+                ? AppColors.success
+                : AppColors.danger,
           ),
           const SizedBox(height: 26),
           const SectionHeader(title: 'Historique de présence'),
@@ -168,9 +274,35 @@ class _EmployeeDetailScreenState extends ConsumerState<EmployeeDetailScreen> {
       ),
     );
   }
+
+  Widget _paymentRow(
+    BuildContext context,
+    String label,
+    double value, {
+    bool isLast = false,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        border: isLast
+            ? null
+            : const Border(bottom: BorderSide(color: AppColors.border)),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.bodyMedium),
+          Text(
+            AppFormat.dtShort(value),
+            style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13.5),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
-class _ShiftTile extends StatelessWidget {
+class _ShiftTile extends ConsumerWidget {
   final Shift shift;
   const _ShiftTile({required this.shift});
 
@@ -178,52 +310,98 @@ class _ShiftTile extends StatelessWidget {
       '${d.inHours}h ${(d.inMinutes % 60).toString().padLeft(2, '0')}min';
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        boxShadow: AppShadows.card,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: (shift.enCours ? AppColors.teal : AppColors.textSecondary)
-                  .withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-            ),
-            child: Icon(
-              Icons.schedule_rounded,
-              size: 18,
-              color: shift.enCours ? AppColors.teal : AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ecart = shift.enCours
+        ? null
+        : ref.watch(cashDiscrepancyForShiftProvider(shift));
+
+    return InkWell(
+      onTap: shift.enCours
+          ? null
+          : () => context.push('/caisses/detail', extra: shift),
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          boxShadow: AppShadows.card,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Text(
-                  DateFormat('dd/MM/yyyy').format(shift.clockIn),
-                  style: Theme.of(context).textTheme.titleMedium,
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color:
+                        (shift.enCours
+                                ? AppColors.teal
+                                : AppColors.textSecondary)
+                            .withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: Icon(
+                    Icons.schedule_rounded,
+                    size: 18,
+                    color: shift.enCours
+                        ? AppColors.teal
+                        : AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        DateFormat('dd/MM/yyyy').format(shift.clockIn),
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      Text(
+                        '${DateFormat('HH:mm').format(shift.clockIn)} → ${shift.clockOut != null ? DateFormat('HH:mm').format(shift.clockOut!) : 'en cours'}',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
                 ),
                 Text(
-                  '${DateFormat('HH:mm').format(shift.clockIn)} → ${shift.clockOut != null ? DateFormat('HH:mm').format(shift.clockOut!) : 'en cours'}',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  _formatDuree(shift.duree),
+                  style: const TextStyle(fontWeight: FontWeight.w800),
                 ),
               ],
             ),
-          ),
-          Text(
-            _formatDuree(shift.duree),
-            style: const TextStyle(fontWeight: FontWeight.w800),
-          ),
-        ],
+            if (ecart != null) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color:
+                      (ecart.abs() < 0.001
+                              ? AppColors.success
+                              : AppColors.danger)
+                          .withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: Text(
+                  ecart.abs() < 0.001
+                      ? '🟢 Caisse équilibrée'
+                      : '${ecart >= 0 ? '↑' : '↓'} Écart ${AppFormat.dtShort(ecart.abs())}',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    color: ecart.abs() < 0.001
+                        ? AppColors.success
+                        : AppColors.danger,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

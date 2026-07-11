@@ -84,6 +84,38 @@ final todayExpensesTotalProvider = Provider<double>((ref) {
       .fold(0.0, (sum, e) => sum + e.montant);
 });
 
+/// The one "Bénéfice net" figure the whole dashboard shows — margin
+/// (revenue − cost of goods sold, see [todayProfitProvider]) minus today's
+/// expenses. Every widget that shows a profit number for today (KPI card,
+/// Résumé aujourd'hui) reads this single provider so they can never
+/// disagree with each other.
+final todayNetProfitProvider = Provider<double>((ref) {
+  return ref.watch(todayProfitProvider) - ref.watch(todayExpensesTotalProvider);
+});
+
+final yesterdayExpensesTotalProvider = Provider<double>((ref) {
+  final yesterday = DateTime.now().subtract(const Duration(days: 1));
+  return ref
+      .watch(expensesProvider)
+      .where((e) => _isSameDay(e.date, yesterday))
+      .fold(0.0, (sum, e) => sum + e.montant);
+});
+
+final yesterdayNetProfitProvider = Provider<double>((ref) {
+  return ref.watch(yesterdayProfitProvider) -
+      ref.watch(yesterdayExpensesTotalProvider);
+});
+
+/// Revenue on this same weekday last week (exactly 7 days ago) — a real,
+/// non-fabricated comparison point for the forecast card.
+final lastWeekSameDayRevenueProvider = Provider<double>((ref) {
+  final lastWeek = DateTime.now().subtract(const Duration(days: 7));
+  return ref
+      .watch(salesProvider)
+      .where((s) => _isSameDay(s.dateHeure, lastWeek))
+      .fold(0.0, (sum, s) => sum + s.total);
+});
+
 enum RevenuePeriod { j7, j30, m12 }
 
 extension RevenuePeriodLabel on RevenuePeriod {
@@ -100,14 +132,13 @@ final revenuePeriodProvider = StateProvider<RevenuePeriod>(
 
 /// Which figure the dashboard's chart plots — the period toggle above
 /// still controls the time window either way.
-enum ChartMetric { recettes, benefices, tickets, produits }
+enum ChartMetric { recettes, benefices, tickets }
 
 extension ChartMetricLabel on ChartMetric {
   String get label => switch (this) {
     ChartMetric.recettes => 'Recettes',
     ChartMetric.benefices => 'Bénéfices',
     ChartMetric.tickets => 'Tickets',
-    ChartMetric.produits => 'Produits',
   };
 }
 
@@ -122,10 +153,6 @@ double _saleMetricValue(Sale s, ChartMetric metric) => switch (metric) {
     (sum, l) => sum + l.product.marge * l.quantite,
   ),
   ChartMetric.tickets => 1,
-  ChartMetric.produits => s.lignes.fold<double>(
-    0,
-    (sum, l) => sum + l.quantite,
-  ),
 };
 
 const _weekdayLabels = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -144,10 +171,66 @@ const _monthLabels = [
   'Déc',
 ];
 
+/// The full breakdown behind one chart bar — shown in the tap-detail popup
+/// regardless of which [ChartMetric] is currently plotted.
+class ChartBarDetail {
+  final DateTime date;
+  final bool isMonth;
+  final double revenue;
+  final double profit;
+  final int tickets;
+
+  /// Revenue on the same weekday last week (day bars) or the same month
+  /// last year (month bars) — the comparison point for "↑X% vs …" in the
+  /// popup. Null when that reference period has no sales to compare to.
+  final double? previousRevenue;
+
+  const ChartBarDetail({
+    required this.date,
+    required this.isMonth,
+    required this.revenue,
+    required this.profit,
+    required this.tickets,
+    this.previousRevenue,
+  });
+}
+
+ChartBarDetail _detailFor(
+  Iterable<Sale> sales,
+  DateTime date,
+  bool isMonth,
+  double? previousRevenue,
+) {
+  double revenue = 0;
+  double profit = 0;
+  var tickets = 0;
+  for (final s in sales) {
+    tickets++;
+    revenue += s.total;
+    profit += s.lignes.fold<double>(
+      0,
+      (lsum, l) => lsum + l.product.marge * l.quantite,
+    );
+  }
+  return ChartBarDetail(
+    date: date,
+    isMonth: isMonth,
+    revenue: revenue,
+    profit: profit,
+    tickets: tickets,
+    previousRevenue: previousRevenue != null && previousRevenue > 0
+        ? previousRevenue
+        : null,
+  );
+}
+
 /// Chart bars + labels for the currently selected [RevenuePeriod] and
-/// [ChartMetric].
+/// [ChartMetric], plus per-bar [ChartBarDetail] (independent of the metric)
+/// for the tap-to-inspect popup.
 final revenueChartDataProvider =
-    Provider<({List<double> values, List<String> labels})>((ref) {
+    Provider<
+      ({List<double> values, List<String> labels, List<ChartBarDetail> details})
+    >((ref) {
       final period = ref.watch(revenuePeriodProvider);
       final metric = ref.watch(chartMetricProvider);
       final sales = ref.watch(salesProvider);
@@ -159,35 +242,52 @@ final revenueChartDataProvider =
           final days = period == RevenuePeriod.j7 ? 7 : 30;
           final values = <double>[];
           final labels = <String>[];
+          final details = <ChartBarDetail>[];
           for (var i = days - 1; i >= 0; i--) {
             final day = now.subtract(Duration(days: i));
+            final daySales = sales.where((s) => _isSameDay(s.dateHeure, day));
             values.add(
-              sales
-                  .where((s) => _isSameDay(s.dateHeure, day))
-                  .fold(0.0, (sum, s) => sum + _saleMetricValue(s, metric)),
+              daySales.fold(0.0, (sum, s) => sum + _saleMetricValue(s, metric)),
             );
             labels.add(
               days == 7 ? _weekdayLabels[day.weekday - 1] : '${day.day}',
             );
+            final weekAgo = day.subtract(const Duration(days: 7));
+            final weekAgoRevenue = sales
+                .where((s) => _isSameDay(s.dateHeure, weekAgo))
+                .fold(0.0, (sum, s) => sum + s.total);
+            details.add(_detailFor(daySales, day, false, weekAgoRevenue));
           }
-          return (values: values, labels: labels);
+          return (values: values, labels: labels, details: details);
         case RevenuePeriod.m12:
           final values = <double>[];
           final labels = <String>[];
+          final details = <ChartBarDetail>[];
           for (var i = 11; i >= 0; i--) {
             final month = DateTime(now.year, now.month - i, 1);
+            final monthSales = sales.where(
+              (s) =>
+                  s.dateHeure.year == month.year &&
+                  s.dateHeure.month == month.month,
+            );
             values.add(
-              sales
-                  .where(
-                    (s) =>
-                        s.dateHeure.year == month.year &&
-                        s.dateHeure.month == month.month,
-                  )
-                  .fold(0.0, (sum, s) => sum + _saleMetricValue(s, metric)),
+              monthSales.fold(
+                0.0,
+                (sum, s) => sum + _saleMetricValue(s, metric),
+              ),
             );
             labels.add(_monthLabels[month.month - 1]);
+            final yearAgo = DateTime(month.year - 1, month.month, 1);
+            final yearAgoRevenue = sales
+                .where(
+                  (s) =>
+                      s.dateHeure.year == yearAgo.year &&
+                      s.dateHeure.month == yearAgo.month,
+                )
+                .fold(0.0, (sum, s) => sum + s.total);
+            details.add(_detailFor(monthSales, month, true, yearAgoRevenue));
           }
-          return (values: values, labels: labels);
+          return (values: values, labels: labels, details: details);
       }
     });
 
@@ -289,20 +389,14 @@ final busiestHourTodayProvider = Provider<int?>((ref) {
 
 /// The dashboard's optional list sections — an admin can hide the ones
 /// they don't care about via "Personnaliser le tableau de bord". KPI,
-/// Résumé, Actions rapides, Alertes and Dernières ventes always show;
-/// these also sit behind the "Voir plus" collapse (see
+/// Résumé, Actions rapides, Alertes, Dernières ventes, Performance and Top
+/// produits always show; these sit behind the "Voir plus" collapse (see
 /// [dashboardExpandedProvider]) since they're the ones that make the page
 /// long.
-enum DashboardSection {
-  topProduits,
-  clientsCredit,
-  stockFaible,
-  facturesFournisseurs,
-}
+enum DashboardSection { clientsCredit, stockFaible, facturesFournisseurs }
 
 extension DashboardSectionLabel on DashboardSection {
   String get label => switch (this) {
-    DashboardSection.topProduits => 'Top produits',
     DashboardSection.clientsCredit => 'Clients crédit',
     DashboardSection.stockFaible => 'Stock faible',
     DashboardSection.facturesFournisseurs => 'Factures fournisseurs à payer',
@@ -456,16 +550,25 @@ final topProductsTrendProvider = Provider<Map<String, double?>>((ref) {
 
 /// A same-day revenue pace projection ("at this rate, today should reach
 /// ~X DT") — plain arithmetic on real data (elapsed-hours extrapolation),
-/// not a prediction model. Null before it has enough of the day to go on.
-String? dashboardInsightText(WidgetRef ref) {
+/// not a prediction model, so the UI must call this "Prévision du jour",
+/// never "IA".
+class DashboardForecast {
+  final double projected;
+  final double? vsLastWeekPct;
+  const DashboardForecast({required this.projected, this.vsLastWeekPct});
+}
+
+/// Null before there's enough of the day elapsed to extrapolate from.
+final dashboardForecastProvider = Provider<DashboardForecast?>((ref) {
   final now = DateTime.now();
   final todayRevenue = ref.watch(todayRevenueProvider);
-  if (todayRevenue > 0 && now.hour >= 9) {
-    final hoursElapsed = (now.hour - 8).clamp(1, 24);
-    final projected = todayRevenue / hoursElapsed * 14; // shop day ≈ 08h-22h
-    if (projected > todayRevenue * 1.05) {
-      return '📈 Au rythme actuel, les recettes d\'aujourd\'hui devraient atteindre environ ${projected.toStringAsFixed(0)} DT.';
-    }
-  }
-  return null;
-}
+  if (todayRevenue <= 0 || now.hour < 9) return null;
+  final hoursElapsed = (now.hour - 8).clamp(1, 24);
+  final projected = todayRevenue / hoursElapsed * 14; // shop day ≈ 08h-22h
+  if (projected <= todayRevenue * 1.05) return null;
+  final lastWeek = ref.watch(lastWeekSameDayRevenueProvider);
+  final vsLastWeekPct = lastWeek > 0
+      ? ((projected - lastWeek) / lastWeek * 100)
+      : null;
+  return DashboardForecast(projected: projected, vsLastWeekPct: vsLastWeekPct);
+});

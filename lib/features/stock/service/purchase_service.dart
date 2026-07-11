@@ -7,7 +7,9 @@ import 'package:sou9ix/features/stock/model/purchase_invoice.dart';
 import 'package:sou9ix/features/stock/model/purchase_invoice_line.dart';
 import 'package:sou9ix/features/suppliers/model/supplier.dart';
 import 'package:sou9ix/features/products/viewmodel/products_provider.dart';
+import 'package:sou9ix/features/stock/model/stock_movement.dart';
 import 'package:sou9ix/features/stock/viewmodel/purchase_invoices_provider.dart';
+import 'package:sou9ix/features/stock/viewmodel/stock_movements_provider.dart';
 
 /// Encapsulates receiving a supplier invoice: every staged line either
 /// restocks an existing product or creates a brand-new one, then the
@@ -25,6 +27,15 @@ class PurchaseService {
     required double montantPaye,
   }) {
     final invoiceLines = <PurchaseInvoiceLine>[];
+    final pendingMovements =
+        <
+          ({
+            String productId,
+            String productName,
+            double quantite,
+            double stockApres,
+          })
+        >[];
     for (final line in lines) {
       if (line.existingProduct != null) {
         _ref
@@ -43,6 +54,12 @@ class PurchaseService {
             prixAchatUnitaire: line.prixAchatUnitaire,
           ),
         );
+        pendingMovements.add((
+          productId: line.existingProduct!.id,
+          productName: line.existingProduct!.name,
+          quantite: line.quantite,
+          stockApres: line.existingProduct!.stock + line.quantite,
+        ));
       } else {
         final product = line.newProductDraft!;
         _ref.read(productsProvider.notifier).upsert(product);
@@ -55,6 +72,12 @@ class PurchaseService {
             prixAchatUnitaire: line.prixAchatUnitaire,
           ),
         );
+        pendingMovements.add((
+          productId: product.id,
+          productName: product.name,
+          quantite: product.stock,
+          stockApres: product.stock,
+        ));
       }
     }
 
@@ -77,6 +100,17 @@ class PurchaseService {
           : const [],
     );
     _ref.read(purchaseInvoicesProvider.notifier).add(invoice);
+    for (final m in pendingMovements) {
+      recordStockMovement(
+        _ref,
+        productId: m.productId,
+        productName: m.productName,
+        type: StockMovementType.achat,
+        quantite: m.quantite,
+        stockApres: m.stockApres,
+        reference: 'Facture #${invoice.reference}',
+      );
+    }
     return invoice;
   }
 }

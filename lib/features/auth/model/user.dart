@@ -11,6 +11,13 @@ class AppUser {
   final String magasin;
   final Uint8List? photoBytes;
 
+  /// Which staff-roster [Employee] this login account is — lets a
+  /// Caissier's session (fond de caisse, ventes attribuées) resolve
+  /// automatically from who's logged in, instead of asking them to pick
+  /// themselves from a list every time. Null for an account with no
+  /// matching roster entry (e.g. a brand-new admin-only login).
+  final String? employeeId;
+
   const AppUser({
     required this.id,
     required this.nom,
@@ -19,6 +26,7 @@ class AppUser {
     required this.role,
     required this.magasin,
     this.photoBytes,
+    this.employeeId,
   });
 
   String get initiales {

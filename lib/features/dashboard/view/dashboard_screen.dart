@@ -10,11 +10,12 @@ import 'package:sou9ix/core/shell/tab_navigation_provider.dart';
 import 'package:sou9ix/features/activity/model/activity_log_entry.dart';
 import 'package:sou9ix/features/activity/viewmodel/activity_log_provider.dart';
 import 'package:sou9ix/features/alerts/viewmodel/alerts_provider.dart';
-import 'package:sou9ix/features/analytics/viewmodel/analytics_provider.dart';
 import 'package:sou9ix/features/auth/viewmodel/auth_provider.dart';
+import 'package:sou9ix/features/caisse/viewmodel/cash_session_provider.dart';
 import 'package:sou9ix/features/clients/model/client.dart';
 import 'package:sou9ix/features/dashboard/view/global_search_sheet.dart';
 import 'package:sou9ix/features/dashboard/viewmodel/dashboard_provider.dart';
+import 'package:sou9ix/features/employees/viewmodel/employees_provider.dart';
 import 'package:sou9ix/features/products/model/product.dart';
 import 'package:sou9ix/features/products/viewmodel/products_provider.dart';
 import 'package:sou9ix/features/sales/model/sale.dart';
@@ -96,20 +97,80 @@ class DashboardScreen extends ConsumerWidget {
     );
   }
 
+  Future<void> _openMoreActionsSheet(BuildContext context, WidgetRef ref) {
+    return showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Container(
+        decoration: const BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppRadius.xl),
+          ),
+        ),
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SheetHandle(),
+            const SizedBox(height: 8),
+            Text(
+              'Toutes les actions',
+              style: Theme.of(sheetContext).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 16),
+            _MoreActionTile(
+              icon: Icons.local_shipping_outlined,
+              label: 'Facture fournisseur',
+              onTap: () {
+                Navigator.pop(sheetContext);
+                context.push('/stock/receipt');
+              },
+            ),
+            _MoreActionTile(
+              icon: Icons.warehouse_outlined,
+              label: 'Inventaire',
+              onTap: () {
+                Navigator.pop(sheetContext);
+                ref.read(requestedTabIndexProvider.notifier).state = 1;
+              },
+            ),
+            _MoreActionTile(
+              icon: Icons.wallet_outlined,
+              label: 'Nouvelle dépense',
+              onTap: () {
+                Navigator.pop(sheetContext);
+                context.push('/expenses');
+              },
+            ),
+            _MoreActionTile(
+              icon: Icons.payments_outlined,
+              label: 'Encaisser crédit',
+              onTap: () {
+                Navigator.pop(sheetContext);
+                context.push('/clients');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final user = ref.watch(authProvider);
     final totalAlerts = ref.watch(totalAlertsCountProvider);
+    final criticalAlerts = ref.watch(criticalAlertsCountProvider);
     final todayRevenue = ref.watch(todayRevenueProvider);
     final yesterdayRevenue = ref.watch(yesterdayRevenueProvider);
-    final todayProfit = ref.watch(todayProfitProvider);
-    final yesterdayProfit = ref.watch(yesterdayProfitProvider);
+    final todayNetProfit = ref.watch(todayNetProfitProvider);
+    final yesterdayNetProfit = ref.watch(yesterdayNetProfitProvider);
     final todayTickets = ref.watch(todaySalesProvider).length;
-    final todayExpenses = ref.watch(todayExpensesTotalProvider);
     final paymentBreakdown = ref.watch(todayPaymentBreakdownProvider);
     final avgTicket = ref.watch(avgTicketTodayProvider);
     final avgBasket = ref.watch(avgBasketSizeTodayProvider);
-    final clientsToday = ref.watch(clientsTodayCountProvider);
     final topProducts = ref.watch(topProductsProvider);
     final productsTrend = ref.watch(topProductsTrendProvider);
     final recentSales = ref.watch(recentSalesProvider);
@@ -118,13 +179,13 @@ class DashboardScreen extends ConsumerWidget {
     final unpaidInvoices = ref.watch(unpaidInvoicesPreviewProvider);
     final visibleSections = ref.watch(dashboardVisibleSectionsProvider);
     final expanded = ref.watch(dashboardExpandedProvider);
-    final insight = dashboardInsightText(ref);
+    final forecast = ref.watch(dashboardForecastProvider);
 
     double trendOf(double today, double yesterday) => yesterday > 0
         ? ((today - yesterday) / yesterday * 100).abs()
         : (today > 0 ? 100.0 : 0.0);
     final revenueTrendUp = todayRevenue >= yesterdayRevenue;
-    final profitTrendUp = todayProfit >= yesterdayProfit;
+    final profitTrendUp = todayNetProfit >= yesterdayNetProfit;
 
     return Scaffold(
       body: SafeArea(
@@ -205,172 +266,126 @@ class DashboardScreen extends ConsumerWidget {
               physics: const NeverScrollableScrollPhysics(),
               mainAxisSpacing: 12,
               crossAxisSpacing: 12,
-              childAspectRatio: 1.5,
+              childAspectRatio: 1.85,
               children: [
                 StatCard(
+                  compact: true,
                   label: 'Recette du jour',
                   value: AppFormat.dt(todayRevenue),
                   icon: Icons.payments_rounded,
                   color: AppColors.teal,
                   trend:
-                      '${trendOf(todayRevenue, yesterdayRevenue).toStringAsFixed(0)}%',
+                      '${trendOf(todayRevenue, yesterdayRevenue).toStringAsFixed(0)}% vs hier',
                   trendUp: revenueTrendUp,
                 ),
                 StatCard(
+                  compact: true,
                   label: 'Bénéfice net',
-                  value: AppFormat.dt(todayProfit),
+                  value: AppFormat.dt(todayNetProfit),
                   icon: Icons.trending_up_rounded,
                   color: AppColors.goldDark,
                   trend:
-                      '${trendOf(todayProfit, yesterdayProfit).toStringAsFixed(0)}%',
+                      '${trendOf(todayNetProfit, yesterdayNetProfit).toStringAsFixed(0)}% vs hier',
                   trendUp: profitTrendUp,
                 ),
                 StatCard(
+                  compact: true,
                   label: 'Tickets émis',
                   value: '$todayTickets',
                   icon: Icons.receipt_long_rounded,
                   color: AppColors.info,
+                  subtitle: avgTicket != null
+                      ? '${AppFormat.dtShort(avgTicket)} moy.'
+                      : null,
                 ),
                 PressScale(
                   onTap: () => context.push('/alerts'),
                   child: StatCard(
+                    compact: true,
                     label: 'Alertes',
                     value: '$totalAlerts',
                     icon: Icons.warning_amber_rounded,
                     color: AppColors.warning,
+                    subtitle: criticalAlerts > 0
+                        ? '$criticalAlerts critique${criticalAlerts > 1 ? 's' : ''}'
+                        : null,
+                    subtitleColor: AppColors.danger,
                   ),
                 ),
               ],
             ),
-            Padding(
-              padding: const EdgeInsets.only(top: 4, left: 4),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Hier : ${AppFormat.dtShort(yesterdayRevenue)}',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textFaint,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      'Hier : ${AppFormat.dtShort(yesterdayProfit)}',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textFaint,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             if (todayTickets == 0)
               _EmptySalesCard(
-                onCreateTicket: () =>
-                    ref.read(requestedTabIndexProvider.notifier).state = 1,
+                onCreateTicket: () => context.push('/pos'),
               ).animate().fadeIn(duration: 380.ms).slideY(begin: 0.05, end: 0)
             else
               _SummaryCard(
                 recettes: todayRevenue,
-                depenses: todayExpenses,
-                benefice: todayRevenue - todayExpenses,
+                beneficeNet: todayNetProfit,
+                tickets: todayTickets,
+                ticketMoyen: avgTicket,
                 especes: paymentBreakdown[ModePaiement.especes] ?? 0,
                 carte: paymentBreakdown[ModePaiement.carte] ?? 0,
                 credit: paymentBreakdown[ModePaiement.credit] ?? 0,
-                ticketMoyen: avgTicket,
-                clientsAujourdhui: clientsToday,
-                panierMoyen: avgBasket,
+                articlesParTicket: avgBasket,
               ).animate().fadeIn(duration: 380.ms).slideY(begin: 0.05, end: 0),
-            if (insight != null) ...[
+            if (forecast != null) ...[
               const SizedBox(height: 12),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: AppColors.teal.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  border: Border.all(
-                    color: AppColors.teal.withValues(alpha: 0.25),
-                  ),
-                ),
-                child: Text(
-                  insight,
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    color: AppColors.tealDark,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              _ForecastCard(forecast: forecast),
             ],
             const SizedBox(height: 24),
-            const SectionHeader(title: 'Actions rapides'),
+            SectionHeader(
+              title: 'Actions rapides',
+              actionLabel: 'Toutes les actions',
+              onAction: () => _openMoreActionsSheet(context, ref),
+            ),
             const SizedBox(height: 14),
-            SizedBox(
-              height: 104,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                children: [
-                  _QuickAction(
+            Row(
+              children: [
+                Expanded(
+                  child: _QuickAction(
                     icon: Icons.add_shopping_cart_rounded,
-                    label: 'Nouvelle vente',
+                    label: 'Vente',
                     color: AppColors.teal,
-                    onTap: () =>
-                        ref.read(requestedTabIndexProvider.notifier).state = 1,
+                    onTap: () => context.push('/pos'),
                   ),
-                  _QuickAction(
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _QuickAction(
                     icon: Icons.inventory_2_outlined,
-                    label: 'Ajouter produit',
+                    label: 'Produit',
                     color: AppColors.goldDark,
                     onTap: () => context.push('/products/new'),
                   ),
-                  _QuickAction(
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _QuickAction(
                     icon: Icons.person_add_alt_1_rounded,
-                    label: 'Nouveau client',
+                    label: 'Client',
                     color: AppColors.info,
                     onTap: () => context.push('/clients'),
                   ),
-                  _QuickAction(
-                    icon: Icons.local_shipping_outlined,
-                    label: 'Facture fournisseur',
-                    color: AppColors.tealDark,
-                    onTap: () => context.push('/stock/receipt'),
-                  ),
-                  _QuickAction(
-                    icon: Icons.warehouse_outlined,
-                    label: 'Inventaire',
-                    color: AppColors.info,
-                    onTap: () =>
-                        ref.read(requestedTabIndexProvider.notifier).state = 2,
-                  ),
-                  _QuickAction(
-                    icon: Icons.wallet_outlined,
-                    label: 'Nouvelle dépense',
-                    color: AppColors.warning,
-                    onTap: () => context.push('/expenses'),
-                  ),
-                  _QuickAction(
-                    icon: Icons.payments_outlined,
-                    label: 'Encaisser crédit',
-                    color: AppColors.teal,
-                    onTap: () => context.push('/clients'),
-                  ),
-                  _QuickAction(
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _QuickAction(
                     icon: Icons.add_business_outlined,
-                    label: 'Ajouter fournisseur',
+                    label: 'Fournisseur',
                     color: AppColors.tealDark,
                     onTap: () => context.push('/suppliers/new'),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
             const SizedBox(height: 24),
             _AlertsSummaryCard(onTap: () => context.push('/alerts')),
+            const SizedBox(height: 24),
+            _CaisseSummaryCard(onTap: () => context.push('/caisses')),
+            const SizedBox(height: 24),
+            _ActivitySummaryCard(onTap: () => context.push('/activity-log')),
             const SizedBox(height: 24),
             SectionHeader(
               title: 'Dernières ventes',
@@ -394,6 +409,26 @@ class DashboardScreen extends ConsumerWidget {
                   ],
                 ),
               ),
+            const SizedBox(height: 28),
+            const SectionHeader(title: 'Performance'),
+            const SizedBox(height: 14),
+            const _RevenueChartSection(),
+            const SizedBox(height: 24),
+            SectionHeader(
+              title: 'Top produits',
+              actionLabel: 'Statistiques',
+              onAction: () => context.push('/statistics'),
+            ),
+            const SizedBox(height: 14),
+            if (topProducts.isEmpty)
+              const _EmptyCard(
+                message: 'Aucune vente enregistrée pour l\'instant.',
+              )
+            else
+              _TopProductsCard(products: topProducts, trends: productsTrend)
+                  .animate()
+                  .fadeIn(duration: 400.ms, delay: 100.ms)
+                  .slideY(begin: 0.05, end: 0),
             const SizedBox(height: 20),
             Center(
               child: TextButton.icon(
@@ -409,169 +444,6 @@ class DashboardScreen extends ConsumerWidget {
               ),
             ),
             if (expanded) ...[
-              const SizedBox(height: 8),
-              _ActivitySummaryCard(onTap: () => context.push('/activity-log')),
-              const SizedBox(height: 24),
-              const _RevenueChartSection(),
-              if (visibleSections.contains(DashboardSection.topProduits)) ...[
-                const SizedBox(height: 24),
-                SectionHeader(
-                  title: 'Top produits',
-                  actionLabel: 'Statistiques',
-                  onAction: () => context.push('/statistics'),
-                ),
-                const SizedBox(height: 14),
-                if (topProducts.isEmpty)
-                  const _EmptyCard(
-                    message: 'Aucune vente enregistrée pour l\'instant.',
-                  )
-                else
-                  Container(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(AppRadius.lg),
-                          boxShadow: AppShadows.card,
-                        ),
-                        child: Column(
-                          children: List.generate(topProducts.length, (i) {
-                            final p = topProducts[i];
-                            final maxRevenue = topProducts.first.revenue;
-                            final trend = productsTrend[p.product.id];
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 26,
-                                    height: 26,
-                                    alignment: Alignment.center,
-                                    decoration: BoxDecoration(
-                                      color: i == 0
-                                          ? AppColors.gold.withValues(
-                                              alpha: 0.2,
-                                            )
-                                          : AppColors.surfaceMuted,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Text(
-                                      '${i + 1}',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w800,
-                                        fontSize: 12,
-                                        color: i == 0
-                                            ? AppColors.goldDark
-                                            : AppColors.textSecondary,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Text(
-                                    p.product.emoji,
-                                    style: const TextStyle(fontSize: 18),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          p.product.name,
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.titleMedium,
-                                        ),
-                                        const SizedBox(height: 5),
-                                        ClipRRect(
-                                          borderRadius: BorderRadius.circular(
-                                            100,
-                                          ),
-                                          child: TweenAnimationBuilder<double>(
-                                            tween: Tween(
-                                              begin: 0,
-                                              end: p.revenue / maxRevenue,
-                                            ),
-                                            duration: const Duration(
-                                              milliseconds: 700,
-                                            ),
-                                            curve: Curves.easeOutCubic,
-                                            builder: (context, value, _) =>
-                                                LinearProgressIndicator(
-                                                  value: value,
-                                                  minHeight: 6,
-                                                  backgroundColor:
-                                                      AppColors.surfaceMuted,
-                                                  valueColor:
-                                                      const AlwaysStoppedAnimation(
-                                                        AppColors.teal,
-                                                      ),
-                                                ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Text(
-                                            AppFormat.dtShort(p.revenue),
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                          ),
-                                          if (trend != null) ...[
-                                            const SizedBox(width: 3),
-                                            Icon(
-                                              trend >= 0
-                                                  ? Icons.arrow_upward_rounded
-                                                  : Icons
-                                                        .arrow_downward_rounded,
-                                              size: 11,
-                                              color: trend >= 0
-                                                  ? AppColors.success
-                                                  : AppColors.danger,
-                                            ),
-                                            Text(
-                                              '${trend.abs().toStringAsFixed(0)}%',
-                                              style: TextStyle(
-                                                fontSize: 10.5,
-                                                fontWeight: FontWeight.w700,
-                                                color: trend >= 0
-                                                    ? AppColors.success
-                                                    : AppColors.danger,
-                                              ),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                      Text(
-                                        '${p.ventes} ticket${p.ventes > 1 ? 's' : ''}'
-                                        '${p.product.venduAuPoids ? ' · ${p.quantite.toStringAsFixed(1)} kg' : ''}',
-                                        style: const TextStyle(
-                                          fontSize: 10.5,
-                                          color: AppColors.textFaint,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            );
-                          }),
-                        ),
-                      )
-                      .animate()
-                      .fadeIn(duration: 400.ms, delay: 100.ms)
-                      .slideY(begin: 0.05, end: 0),
-              ],
               if (visibleSections.contains(DashboardSection.clientsCredit)) ...[
                 const SizedBox(height: 24),
                 SectionHeader(
@@ -655,10 +527,6 @@ class DashboardScreen extends ConsumerWidget {
                     ),
                   ),
               ],
-              const SizedBox(height: 24),
-              const SectionHeader(title: 'Aperçu approfondi'),
-              const SizedBox(height: 14),
-              const _DeeperInsightsGrid(),
             ],
           ],
         ),
@@ -667,164 +535,101 @@ class DashboardScreen extends ConsumerWidget {
   }
 }
 
-class _DeeperInsightsGrid extends ConsumerWidget {
-  const _DeeperInsightsGrid();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final bestCashier = ref.watch(bestCashierTodayProvider);
-    final newClients = ref.watch(newClientsThisMonthProvider);
-    final neverSold = ref.watch(neverSoldProductsProvider).length;
-    final loss = ref.watch(expiredStockLossProvider);
-    final margin = ref.watch(averageMarginPctProvider);
-    final bestClient = ref.watch(topClientThisMonthProvider);
-    final suppliers = ref.watch(topSuppliersProvider);
-    final payments = ref.watch(todayPaymentBreakdownProvider);
-    final paymentsTotal = payments.values.fold<double>(0, (sum, v) => sum + v);
-
-    String pct(double v) =>
-        paymentsTotal > 0 ? '${(v / paymentsTotal * 100).round()}%' : '0%';
-
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 10,
-      childAspectRatio: 1.5,
-      children: [
-        _InsightTile(
-          icon: Icons.emoji_events_outlined,
-          label: 'Meilleur caissier',
-          value: bestCashier != null ? bestCashier.name.split(' ').first : '—',
-          sub: bestCashier != null
-              ? '${AppFormat.dtShort(bestCashier.revenue)} · ${bestCashier.tickets} tickets'
-              : 'Aucune vente',
-          onTap: () => context.push('/analytics'),
-        ),
-        _InsightTile(
-          icon: Icons.person_add_alt_1_outlined,
-          label: 'Nouveaux clients',
-          value: '$newClients',
-          sub: 'ce mois',
-        ),
-        _InsightTile(
-          icon: Icons.inventory_outlined,
-          label: 'Jamais vendus',
-          value: '$neverSold',
-          sub: 'produits',
-          onTap: () => context.push('/analytics'),
-        ),
-        _InsightTile(
-          icon: Icons.delete_outline_rounded,
-          label: 'Perte (expirés)',
-          value: AppFormat.dtShort(loss),
-          sub: 'au prix d\'achat',
-          valueColor: loss > 0 ? AppColors.danger : null,
-        ),
-        _InsightTile(
-          icon: Icons.percent_rounded,
-          label: 'Marge moyenne',
-          value: margin != null ? '${margin.toStringAsFixed(0)}%' : '—',
-          sub: 'catalogue',
-        ),
-        _InsightTile(
-          icon: Icons.pie_chart_outline_rounded,
-          label: 'Paiements (jour)',
-          value: pct(payments[ModePaiement.especes] ?? 0),
-          sub:
-              'espèces · ${pct(payments[ModePaiement.carte] ?? 0)} carte · ${pct(payments[ModePaiement.credit] ?? 0)} crédit',
-        ),
-        _InsightTile(
-          icon: Icons.star_outline_rounded,
-          label: 'Meilleur client',
-          value: bestClient != null
-              ? bestClient.client.nom.split(' ').first
-              : '—',
-          sub: bestClient != null
-              ? '${AppFormat.dtShort(bestClient.total)} ce mois'
-              : 'Aucun achat',
-          onTap: bestClient != null
-              ? () => context.push('/clients/detail', extra: bestClient.client)
-              : null,
-        ),
-        _InsightTile(
-          icon: Icons.local_shipping_outlined,
-          label: 'Meilleur fournisseur',
-          value: suppliers.isNotEmpty ? suppliers.first.nom : '—',
-          sub: suppliers.isNotEmpty
-              ? '${suppliers.first.factures} factures'
-              : 'Aucun achat',
-          onTap: () => context.push('/suppliers'),
-        ),
-      ],
-    );
-  }
-}
-
-class _InsightTile extends StatelessWidget {
+class _MoreActionTile extends StatelessWidget {
   final IconData icon;
   final String label;
-  final String value;
-  final String sub;
-  final Color? valueColor;
-  final VoidCallback? onTap;
-
-  const _InsightTile({
+  final VoidCallback onTap;
+  const _MoreActionTile({
     required this.icon,
     required this.label,
-    required this.value,
-    required this.sub,
-    this.valueColor,
-    this.onTap,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return PressScale(
-      onTap: onTap ?? () {},
-      child: Container(
-        padding: const EdgeInsets.all(12),
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Container(
+        width: 40,
+        height: 40,
         decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          boxShadow: AppShadows.card,
+          color: AppColors.surfaceMuted,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, size: 16, color: AppColors.textSecondary),
-            const SizedBox(height: 6),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text(
-                value,
-                maxLines: 1,
-                style: TextStyle(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w800,
-                  color: valueColor ?? AppColors.textPrimary,
+        child: Icon(icon, color: AppColors.textSecondary, size: 20),
+      ),
+      title: Text(label, style: Theme.of(context).textTheme.titleMedium),
+      onTap: onTap,
+    );
+  }
+}
+
+class _ForecastCard extends StatelessWidget {
+  final DashboardForecast forecast;
+  const _ForecastCard({required this.forecast});
+
+  @override
+  Widget build(BuildContext context) {
+    final upVsLastWeek =
+        forecast.vsLastWeekPct != null && forecast.vsLastWeekPct! >= 0;
+    final lastWeekDay = AppFormat.weekdayFull(
+      DateTime.now().subtract(const Duration(days: 7)),
+    );
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.teal.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.teal.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        children: [
+          const Text('📈', style: TextStyle(fontSize: 22)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Prévision du jour',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.tealDark,
+                    letterSpacing: 0.4,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 2),
+                Text(
+                  '≈ ${forecast.projected.toStringAsFixed(0)} DT de recettes',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.tealDark,
+                  ),
+                ),
+                Text(
+                  forecast.vsLastWeekPct != null
+                      ? 'Au rythme actuel · ${upVsLastWeek ? '↑' : '↓'} ${forecast.vsLastWeekPct!.abs().toStringAsFixed(0)}% vs $lastWeekDay dernier'
+                      : 'Au rythme actuel',
+                  style: const TextStyle(
+                    fontSize: 11.5,
+                    color: AppColors.tealDark,
+                  ),
+                ),
+                Text(
+                  'Mise à jour à ${DateFormat('HH:mm').format(DateTime.now())}',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: AppColors.tealDark.withValues(alpha: 0.65),
+                  ),
+                ),
+              ],
             ),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 10.5,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            Text(
-              sub,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 9.5, color: AppColors.textFaint),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -832,29 +637,36 @@ class _InsightTile extends StatelessWidget {
 
 class _SummaryCard extends StatelessWidget {
   final double recettes;
-  final double depenses;
-  final double benefice;
+  final double beneficeNet;
+  final int tickets;
+  final double? ticketMoyen;
   final double especes;
   final double carte;
   final double credit;
-  final double? ticketMoyen;
-  final int? clientsAujourdhui;
-  final double? panierMoyen;
+  final double? articlesParTicket;
 
   const _SummaryCard({
     required this.recettes,
-    required this.depenses,
-    required this.benefice,
+    required this.beneficeNet,
+    required this.tickets,
+    this.ticketMoyen,
     required this.especes,
     required this.carte,
     required this.credit,
-    this.ticketMoyen,
-    this.clientsAujourdhui,
-    this.panierMoyen,
+    this.articlesParTicket,
   });
 
   @override
   Widget build(BuildContext context) {
+    final total = especes + carte + credit;
+    // Round espèces/carte independently, then let crédit absorb the
+    // remainder so the three percentages always sum to exactly 100 — three
+    // separate roundings (e.g. 45.2/13.3/41.5 → 45/13/42) would otherwise
+    // land on 99 or 101 and look like a math error.
+    final espPct = total > 0 ? (especes / total * 100).round() : 0;
+    final cartePct = total > 0 ? (carte / total * 100).round() : 0;
+    final creditPct = total > 0 ? (100 - espPct - cartePct).clamp(0, 100) : 0;
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -878,26 +690,40 @@ class _SummaryCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _summaryItem(
-                  'Recettes',
+                  'Chiffre d\'affaires',
                   AppFormat.dtShort(recettes),
                   big: true,
                 ),
               ),
               Expanded(
                 child: _summaryItem(
-                  'Dépenses',
-                  AppFormat.dtShort(depenses),
+                  'Bénéfice net',
+                  AppFormat.dtShort(beneficeNet),
                   big: true,
+                  color: beneficeNet >= 0
+                      ? AppColors.tealLight
+                      : Colors.redAccent,
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(child: _summaryItem('Tickets', '$tickets')),
               Expanded(
                 child: _summaryItem(
-                  'Bénéfice',
-                  AppFormat.dtShort(benefice),
-                  big: true,
-                  color: benefice >= 0 ? AppColors.tealLight : Colors.redAccent,
+                  'Panier moyen',
+                  ticketMoyen != null ? AppFormat.dtShort(ticketMoyen!) : '—',
                 ),
               ),
+              if (articlesParTicket != null)
+                Expanded(
+                  child: _summaryItem(
+                    'Articles / ticket',
+                    articlesParTicket!.toStringAsFixed(1),
+                  ),
+                ),
             ],
           ),
           const SizedBox(height: 16),
@@ -906,43 +732,25 @@ class _SummaryCard extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: _summaryItem('Espèces', AppFormat.dtShort(especes)),
+                child: _summaryItem(
+                  'Espèces',
+                  '${AppFormat.dtShort(especes)} ($espPct%)',
+                ),
               ),
-              Expanded(child: _summaryItem('Carte', AppFormat.dtShort(carte))),
               Expanded(
-                child: _summaryItem('Crédit', AppFormat.dtShort(credit)),
+                child: _summaryItem(
+                  'Carte',
+                  '${AppFormat.dtShort(carte)} ($cartePct%)',
+                ),
+              ),
+              Expanded(
+                child: _summaryItem(
+                  'Crédit',
+                  '${AppFormat.dtShort(credit)} ($creditPct%)',
+                ),
               ),
             ],
           ),
-          if (ticketMoyen != null ||
-              clientsAujourdhui != null ||
-              panierMoyen != null) ...[
-            const SizedBox(height: 16),
-            Divider(color: Colors.white.withValues(alpha: 0.12), height: 1),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                if (ticketMoyen != null)
-                  Expanded(
-                    child: _summaryItem(
-                      'Ticket moyen',
-                      AppFormat.dtShort(ticketMoyen!),
-                    ),
-                  ),
-                if (clientsAujourdhui != null)
-                  Expanded(
-                    child: _summaryItem('Clients', '$clientsAujourdhui'),
-                  ),
-                if (panierMoyen != null)
-                  Expanded(
-                    child: _summaryItem(
-                      'Panier moyen',
-                      '${panierMoyen!.toStringAsFixed(1)} art.',
-                    ),
-                  ),
-              ],
-            ),
-          ],
         ],
       ),
     );
@@ -1041,38 +849,34 @@ class _QuickAction extends StatelessWidget {
     return PressScale(
       onTap: onTap,
       child: Container(
-        width: 88,
-        margin: const EdgeInsets.only(right: 10),
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
+        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(AppRadius.md),
           boxShadow: AppShadows.card,
         ),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 44,
-              height: 44,
+              width: 42,
+              height: 42,
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: Icon(icon, color: color, size: 23),
+              child: Icon(icon, color: color, size: 22),
             ),
             const SizedBox(height: 8),
-            Flexible(
-              child: Text(
-                label,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textSecondary,
-                ),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textSecondary,
               ),
             ),
           ],
@@ -1097,28 +901,17 @@ class _AlertsSummaryCard extends ConsumerWidget {
     final staleProducts = ref.watch(staleProductsProvider).length;
     final todayPriceChanges = ref.watch(todayPriceChangesProvider).length;
     final frequentDeletions = ref.watch(hasFrequentTicketDeletionsProvider);
+    final critical = ref.watch(criticalAlertsCountProvider);
 
+    // Danger-colored (🔴 critiques) entries first, then warning (🟠), then
+    // info (🔵) — so the most urgent alerts are always the first ones seen.
     final cards = <(String, String, IconData, Color)>[
-      if (lowStock > 0)
-        (
-          '$lowStock produit${lowStock > 1 ? 's' : ''}',
-          'Sous le seuil',
-          Icons.inventory_2_outlined,
-          AppColors.warning,
-        ),
       if (expired > 0)
         (
           '$expired produit${expired > 1 ? 's' : ''}',
           'Périmés',
           Icons.report_outlined,
           AppColors.danger,
-        ),
-      if (expiringSoon > 0)
-        (
-          '$expiringSoon produit${expiringSoon > 1 ? 's' : ''}',
-          'Proche péremption',
-          Icons.hourglass_bottom_rounded,
-          AppColors.warning,
         ),
       if (unsettled > 0)
         (
@@ -1141,6 +934,27 @@ class _AlertsSummaryCard extends ConsumerWidget {
           Icons.trending_down_rounded,
           AppColors.danger,
         ),
+      if (frequentDeletions)
+        (
+          'Tickets',
+          'Beaucoup de suppressions',
+          Icons.report_gmailerrorred_rounded,
+          AppColors.danger,
+        ),
+      if (lowStock > 0)
+        (
+          '$lowStock produit${lowStock > 1 ? 's' : ''}',
+          'Sous le seuil',
+          Icons.inventory_2_outlined,
+          AppColors.warning,
+        ),
+      if (expiringSoon > 0)
+        (
+          '$expiringSoon produit${expiringSoon > 1 ? 's' : ''}',
+          'Proche péremption',
+          Icons.hourglass_bottom_rounded,
+          AppColors.warning,
+        ),
       if (staleProducts > 0)
         (
           '$staleProducts produit${staleProducts > 1 ? 's' : ''}',
@@ -1151,16 +965,9 @@ class _AlertsSummaryCard extends ConsumerWidget {
       if (todayPriceChanges > 0)
         (
           '$todayPriceChanges prix',
-          'Modifiés',
+          todayPriceChanges > 1 ? 'Modifiés' : 'Modifié',
           Icons.sell_outlined,
           AppColors.info,
-        ),
-      if (frequentDeletions)
-        (
-          'Tickets',
-          'Beaucoup de suppressions',
-          Icons.report_gmailerrorred_rounded,
-          AppColors.danger,
         ),
     ];
 
@@ -1198,6 +1005,27 @@ class _AlertsSummaryCard extends ConsumerWidget {
                     fontWeight: FontWeight.w800,
                   ),
                 ),
+                if (critical > 0) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.danger.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                    child: Text(
+                      '$critical critique${critical > 1 ? 's' : ''}',
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.danger,
+                      ),
+                    ),
+                  ),
+                ],
                 const Spacer(),
                 const Icon(
                   Icons.chevron_right_rounded,
@@ -1262,14 +1090,169 @@ class _AlertsSummaryCard extends ConsumerWidget {
   }
 }
 
+class _CaisseSummaryCard extends ConsumerWidget {
+  final VoidCallback onTap;
+  const _CaisseSummaryCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final summary = ref.watch(todayCaisseSummaryProvider);
+    final hasEcart = summary.sessionsAvecEcart > 0;
+
+    return PressScale(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.point_of_sale_outlined,
+                  color: AppColors.tealDark,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Caisse aujourd\'hui',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const Spacer(),
+                const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.textFaint,
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 12,
+              runSpacing: 4,
+              children: [
+                if (summary.sessionsOuvertes > 0)
+                  _caisseBadge(
+                    '🟢 ${summary.sessionsOuvertes} caisse${summary.sessionsOuvertes > 1 ? 's' : ''} ouverte${summary.sessionsOuvertes > 1 ? 's' : ''}',
+                    AppColors.info,
+                  ),
+                if (summary.sessionsCloturees > 0)
+                  _caisseBadge(
+                    '✓ ${summary.sessionsCloturees} clôturée${summary.sessionsCloturees > 1 ? 's' : ''}',
+                    AppColors.success,
+                  ),
+                if (hasEcart)
+                  _caisseBadge(
+                    '⚠️ ${summary.sessionsAvecEcart} écart${summary.sessionsAvecEcart > 1 ? 's' : ''} détecté${summary.sessionsAvecEcart > 1 ? 's' : ''}',
+                    AppColors.danger,
+                  ),
+                if (summary.sessionsOuvertes == 0 &&
+                    summary.sessionsCloturees == 0)
+                  _caisseBadge(
+                    'Aucune caisse ouverte aujourd\'hui',
+                    AppColors.textFaint,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _caisseStat(
+                    'CA aujourd\'hui',
+                    AppFormat.dt(summary.caDuJour),
+                  ),
+                ),
+                Expanded(
+                  child: _caisseStat(
+                    'Cash attendu',
+                    summary.sessionsOuvertes > 0
+                        ? AppFormat.dt(summary.cashAttenduOuvertes)
+                        : '—',
+                  ),
+                ),
+                Expanded(
+                  child: _caisseStat(
+                    'Écart du jour',
+                    summary.sessionsCloturees > 0
+                        ? '${summary.ecartCloturesTotal >= 0 ? '+' : ''}${AppFormat.dt(summary.ecartCloturesTotal)}'
+                        : '—',
+                    color: summary.sessionsCloturees == 0
+                        ? null
+                        : summary.ecartCloturesTotal.abs() < 0.001
+                        ? AppColors.success
+                        : AppColors.danger,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _caisseBadge(String text, Color color) {
+    return Text(
+      text,
+      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color),
+    );
+  }
+
+  Widget _caisseStat(String label, String value, {Color? color}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 10.5, color: AppColors.textFaint),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w800,
+            color: color ?? AppColors.textPrimary,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _ActivitySummaryCard extends ConsumerWidget {
   final VoidCallback onTap;
   const _ActivitySummaryCard({required this.onTap});
 
+  // Only the events worth a glance from the Home screen — suppressions
+  // (always notable) plus price/stock/new-client changes. Routine edits
+  // (e.g. "Client modifié", "Paiement fournisseur") are left for the full
+  // Journal d'activité so this preview doesn't turn into noise.
+  static const _importantActions = {
+    'Prix modifié',
+    'Stock ajusté',
+    'Nouveau client',
+  };
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final unseen = ref.watch(unseenActivityCountProvider);
-    final recent = ref.watch(activityLogProvider).take(4).toList();
+    final recent = ref
+        .watch(activityLogProvider)
+        .where(
+          (e) =>
+              e.impact == ActivityImpact.suppression ||
+              _importantActions.contains(e.action),
+        )
+        .take(4)
+        .toList();
 
     return PressScale(
       onTap: onTap,
@@ -1359,6 +1342,120 @@ class _ActivitySummaryCard extends ConsumerWidget {
   }
 }
 
+void _showBarDetailSheet(BuildContext context, ChartBarDetail detail) {
+  final title = detail.isMonth
+      ? '${_monthFullNames[detail.date.month - 1]} ${detail.date.year}'
+      : AppFormat.fullDate(detail.date);
+  final previous = detail.previousRevenue;
+  String? comparison;
+  if (previous != null) {
+    final pct = (detail.revenue - previous) / previous * 100;
+    final ref = detail.isMonth
+        ? '${_monthFullNames[detail.date.month - 1]} l\'année dernière'
+        : '${AppFormat.weekdayFull(detail.date)} dernier';
+    comparison =
+        '${pct >= 0 ? '↑' : '↓'} ${pct.abs().toStringAsFixed(0)}% vs $ref';
+  }
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: Colors.transparent,
+    builder: (sheetContext) => Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SheetHandle(),
+          const SizedBox(height: 8),
+          Text(title, style: Theme.of(sheetContext).textTheme.titleLarge),
+          if (comparison != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              comparison,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: FontWeight.w700,
+                color: detail.revenue >= previous!
+                    ? AppColors.success
+                    : AppColors.danger,
+              ),
+            ),
+          ],
+          const SizedBox(height: 16),
+          _barDetailRow(
+            'Recettes',
+            AppFormat.dt(detail.revenue),
+            AppColors.teal,
+          ),
+          _barDetailRow(
+            'Bénéfice',
+            AppFormat.dt(detail.profit),
+            AppColors.goldDark,
+          ),
+          _barDetailRow('Tickets', '${detail.tickets}', AppColors.info),
+        ],
+      ),
+    ),
+  );
+}
+
+Widget _barDetailRow(String label, String value, Color color) {
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8),
+    child: Row(
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 10),
+        Expanded(child: Text(label, style: const TextStyle(fontSize: 13.5))),
+        Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14.5),
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _chartTotalStat(String label, String value) {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(
+        label,
+        style: const TextStyle(fontSize: 11, color: AppColors.textFaint),
+      ),
+      const SizedBox(height: 2),
+      Text(
+        value,
+        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800),
+      ),
+    ],
+  );
+}
+
+const _monthFullNames = [
+  'Janvier',
+  'Février',
+  'Mars',
+  'Avril',
+  'Mai',
+  'Juin',
+  'Juillet',
+  'Août',
+  'Septembre',
+  'Octobre',
+  'Novembre',
+  'Décembre',
+];
+
 class _RevenueChartSection extends ConsumerWidget {
   const _RevenueChartSection();
 
@@ -1367,12 +1464,32 @@ class _RevenueChartSection extends ConsumerWidget {
     final period = ref.watch(revenuePeriodProvider);
     final metric = ref.watch(chartMetricProvider);
     final chart = ref.watch(revenueChartDataProvider);
+    final isMonetary =
+        metric == ChartMetric.recettes || metric == ChartMetric.benefices;
+    final total = chart.values.fold<double>(0, (sum, v) => sum + v);
+    final average = chart.values.isEmpty ? 0.0 : total / chart.values.length;
+    final unitLabel = switch (period) {
+      RevenuePeriod.j7 || RevenuePeriod.j30 => 'jour',
+      RevenuePeriod.m12 => 'mois',
+    };
+    String fmt(double v) => isMonetary ? AppFormat.dt(v) : v.toStringAsFixed(0);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SectionHeader(title: metric.label),
-        const SizedBox(height: 10),
+        if (total > 0) ...[
+          Row(
+            children: [
+              Expanded(
+                child: _chartTotalStat('Total ${period.label}', fmt(total)),
+              ),
+              Expanded(
+                child: _chartTotalStat('Moyenne / $unitLabel', fmt(average)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+        ],
         SizedBox(
           height: 32,
           child: ListView(
@@ -1453,7 +1570,9 @@ class _RevenueChartSection extends ConsumerWidget {
               : _RevenueBarChart(
                   values: chart.values,
                   labels: chart.labels,
+                  details: chart.details,
                   metric: metric,
+                  onBarTap: (detail) => _showBarDetailSheet(context, detail),
                 ),
         ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.05, end: 0),
       ],
@@ -1464,11 +1583,15 @@ class _RevenueChartSection extends ConsumerWidget {
 class _RevenueBarChart extends StatelessWidget {
   final List<double> values;
   final List<String> labels;
+  final List<ChartBarDetail> details;
   final ChartMetric metric;
+  final ValueChanged<ChartBarDetail> onBarTap;
   const _RevenueBarChart({
     required this.values,
     required this.labels,
+    required this.details,
     required this.metric,
+    required this.onBarTap,
   });
 
   @override
@@ -1532,6 +1655,14 @@ class _RevenueBarChart extends StatelessWidget {
                   ),
                 ),
           ),
+          touchCallback: (event, response) {
+            final index = response?.spot?.touchedBarGroupIndex;
+            if (event is FlTapUpEvent &&
+                index != null &&
+                index < details.length) {
+              onBarTap(details[index]);
+            }
+          },
         ),
         barGroups: List.generate(values.length, (i) {
           final isLast = i == values.length - 1;
@@ -1559,12 +1690,154 @@ class _RevenueBarChart extends StatelessWidget {
   }
 }
 
-class _RecentSaleTile extends StatelessWidget {
+class _TopProductsCard extends StatelessWidget {
+  final List<TopProductStat> products;
+  final Map<String, double?> trends;
+  const _TopProductsCard({required this.products, required this.trends});
+
+  @override
+  Widget build(BuildContext context) {
+    final maxRevenue = products.first.revenue;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        boxShadow: AppShadows.card,
+      ),
+      child: Column(
+        children: List.generate(products.length, (i) {
+          final p = products[i];
+          final trend = trends[p.product.id];
+          final qtyPart = p.product.venduAuPoids
+              ? '${p.quantite.toStringAsFixed(1)} kg vendus'
+              : '${p.quantite.toStringAsFixed(0)} unité${p.quantite > 1 ? 's' : ''} vendues';
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Container(
+                  width: 26,
+                  height: 26,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: i == 0
+                        ? AppColors.gold.withValues(alpha: 0.2)
+                        : AppColors.surfaceMuted,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    '${i + 1}',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                      color: i == 0
+                          ? AppColors.goldDark
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(p.product.emoji, style: const TextStyle(fontSize: 18)),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        p.product.name,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 5),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(100),
+                        child: TweenAnimationBuilder<double>(
+                          tween: Tween(begin: 0, end: p.revenue / maxRevenue),
+                          duration: const Duration(milliseconds: 700),
+                          curve: Curves.easeOutCubic,
+                          builder: (context, value, _) =>
+                              LinearProgressIndicator(
+                                value: value,
+                                minHeight: 6,
+                                backgroundColor: AppColors.surfaceMuted,
+                                valueColor: const AlwaysStoppedAnimation(
+                                  AppColors.teal,
+                                ),
+                              ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          AppFormat.dtShort(p.revenue),
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        if (trend != null) ...[
+                          const SizedBox(width: 3),
+                          Icon(
+                            trend >= 0
+                                ? Icons.arrow_upward_rounded
+                                : Icons.arrow_downward_rounded,
+                            size: 11,
+                            color: trend >= 0
+                                ? AppColors.success
+                                : AppColors.danger,
+                          ),
+                          Text(
+                            '${trend.abs().toStringAsFixed(0)}%',
+                            style: TextStyle(
+                              fontSize: 10.5,
+                              fontWeight: FontWeight.w700,
+                              color: trend >= 0
+                                  ? AppColors.success
+                                  : AppColors.danger,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    Text(
+                      '$qtyPart • ${p.ventes} vente${p.ventes > 1 ? 's' : ''}',
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        color: AppColors.textFaint,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
+class _RecentSaleTile extends ConsumerWidget {
   final Sale sale;
   const _RecentSaleTile({required this.sale});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final employeeId = sale.employeeId;
+    String? cashierName;
+    if (employeeId != null) {
+      for (final e in ref.watch(employeesProvider)) {
+        if (e.id == employeeId) {
+          cashierName = e.nom.split(' ').first;
+          break;
+        }
+      }
+    }
+
     return PressScale(
       onTap: () => context.push('/history/edit', extra: sale),
       child: Padding(
@@ -1594,7 +1867,9 @@ class _RecentSaleTile extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   Text(
-                    DateFormat('HH:mm').format(sale.dateHeure),
+                    cashierName != null
+                        ? '${DateFormat('HH:mm').format(sale.dateHeure)} • $cashierName'
+                        : DateFormat('HH:mm').format(sale.dateHeure),
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
@@ -1693,20 +1968,50 @@ class _CreditClientTile extends StatelessWidget {
                 ),
               ],
             ),
+            const SizedBox(height: 8),
             if (ratio != null) ...[
-              const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(100),
-                child: LinearProgressIndicator(
-                  value: ratio,
-                  minHeight: 5,
-                  backgroundColor: AppColors.surfaceMuted,
-                  valueColor: AlwaysStoppedAnimation(
-                    ratio >= 1 ? AppColors.danger : AppColors.warning,
+              Row(
+                children: [
+                  Expanded(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(100),
+                      child: LinearProgressIndicator(
+                        value: ratio,
+                        minHeight: 5,
+                        backgroundColor: AppColors.surfaceMuted,
+                        valueColor: AlwaysStoppedAnimation(
+                          ratio >= 1 ? AppColors.danger : AppColors.warning,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${(ratio * 100).round()}%',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w700,
+                      color: ratio >= 1 ? AppColors.danger : AppColors.warning,
+                    ),
+                  ),
+                ],
+              ),
+              if (ratio >= 0.8) ...[
+                const SizedBox(height: 4),
+                Text(
+                  '⚠️ Proche de la limite',
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: ratio >= 1 ? AppColors.danger : AppColors.warning,
                   ),
                 ),
+              ],
+            ] else
+              const Text(
+                'Aucune limite définie',
+                style: TextStyle(fontSize: 11, color: AppColors.textFaint),
               ),
-            ],
           ],
         ),
       ),
@@ -1720,9 +2025,11 @@ class _LowStockTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final ratio = product.seuilAlerte > 0
-        ? (product.stock / product.seuilAlerte).clamp(0.0, 1.0)
-        : 0.0;
+    final decimals = product.venduAuPoids ? 1 : 0;
+    final manque = (product.seuilAlerte - product.stock).clamp(
+      0,
+      double.infinity,
+    );
 
     return PressScale(
       onTap: () => context.push('/products/edit', extra: product),
@@ -1742,7 +2049,7 @@ class _LowStockTile extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  '${product.stock.toStringAsFixed(product.venduAuPoids ? 1 : 0)} ${product.unite}',
+                  '${product.stock.toStringAsFixed(decimals)} ${product.unite}',
                   style: const TextStyle(
                     fontWeight: FontWeight.w800,
                     color: AppColors.warning,
@@ -1750,37 +2057,30 @@ class _LowStockTile extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 6),
-            Row(
-              children: [
-                Expanded(
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(100),
-                    child: LinearProgressIndicator(
-                      value: ratio,
-                      minHeight: 5,
-                      backgroundColor: AppColors.surfaceMuted,
-                      valueColor: const AlwaysStoppedAnimation(
-                        AppColors.warning,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Min ${product.seuilAlerte.toStringAsFixed(product.venduAuPoids ? 1 : 0)} ${product.unite}',
-                  style: const TextStyle(
-                    fontSize: 10.5,
-                    color: AppColors.textFaint,
-                  ),
-                ),
-              ],
+            const SizedBox(height: 4),
+            Text(
+              'Seuil : ${product.seuilAlerte.toStringAsFixed(decimals)} ${product.unite}'
+              '${manque > 0 ? ' • Manque ${manque.toStringAsFixed(decimals)} ${product.unite}' : ''}',
+              style: const TextStyle(
+                fontSize: 10.5,
+                color: AppColors.textFaint,
+              ),
             ),
           ],
         ),
       ),
     );
   }
+}
+
+enum _InvoiceState { aJour, bientotDue, enRetard }
+
+extension on _InvoiceState {
+  (String, Color) get labelAndColor => switch (this) {
+    _InvoiceState.aJour => ('À jour', AppColors.success),
+    _InvoiceState.bientotDue => ('Bientôt due', AppColors.warning),
+    _InvoiceState.enRetard => ('En retard', AppColors.danger),
+  };
 }
 
 class _UnpaidInvoiceTile extends StatelessWidget {
@@ -1792,6 +2092,12 @@ class _UnpaidInvoiceTile extends StatelessWidget {
     final now = DateTime.now();
     final daysOpen = now.difference(invoice.date).inDays;
     final isToday = daysOpen == 0 && invoice.date.day == now.day;
+    final state = daysOpen >= oldUnpaidInvoiceThresholdDays
+        ? _InvoiceState.enRetard
+        : daysOpen >= oldUnpaidInvoiceThresholdDays - 15
+        ? _InvoiceState.bientotDue
+        : _InvoiceState.aJour;
+    final (stateLabel, stateColor) = state.labelAndColor;
 
     return PressScale(
       onTap: () => showInvoiceDetailSheet(context, invoice),
@@ -1813,19 +2119,35 @@ class _UnpaidInvoiceTile extends StatelessWidget {
                     invoice.fournisseurNom ?? 'Fournisseur non précisé',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
-                  Text(
-                    isToday
-                        ? 'Aujourd\'hui'
-                        : 'Ouverte depuis $daysOpen jour${daysOpen > 1 ? 's' : ''}',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: daysOpen >= oldUnpaidInvoiceThresholdDays
-                          ? AppColors.danger
-                          : AppColors.textSecondary,
-                      fontWeight: daysOpen >= oldUnpaidInvoiceThresholdDays
-                          ? FontWeight.w700
-                          : FontWeight.w400,
-                    ),
+                  Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: stateColor,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      Text(
+                        stateLabel,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: stateColor,
+                        ),
+                      ),
+                      Text(
+                        isToday
+                            ? ' · aujourd\'hui'
+                            : ' · ouverte depuis $daysOpen jour${daysOpen > 1 ? 's' : ''}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

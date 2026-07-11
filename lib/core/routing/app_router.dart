@@ -4,7 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:sou9ix/features/activity/view/activity_log_screen.dart';
 import 'package:sou9ix/features/activity/view/trash_screen.dart';
 import 'package:sou9ix/features/analytics/view/analytics_screen.dart';
+import 'package:sou9ix/features/caisse/view/caisse_detail_screen.dart';
+import 'package:sou9ix/features/caisse/view/caisses_screen.dart';
 import 'package:sou9ix/features/employees/model/employee.dart';
+import 'package:sou9ix/features/employees/model/shift.dart';
 import 'package:sou9ix/features/expenses/view/expenses_screen.dart';
 import 'package:sou9ix/features/products/model/product.dart';
 import 'package:sou9ix/features/sales/model/sale.dart';
@@ -15,10 +18,12 @@ import 'package:sou9ix/features/clients/view/client_detail_screen.dart';
 import 'package:sou9ix/features/clients/view/clients_screen.dart';
 import 'package:sou9ix/features/employees/view/employee_detail_screen.dart';
 import 'package:sou9ix/features/employees/view/employee_form_screen.dart';
+import 'package:sou9ix/features/employees/view/employee_performance_screen.dart';
 import 'package:sou9ix/features/employees/view/employees_screen.dart';
 import 'package:sou9ix/features/sales/view/edit_sale_screen.dart';
 import 'package:sou9ix/features/sales/view/history_screen.dart';
 import 'package:sou9ix/features/pos/view/checkout_screen.dart';
+import 'package:sou9ix/features/pos/view/scan_sale_screen.dart';
 import 'package:sou9ix/features/profile/view/about_screen.dart';
 import 'package:sou9ix/features/profile/view/help_center_screen.dart';
 import 'package:sou9ix/features/sales/view/receipt_screen.dart';
@@ -30,6 +35,7 @@ import 'package:sou9ix/core/shell/main_shell.dart';
 import 'package:sou9ix/features/splash/view/splash_screen.dart';
 import 'package:sou9ix/features/stats/view/statistics_screen.dart';
 import 'package:sou9ix/features/stock/view/purchase_invoices_screen.dart';
+import 'package:sou9ix/features/stock/view/stock_detail_screen.dart';
 import 'package:sou9ix/features/stock/view/stock_receipt_screen.dart';
 import 'package:sou9ix/features/suppliers/model/supplier.dart';
 import 'package:sou9ix/features/suppliers/view/supplier_detail_screen.dart';
@@ -52,6 +58,10 @@ final appRouter = GoRouter(
       path: '/checkout',
       builder: (context, state) => const CheckoutScreen(),
     ),
+    // The admin's shell has no permanent Caisse tab (daily sales is a
+    // Caissier job) — this lets the dashboard's "Vente" quick action still
+    // reach the same scan-and-sell screen as a one-off pushed route.
+    GoRoute(path: '/pos', builder: (context, state) => const ScanSaleScreen()),
     GoRoute(
       path: '/receipt',
       builder: (context, state) => ReceiptScreen(sale: state.extra as Sale),
@@ -93,6 +103,11 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/stock/receipt',
       builder: (context, state) => const StockReceiptScreen(),
+    ),
+    GoRoute(
+      path: '/stock/detail',
+      builder: (context, state) =>
+          StockDetailScreen(product: state.extra as Product),
     ),
     GoRoute(
       path: '/purchases',
@@ -154,8 +169,21 @@ final appRouter = GoRouter(
           EmployeeDetailScreen(employee: state.extra as Employee),
     ),
     GoRoute(
+      path: '/employees/performance',
+      builder: (context, state) => const EmployeePerformanceScreen(),
+    ),
+    GoRoute(
       path: '/activity-log',
       builder: (context, state) => const ActivityLogScreen(),
+    ),
+    GoRoute(
+      path: '/caisses',
+      builder: (context, state) => const CaissesScreen(),
+    ),
+    GoRoute(
+      path: '/caisses/detail',
+      builder: (context, state) =>
+          CaisseDetailScreen(shift: state.extra as Shift),
     ),
     GoRoute(path: '/trash', builder: (context, state) => const TrashScreen()),
     GoRoute(

@@ -7,6 +7,7 @@ import 'package:sou9ix/core/theme/app_colors.dart';
 import 'package:sou9ix/core/shell/animated_bottom_nav.dart';
 import 'package:sou9ix/core/shell/bottom_nav_visibility_provider.dart';
 import 'package:sou9ix/core/shell/tab_navigation_provider.dart';
+import 'package:sou9ix/features/caisse/view/caisse_gate.dart';
 import 'package:sou9ix/features/settings/viewmodel/company_settings_provider.dart';
 import 'package:sou9ix/features/dashboard/view/dashboard_screen.dart';
 import 'package:sou9ix/features/sales/view/history_screen.dart';
@@ -18,9 +19,11 @@ import 'package:sou9ix/features/stock/view/stock_screen.dart';
 
 /// Bottom-tab shell. Tabs (and their order) depend on the signed-in role:
 /// the Administrator gets a management-oriented set (Dashboard, Stock,
-/// Stats), while the Caissier gets a sales-first set (Caisse, Produits,
-/// Stock, Historique). Both share Caisse and Profil, and both can see and
-/// manage stock levels.
+/// Stats, Profil) — daily sales is a Caissier job, so Caisse isn't one of
+/// their permanent tabs; they can still ring up a sale via the dashboard's
+/// "Vente" quick action, which pushes it as a one-off route instead
+/// (see [ScanSaleScreen] pushed at `/pos`). The Caissier gets a
+/// sales-first set (Caisse, Produits, Stock, Historique).
 class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
 
@@ -36,11 +39,6 @@ class _MainShellState extends ConsumerState<MainShell> {
       icon: Icons.grid_view_outlined,
       activeIcon: Icons.grid_view_rounded,
       label: 'Accueil',
-    ),
-    NavItemData(
-      icon: Icons.point_of_sale_outlined,
-      activeIcon: Icons.point_of_sale_rounded,
-      label: 'Caisse',
     ),
     NavItemData(
       icon: Icons.inventory_2_outlined,
@@ -101,20 +99,23 @@ class _MainShellState extends ConsumerState<MainShell> {
     ref.watch(companySettingsProvider);
     final isAdmin = ref.watch(authProvider)?.role == UserRole.admin;
     final items = isAdmin ? _adminItems : _caissierItems;
-    // The Caisse tab holds the only persistent camera session; every other
-    // tab is inert, so it only needs to know whether it's the visible one.
-    final caisseTabIndex = isAdmin ? 1 : 0;
     final index = _index >= items.length ? 0 : _index;
+    // Only the Caissier's shell keeps a persistent Caisse tab (index 0)
+    // holding the live camera session; the admin reaches the same screen
+    // as a one-off pushed route (`/pos`) instead, so it's never part of
+    // this IndexedStack for them.
+    const caisseTabIndex = 0;
     final pages = isAdmin
         ? [
             const DashboardScreen(),
-            ScanSaleScreen(isActive: index == caisseTabIndex),
             const StockScreen(),
             const StatisticsScreen(),
             const ProfileScreen(),
           ]
         : [
-            ScanSaleScreen(isActive: index == caisseTabIndex),
+            CaisseGate(
+              child: ScanSaleScreen(isActive: index == caisseTabIndex),
+            ),
             const ProductsScreen(),
             const StockScreen(),
             const HistoryScreen(),

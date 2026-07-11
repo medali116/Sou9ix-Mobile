@@ -5,8 +5,11 @@ import 'package:go_router/go_router.dart';
 
 import 'package:sou9ix/core/formatters.dart';
 import 'package:sou9ix/features/analytics/viewmodel/analytics_provider.dart';
+import 'package:sou9ix/features/dashboard/viewmodel/dashboard_provider.dart';
+import 'package:sou9ix/features/sales/model/sale.dart';
 import 'package:sou9ix/core/theme/app_colors.dart';
 import 'package:sou9ix/core/theme/app_theme.dart';
+import 'package:sou9ix/core/widgets/press_scale.dart';
 import 'package:sou9ix/core/widgets/product_avatar.dart';
 import 'package:sou9ix/core/widgets/section_header.dart';
 
@@ -84,6 +87,10 @@ class AnalyticsScreen extends ConsumerWidget {
               ],
             ),
           ),
+          const SizedBox(height: 26),
+          const SectionHeader(title: 'Aperçu approfondi'),
+          const SizedBox(height: 12),
+          const _DeeperInsightsGrid(),
           const SizedBox(height: 26),
           SectionHeader(title: 'Prévision de rupture de stock'),
           const SizedBox(height: 4),
@@ -331,6 +338,167 @@ class AnalyticsScreen extends ConsumerWidget {
             color: AppColors.warning,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _DeeperInsightsGrid extends ConsumerWidget {
+  const _DeeperInsightsGrid();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final bestCashier = ref.watch(bestCashierTodayProvider);
+    final newClients = ref.watch(newClientsThisMonthProvider);
+    final neverSold = ref.watch(neverSoldProductsProvider).length;
+    final loss = ref.watch(expiredStockLossProvider);
+    final margin = ref.watch(averageMarginPctProvider);
+    final bestClient = ref.watch(topClientThisMonthProvider);
+    final suppliers = ref.watch(topSuppliersProvider);
+    final payments = ref.watch(todayPaymentBreakdownProvider);
+    final paymentsTotal = payments.values.fold<double>(0, (sum, v) => sum + v);
+
+    String pct(double v) =>
+        paymentsTotal > 0 ? '${(v / paymentsTotal * 100).round()}%' : '0%';
+
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      mainAxisSpacing: 10,
+      crossAxisSpacing: 10,
+      childAspectRatio: 1.5,
+      children: [
+        _InsightTile(
+          icon: Icons.emoji_events_outlined,
+          label: 'Meilleur caissier',
+          value: bestCashier != null ? bestCashier.name.split(' ').first : '—',
+          sub: bestCashier != null
+              ? '${AppFormat.dtShort(bestCashier.revenue)} · ${bestCashier.tickets} tickets'
+              : 'Aucune vente',
+        ),
+        _InsightTile(
+          icon: Icons.person_add_alt_1_outlined,
+          label: 'Nouveaux clients',
+          value: '$newClients',
+          sub: 'ce mois',
+        ),
+        _InsightTile(
+          icon: Icons.inventory_outlined,
+          label: 'Jamais vendus',
+          value: '$neverSold',
+          sub: 'produits',
+        ),
+        _InsightTile(
+          icon: Icons.delete_outline_rounded,
+          label: 'Perte (expirés)',
+          value: AppFormat.dtShort(loss),
+          sub: 'au prix d\'achat',
+          valueColor: loss > 0 ? AppColors.danger : null,
+        ),
+        _InsightTile(
+          icon: Icons.percent_rounded,
+          label: 'Marge moyenne',
+          value: margin != null ? '${margin.toStringAsFixed(0)}%' : '—',
+          sub: 'catalogue',
+        ),
+        _InsightTile(
+          icon: Icons.pie_chart_outline_rounded,
+          label: 'Paiements (jour)',
+          value: pct(payments[ModePaiement.especes] ?? 0),
+          sub:
+              'espèces · ${pct(payments[ModePaiement.carte] ?? 0)} carte · ${pct(payments[ModePaiement.credit] ?? 0)} crédit',
+        ),
+        _InsightTile(
+          icon: Icons.star_outline_rounded,
+          label: 'Meilleur client',
+          value: bestClient != null
+              ? bestClient.client.nom.split(' ').first
+              : '—',
+          sub: bestClient != null
+              ? '${AppFormat.dtShort(bestClient.total)} ce mois'
+              : 'Aucun achat',
+          onTap: bestClient != null
+              ? () => context.push('/clients/detail', extra: bestClient.client)
+              : null,
+        ),
+        _InsightTile(
+          icon: Icons.local_shipping_outlined,
+          label: 'Meilleur fournisseur',
+          value: suppliers.isNotEmpty ? suppliers.first.nom : '—',
+          sub: suppliers.isNotEmpty
+              ? '${suppliers.first.factures} factures'
+              : 'Aucun achat',
+          onTap: () => context.push('/suppliers'),
+        ),
+      ],
+    );
+  }
+}
+
+class _InsightTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final String sub;
+  final Color? valueColor;
+  final VoidCallback? onTap;
+
+  const _InsightTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.sub,
+    this.valueColor,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return PressScale(
+      onTap: onTap ?? () {},
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          boxShadow: AppShadows.card,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, size: 16, color: AppColors.textSecondary),
+            const SizedBox(height: 6),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                maxLines: 1,
+                style: TextStyle(
+                  fontSize: 14.5,
+                  fontWeight: FontWeight.w800,
+                  color: valueColor ?? AppColors.textPrimary,
+                ),
+              ),
+            ),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Text(
+              sub,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 9.5, color: AppColors.textFaint),
+            ),
+          ],
+        ),
       ),
     );
   }

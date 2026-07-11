@@ -15,6 +15,7 @@ class AuthNotifier extends StateNotifier<AppUser?> {
       telephone: '+216 20 123 456',
       role: UserRole.admin,
       magasin: 'Épicerie El Baraka — La Marsa',
+      employeeId: 'e1',
     );
   }
 
@@ -26,6 +27,7 @@ class AuthNotifier extends StateNotifier<AppUser?> {
       telephone: '+216 22 987 654',
       role: UserRole.caissier,
       magasin: 'Épicerie El Baraka — La Marsa',
+      employeeId: 'e2',
     );
   }
 

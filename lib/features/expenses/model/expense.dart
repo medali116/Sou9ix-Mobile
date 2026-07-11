@@ -2,6 +2,8 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import 'package:sou9ix/features/clients/model/client.dart' show PaymentMethod;
+
 enum ExpenseCategory {
   loyer,
   steg,
@@ -79,6 +81,12 @@ class Expense {
   final bool recurrente;
   final String? ajouteePar;
 
+  /// How the expense left the business — defaults to espèces since that's
+  /// the overwhelming majority case for day-to-day shop expenses, and it's
+  /// what lets a cash-register session's reconciliation know which
+  /// expenses actually came out of the till.
+  final PaymentMethod modePaiement;
+
   const Expense({
     required this.id,
     required this.label,
@@ -90,6 +98,7 @@ class Expense {
     this.paye = true,
     this.recurrente = false,
     this.ajouteePar,
+    this.modePaiement = PaymentMethod.especes,
   });
 
   Expense copyWith({
@@ -103,6 +112,7 @@ class Expense {
     bool? paye,
     bool? recurrente,
     String? ajouteePar,
+    PaymentMethod? modePaiement,
   }) => Expense(
     id: id ?? this.id,
     label: label ?? this.label,
@@ -114,5 +124,6 @@ class Expense {
     paye: paye ?? this.paye,
     recurrente: recurrente ?? this.recurrente,
     ajouteePar: ajouteePar ?? this.ajouteePar,
+    modePaiement: modePaiement ?? this.modePaiement,
   );
 }

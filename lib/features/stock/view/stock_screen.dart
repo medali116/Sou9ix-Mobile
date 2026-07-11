@@ -4,13 +4,13 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import 'package:sou9ix/core/formatters.dart';
 import 'package:sou9ix/features/products/model/product.dart';
 import 'package:sou9ix/features/products/viewmodel/products_provider.dart';
-import 'package:sou9ix/features/sales/viewmodel/sales_provider.dart';
+import 'package:sou9ix/features/analytics/viewmodel/analytics_provider.dart';
 import 'package:sou9ix/features/pos/view/barcode_capture_screen.dart';
+import 'package:sou9ix/features/stock/view/adjust_stock_sheet.dart';
 import 'package:sou9ix/core/shell/bottom_nav_visibility_provider.dart';
 import 'package:sou9ix/core/theme/app_colors.dart';
 import 'package:sou9ix/core/theme/app_theme.dart';
@@ -161,197 +161,6 @@ class _StockScreenState extends ConsumerState<StockScreen> {
     if (result != null) setState(() => _sort = result);
   }
 
-  Future<void> _adjustStock(Product p) async {
-    final ctrl = TextEditingController(
-      text: p.venduAuPoids
-          ? p.stock.toStringAsFixed(2)
-          : p.stock.toInt().toString(),
-    );
-    final causeCtrl = TextEditingController();
-    final result = await showModalBottomSheet<(double, String?)>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (_) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
-        child: Container(
-          constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.85,
-          ),
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(AppRadius.xl),
-            ),
-          ),
-          child: StatefulBuilder(
-            builder: (sheetContext, setSheetState) {
-              final newValue = double.tryParse(ctrl.text);
-              final changed = newValue != null && newValue != p.stock;
-              final canSave =
-                  newValue != null &&
-                  (!changed || causeCtrl.text.trim().isNotEmpty);
-
-              return SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Center(child: SheetHandle()),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Ajuster le stock',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    Text(p.name, style: Theme.of(context).textTheme.bodyMedium),
-                    const SizedBox(height: 16),
-                    Text(
-                      p.venduAuPoids
-                          ? 'Nouveau stock (kg)'
-                          : 'Nouveau stock (pcs)',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: ctrl,
-                      autofocus: true,
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      onChanged: (_) => setSheetState(() {}),
-                    ),
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: causeCtrl,
-                      onChanged: (_) => setSheetState(() {}),
-                      decoration: InputDecoration(
-                        labelText: changed
-                            ? 'Cause (obligatoire)'
-                            : 'Cause (optionnel)',
-                        prefixIcon: const Icon(Icons.edit_note_rounded),
-                        hintText: 'Ex. Produit cassé',
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: canSave
-                            ? () {
-                                Navigator.pop(sheetContext, (
-                                  newValue,
-                                  causeCtrl.text.trim().isEmpty
-                                      ? null
-                                      : causeCtrl.text.trim(),
-                                ));
-                              }
-                            : null,
-                        child: const Text('Enregistrer'),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      ),
-    );
-    if (result != null && mounted) {
-      final (value, cause) = result;
-      ref
-          .read(productsProvider.notifier)
-          .upsert(p.copyWith(stock: value), motifStock: cause);
-    }
-  }
-
-  void _showHistorySheet(Product p) {
-    final sales = ref.read(salesProvider);
-    final moves = <({DateTime date, double quantite})>[];
-    for (final s in sales) {
-      for (final l in s.lignes) {
-        if (l.product.id == p.id) {
-          moves.add((date: s.dateHeure, quantite: l.quantite));
-        }
-      }
-    }
-    moves.sort((a, b) => b.date.compareTo(a.date));
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        minChildSize: 0.35,
-        maxChildSize: 0.9,
-        expand: false,
-        builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.vertical(
-              top: Radius.circular(AppRadius.xl),
-            ),
-          ),
-          child: Column(
-            children: [
-              const SheetHandle(),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Historique · ${p.name}',
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: moves.isEmpty
-                    ? const EmptyState(
-                        icon: Icons.history_rounded,
-                        title: 'Aucun mouvement',
-                        message: 'Les ventes de ce produit\napparaîtront ici.',
-                      )
-                    : ListView.separated(
-                        controller: scrollController,
-                        padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                        itemCount: moves.length,
-                        separatorBuilder: (_, _) => const Divider(height: 18),
-                        itemBuilder: (context, index) {
-                          final m = moves[index];
-                          return Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                DateFormat('dd/MM/yyyy HH:mm').format(m.date),
-                                style: Theme.of(context).textTheme.bodyMedium,
-                              ),
-                              Text(
-                                '- ${p.venduAuPoids ? AppFormat.kg(m.quantite) : '${m.quantite.toInt()} pcs'}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.danger,
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final products = ref.watch(productsProvider);
@@ -362,6 +171,7 @@ class _StockScreenState extends ConsumerState<StockScreen> {
     final faibleCount = products
         .where((p) => p.stockFaible && p.stock > 0)
         .length;
+    final stockValue = ref.watch(currentStockValueProvider);
 
     var list = (_onlyLow ? lowStock : products)
         .where(
@@ -426,32 +236,76 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                 ? const SizedBox(width: double.infinity)
                 : Padding(
                     padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
-                    child: Row(
+                    child: Column(
                       children: [
-                        Expanded(
-                          child: _QuickStat(
-                            icon: Icons.inventory_2_outlined,
-                            color: AppColors.teal,
-                            value: '${products.length}',
-                            label: 'Total produits',
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _QuickStat(
+                                icon: Icons.inventory_2_outlined,
+                                color: AppColors.teal,
+                                value: '${products.length}',
+                                label: 'Total produits',
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _QuickStat(
+                                icon: Icons.warning_amber_rounded,
+                                color: AppColors.warning,
+                                value: '$faibleCount',
+                                label: 'Stock faible',
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: _QuickStat(
+                                icon: Icons.remove_circle_outline_rounded,
+                                color: AppColors.danger,
+                                value: '$ruptureCount',
+                                label: 'Rupture',
+                              ),
+                            ),
+                          ],
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _QuickStat(
-                            icon: Icons.warning_amber_rounded,
-                            color: AppColors.warning,
-                            value: '$faibleCount',
-                            label: 'Stock faible',
+                        const SizedBox(height: 8),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _QuickStat(
-                            icon: Icons.remove_circle_outline_rounded,
-                            color: AppColors.danger,
-                            value: '$ruptureCount',
-                            label: 'Rupture',
+                          decoration: BoxDecoration(
+                            gradient: AppColors.inkGradient,
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.account_balance_wallet_outlined,
+                                color: AppColors.tealLight,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  'Valeur du stock · au prix d\'achat',
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.7),
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                AppFormat.dt(stockValue),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 14.5,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
@@ -578,34 +432,26 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                               ),
                             ),
                           ),
-                          if (!_onlyLow)
-                            TextButton(
-                              onPressed: () => setState(() => _onlyLow = true),
-                              style: TextButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
-                                ),
-                                minimumSize: Size.zero,
-                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                foregroundColor: AppColors.warning,
+                          TextButton(
+                            onPressed: () =>
+                                setState(() => _onlyLow = !_onlyLow),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
                               ),
-                              child: const Text(
-                                'Voir',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 12.5,
-                                ),
-                              ),
+                              minimumSize: Size.zero,
+                              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              foregroundColor: AppColors.warning,
                             ),
-                          Transform.scale(
-                            scale: 0.8,
-                            child: Switch(
-                              value: _onlyLow,
-                              activeThumbColor: AppColors.warning,
-                              materialTapTargetSize:
-                                  MaterialTapTargetSize.shrinkWrap,
-                              onChanged: (v) => setState(() => _onlyLow = v),
+                            child: Text(
+                              _onlyLow
+                                  ? 'Tous les produits'
+                                  : 'Voir les ${lowStock.length} produits →',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 12.5,
+                              ),
                             ),
                           ),
                         ],
@@ -651,7 +497,8 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                             extentRatio: 0.5,
                             children: [
                               SlidableAction(
-                                onPressed: (_) => _adjustStock(p),
+                                onPressed: (_) =>
+                                    showAdjustStockSheet(context, ref, p),
                                 backgroundColor: AppColors.goldDark,
                                 foregroundColor: Colors.white,
                                 icon: Icons.tune_rounded,
@@ -661,78 +508,89 @@ class _StockScreenState extends ConsumerState<StockScreen> {
                                 ),
                               ),
                               SlidableAction(
-                                onPressed: (_) => _showHistorySheet(p),
-                                backgroundColor: AppColors.info,
+                                onPressed: (_) =>
+                                    context.push('/returns/new', extra: p),
+                                backgroundColor: AppColors.danger,
                                 foregroundColor: Colors.white,
-                                icon: Icons.history_rounded,
-                                label: 'Historique',
+                                icon: Icons.remove_shopping_cart_outlined,
+                                label: 'Perte',
                                 borderRadius: BorderRadius.circular(
                                   AppRadius.md,
                                 ),
                               ),
                             ],
                           ),
-                          child: Container(
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: AppColors.surface,
+                          child: Material(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            child: InkWell(
                               borderRadius: BorderRadius.circular(AppRadius.md),
-                              boxShadow: AppShadows.card,
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
+                              onTap: () =>
+                                  context.push('/stock/detail', extra: p),
+                              child: Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.md,
+                                  ),
+                                  boxShadow: AppShadows.card,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    ProductAvatar(
-                                      emoji: p.emoji,
-                                      photoBytes: p.photoBytes,
-                                      size: 32,
+                                    Row(
+                                      children: [
+                                        ProductAvatar(
+                                          emoji: p.emoji,
+                                          photoBytes: p.photoBytes,
+                                          size: 32,
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            p.name,
+                                            style: Theme.of(
+                                              context,
+                                            ).textTheme.titleMedium,
+                                          ),
+                                        ),
+                                        Text(
+                                          p.venduAuPoids
+                                              ? AppFormat.kg(p.stock)
+                                              : '${p.stock.toInt()} pcs',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.w800,
+                                            color: p.stock <= 0
+                                                ? AppColors.danger
+                                                : p.stockFaible
+                                                ? AppColors.warning
+                                                : AppColors.textPrimary,
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        p.name,
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.titleMedium,
-                                      ),
+                                    const SizedBox(height: 10),
+                                    StockBar(
+                                      quantite: p.stock,
+                                      seuil: p.seuilAlerte,
                                     ),
-                                    Text(
-                                      p.venduAuPoids
-                                          ? AppFormat.kg(p.stock)
-                                          : '${p.stock.toInt()} pcs',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w800,
-                                        color: p.stock <= 0
-                                            ? AppColors.danger
-                                            : p.stockFaible
-                                            ? AppColors.warning
-                                            : AppColors.textPrimary,
-                                      ),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          'Seuil d\'alerte : ${p.seuilAlerte.toStringAsFixed(1)} ${p.unite}',
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodyMedium,
+                                        ),
+                                        _StockStatusBadge(product: p),
+                                      ],
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 10),
-                                StockBar(
-                                  quantite: p.stock,
-                                  seuil: p.seuilAlerte,
-                                ),
-                                const SizedBox(height: 6),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Seuil d\'alerte : ${p.seuilAlerte.toStringAsFixed(1)} ${p.unite}',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodyMedium,
-                                    ),
-                                    _StockStatusBadge(product: p),
-                                  ],
-                                ),
-                              ],
+                              ),
                             ),
                           ),
                         ).animate().fadeIn(

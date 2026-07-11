@@ -11,6 +11,12 @@ class StatCard extends StatelessWidget {
   final Color color;
   final String? trend;
   final bool trendUp;
+  final String? subtitle;
+  final Color? subtitleColor;
+
+  /// Denser padding/icon size — used on the dashboard's KPI grid where four
+  /// cards need to fit above the fold without a tall empty band underneath.
+  final bool compact;
 
   const StatCard({
     super.key,
@@ -20,12 +26,16 @@ class StatCard extends StatelessWidget {
     required this.color,
     this.trend,
     this.trendUp = true,
+    this.subtitle,
+    this.subtitleColor,
+    this.compact = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final iconSize = compact ? 32.0 : 40.0;
     return Container(
-          padding: const EdgeInsets.all(18),
+          padding: EdgeInsets.all(compact ? 14 : 18),
           decoration: BoxDecoration(
             color: AppColors.surface,
             borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -33,48 +43,71 @@ class StatCard extends StatelessWidget {
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: iconSize,
+                height: iconSize,
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
-                child: Icon(icon, color: color, size: 20),
+                child: Icon(icon, color: color, size: compact ? 17 : 20),
               ),
-              const SizedBox(height: 14),
-              Text(value, style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 2),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      label,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  if (trend != null) ...[
+              SizedBox(height: compact ? 8 : 14),
+              Text(
+                value,
+                style: compact
+                    ? Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      )
+                    : Theme.of(context).textTheme.headlineMedium,
+              ),
+              const SizedBox(height: 1),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.bodyMedium,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (trend != null) ...[
+                const SizedBox(height: 2),
+                Row(
+                  children: [
                     Icon(
                       trendUp
                           ? Icons.trending_up_rounded
                           : Icons.trending_down_rounded,
-                      size: 14,
+                      size: 13,
                       color: trendUp ? AppColors.success : AppColors.danger,
                     ),
                     const SizedBox(width: 2),
-                    Text(
-                      trend!,
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                        color: trendUp ? AppColors.success : AppColors.danger,
+                    Flexible(
+                      child: Text(
+                        trend!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: trendUp ? AppColors.success : AppColors.danger,
+                        ),
                       ),
                     ),
                   ],
-                ],
-              ),
+                ),
+              ],
+              if (subtitle != null) ...[
+                const SizedBox(height: 2),
+                Text(
+                  subtitle!,
+                  style: TextStyle(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w700,
+                    color: subtitleColor ?? AppColors.textFaint,
+                  ),
+                ),
+              ],
             ],
           ),
         )

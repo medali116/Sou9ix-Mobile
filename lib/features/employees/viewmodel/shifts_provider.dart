@@ -5,27 +5,44 @@ import 'package:sou9ix/features/employees/model/shift.dart';
 class ShiftsNotifier extends StateNotifier<List<Shift>> {
   ShiftsNotifier() : super(const []);
 
-  void clockIn(String employeeId) {
+  /// Opens a cash-register session for [employeeId] with a starting float
+  /// of [fondInitial] — a no-op if they already have one open.
+  void clockIn(
+    String employeeId, {
+    double fondInitial = 0,
+    String fondSource = 'Report de caisse',
+  }) {
     if (state.any((s) => s.employeeId == employeeId && s.enCours)) return;
     state = [
       Shift(
         id: 'sh${DateTime.now().microsecondsSinceEpoch}',
         employeeId: employeeId,
         clockIn: DateTime.now(),
+        fondInitial: fondInitial,
+        fondSource: fondSource,
       ),
       ...state,
     ];
   }
 
-  void clockOut(String employeeId) {
+  /// Closes [shiftId]'s cash session with what was physically counted in
+  /// the till — the reconciliation against expected cash is computed
+  /// separately (see `cash_session_provider.dart`) since it needs sales/
+  /// expense/payment data this notifier doesn't have.
+  void closeCashSession(
+    String shiftId, {
+    required double montantCompte,
+    String? ecartMotif,
+    String? ecartCommentaire,
+  }) {
     state = [
       for (final s in state)
-        if (s.employeeId == employeeId && s.enCours)
-          Shift(
-            id: s.id,
-            employeeId: s.employeeId,
-            clockIn: s.clockIn,
+        if (s.id == shiftId)
+          s.copyWith(
             clockOut: DateTime.now(),
+            montantCompte: montantCompte,
+            ecartMotif: ecartMotif,
+            ecartCommentaire: ecartCommentaire,
           )
         else
           s,

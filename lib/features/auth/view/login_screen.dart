@@ -36,6 +36,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     context.go('/app');
   }
 
+  /// No real backend exists yet to check credentials against, so this
+  /// resolves the two demo accounts by the email actually typed instead
+  /// of always logging in as admin — the form isn't purely cosmetic
+  /// anymore, even without real authentication behind it.
+  void _loginFromForm() {
+    final email = _emailCtrl.text.trim().toLowerCase();
+    final notifier = ref.read(authProvider.notifier);
+    _login(
+      email == 'rania@sou9ix.tn'
+          ? notifier.loginAsCaissier
+          : notifier.loginAsAdmin,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -109,11 +123,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _loading
-                      ? null
-                      : () => _login(
-                          ref.read(authProvider.notifier).loginAsAdmin,
-                        ),
+                  onPressed: _loading ? null : _loginFromForm,
                   child: _loading
                       ? const SizedBox(
                           width: 22,

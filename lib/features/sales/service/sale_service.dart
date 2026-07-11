@@ -9,6 +9,8 @@ import 'package:sou9ix/features/sales/model/sale.dart';
 import 'package:sou9ix/features/clients/viewmodel/clients_provider.dart';
 import 'package:sou9ix/features/products/viewmodel/products_provider.dart';
 import 'package:sou9ix/features/sales/viewmodel/sales_provider.dart';
+import 'package:sou9ix/features/stock/model/stock_movement.dart';
+import 'package:sou9ix/features/stock/viewmodel/stock_movements_provider.dart';
 
 /// Encapsulates the multi-step domain transactions around a [Sale]: every
 /// place a sale is created, edited or deleted must keep stock and client
@@ -50,6 +52,15 @@ class SaleService {
       _ref
           .read(productsProvider.notifier)
           .decrementStock(item.product.id, item.quantite);
+      recordStockMovement(
+        _ref,
+        productId: item.product.id,
+        productName: item.product.name,
+        type: StockMovementType.vente,
+        quantite: -item.quantite,
+        stockApres: _currentStock(item.product.id),
+        reference: 'Ticket #${_reference(sale)}',
+      );
     }
     if (modePaiement == ModePaiement.credit && effectiveClientId != null) {
       _ref
@@ -75,10 +86,23 @@ class SaleService {
     final newQty = <String, double>{
       for (final l in lignes) l.product.id: l.quantite,
     };
+    final productNames = <String, String>{
+      for (final l in [...original.lignes, ...lignes])
+        l.product.id: l.product.name,
+    };
     for (final id in {...oldQty.keys, ...newQty.keys}) {
       final delta = (oldQty[id] ?? 0) - (newQty[id] ?? 0);
       if (delta != 0) {
         _ref.read(productsProvider.notifier).adjustStock(id, delta);
+        recordStockMovement(
+          _ref,
+          productId: id,
+          productName: productNames[id] ?? id,
+          type: StockMovementType.ajustement,
+          quantite: delta,
+          stockApres: _currentStock(id),
+          reference: 'Ticket #${_reference(original)} modifié',
+        );
       }
     }
 
@@ -112,6 +136,9 @@ class SaleService {
       ? sale.id.substring(sale.id.length - 6).toUpperCase()
       : sale.id.toUpperCase();
 
+  double _currentStock(String productId) =>
+      _ref.read(productsProvider).firstWhere((p) => p.id == productId).stock;
+
   /// Reverses a sale entirely: restores the stock it consumed, cancels the
   /// client credit it created (if any), then removes the record — but
   /// keeps a copy in the Corbeille (see [restoreSale]) rather than
@@ -121,6 +148,16 @@ class SaleService {
       _ref
           .read(productsProvider.notifier)
           .adjustStock(l.product.id, l.quantite);
+      recordStockMovement(
+        _ref,
+        productId: l.product.id,
+        productName: l.product.name,
+        type: StockMovementType.ajustement,
+        quantite: l.quantite,
+        stockApres: _currentStock(l.product.id),
+        reference: 'Ticket #${_reference(sale)} supprimé',
+        motif: motif,
+      );
     }
     if (sale.modePaiement == ModePaiement.credit && sale.clientId != null) {
       _ref
@@ -149,6 +186,15 @@ class SaleService {
       _ref
           .read(productsProvider.notifier)
           .decrementStock(l.product.id, l.quantite);
+      recordStockMovement(
+        _ref,
+        productId: l.product.id,
+        productName: l.product.name,
+        type: StockMovementType.ajustement,
+        quantite: -l.quantite,
+        stockApres: _currentStock(l.product.id),
+        reference: 'Ticket #${_reference(sale)} restauré',
+      );
     }
     if (sale.modePaiement == ModePaiement.credit && sale.clientId != null) {
       _ref.read(clientsProvider.notifier).addCredit(sale.clientId!, sale.total);

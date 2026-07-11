@@ -1,9 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:sou9ix/features/activity/model/activity_log_entry.dart';
+import 'package:sou9ix/features/activity/viewmodel/activity_log_provider.dart';
 import 'package:sou9ix/features/products/model/product.dart';
 import 'package:sou9ix/features/returns/model/stock_return.dart';
 import 'package:sou9ix/features/products/viewmodel/products_provider.dart';
 import 'package:sou9ix/features/returns/viewmodel/stock_returns_provider.dart';
+import 'package:sou9ix/features/stock/model/stock_movement.dart';
+import 'package:sou9ix/features/stock/viewmodel/stock_movements_provider.dart';
 
 /// Encapsulates recording a stock write-off (expired, damaged, stolen…):
 /// decrementing the live stock and logging the loss in the same step, so
@@ -35,6 +39,30 @@ class StockService {
             note: note,
           ),
         );
+
+    final stockApres = _ref
+        .read(productsProvider)
+        .firstWhere((p) => p.id == product.id)
+        .stock;
+    recordStockMovement(
+      _ref,
+      productId: product.id,
+      productName: product.name,
+      type: StockMovementType.ajustement,
+      quantite: -quantite,
+      stockApres: stockApres,
+      reference: 'Perte',
+      motif: note != null ? '${motif.label} · $note' : motif.label,
+    );
+    logActivity(
+      _ref,
+      category: ActivityCategory.stock,
+      impact: ActivityImpact.suppression,
+      action: 'Perte enregistrée',
+      targetName: product.name,
+      motif: note != null ? '${motif.label} · $note' : motif.label,
+      montant: quantite * product.prixAchat,
+    );
   }
 }
 

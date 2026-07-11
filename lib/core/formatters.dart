@@ -16,6 +16,11 @@ class AppFormat {
     return days[date.weekday - 1];
   }
 
+  /// "samedi" — full French weekday name, lowercase (for phrases like
+  /// "vs samedi dernier").
+  static String weekdayFull(DateTime date) =>
+      _weekdayNames[date.weekday - 1].toLowerCase();
+
   static const _weekdayNames = [
     'Lundi',
     'Mardi',

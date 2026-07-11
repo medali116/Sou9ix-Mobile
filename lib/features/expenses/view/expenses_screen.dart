@@ -7,6 +7,8 @@ import 'package:intl/intl.dart';
 
 import 'package:sou9ix/core/formatters.dart';
 import 'package:sou9ix/features/auth/viewmodel/auth_provider.dart';
+import 'package:sou9ix/features/clients/model/client.dart'
+    show PaymentMethod, PaymentMethodLabel;
 import 'package:sou9ix/features/expenses/model/expense.dart';
 import 'package:sou9ix/features/expenses/service/expense_export_service.dart';
 import 'package:sou9ix/features/expenses/viewmodel/expenses_provider.dart';
@@ -273,6 +275,7 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
     var photoBytes = existing?.photoBytes;
     var paye = existing?.paye ?? true;
     var recurrente = existing?.recurrente ?? false;
+    var modePaiement = existing?.modePaiement ?? PaymentMethod.especes;
 
     final saved = await showModalBottomSheet<bool>(
       context: context,
@@ -481,6 +484,43 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Mode de paiement',
+                      style: Theme.of(sheetContext).textTheme.bodyMedium
+                          ?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                    ),
+                    Text(
+                      'Espèces = sortie de la caisse, prise en compte dans la clôture de caisse',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.textFaint,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: PaymentMethod.values.map((m) {
+                        final selected = m == modePaiement;
+                        return ChoiceChip(
+                          label: Text(m.label),
+                          avatar: Icon(
+                            m.icon,
+                            size: 16,
+                            color: selected
+                                ? Colors.white
+                                : AppColors.textSecondary,
+                          ),
+                          selected: selected,
+                          onSelected: (_) =>
+                              setSheetState(() => modePaiement = m),
+                        );
+                      }).toList(),
+                    ),
                     const SizedBox(height: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -524,6 +564,7 @@ class _ExpensesScreenState extends ConsumerState<ExpensesScreen> {
                             paye: paye,
                             recurrente: recurrente,
                             ajouteePar: existing?.ajouteePar ?? user?.nom,
+                            modePaiement: modePaiement,
                           );
                           if (existing == null) {
                             ref.read(expensesProvider.notifier).add(expense);

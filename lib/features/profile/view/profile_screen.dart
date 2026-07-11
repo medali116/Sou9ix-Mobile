@@ -1435,6 +1435,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               onTap: () => context.push('/employees'),
             ),
             _MenuTile(
+              icon: Icons.leaderboard_outlined,
+              label: 'Performance des employés',
+              onTap: () => context.push('/employees/performance'),
+            ),
+            _MenuTile(
+              icon: Icons.point_of_sale_outlined,
+              label: 'Caisses & clôtures',
+              onTap: () => context.push('/caisses'),
+            ),
+            _MenuTile(
               icon: Icons.wallet_outlined,
               label: 'Dépenses & charges',
               onTap: () => context.push('/expenses'),

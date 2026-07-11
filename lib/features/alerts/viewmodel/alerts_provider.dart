@@ -121,6 +121,15 @@ final hasFrequentTicketDeletionsProvider = Provider<bool>((ref) {
       frequentDeletionThreshold;
 });
 
+/// The subset of alerts that are urgent/irreversible enough to call out
+/// separately (e.g. "3 critiques" next to the total) — expired stock,
+/// invoices open 45+ days, and an unusual run of ticket deletions.
+final criticalAlertsCountProvider = Provider<int>((ref) {
+  return ref.watch(expiredProductsProvider).length +
+      ref.watch(oldUnpaidInvoicesProvider).length +
+      (ref.watch(hasFrequentTicketDeletionsProvider) ? 1 : 0);
+});
+
 /// Aggregate count surfaced on the notification bell badge and the
 /// dashboard's "Alertes" card — sum of every alert category shown on the
 /// Alertes screen. [oldUnpaidInvoicesProvider] is a subset of

@@ -107,43 +107,45 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          _label('Permissions'),
-          Text(
-            'Ce que cet employé peut faire dans l\'application',
-            style: Theme.of(context).textTheme.bodyMedium,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _label('Permissions'),
+                    Text(
+                      '${_permissions.length}/${EmployeePermission.values.length} sélectionnées',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
+              TextButton(
+                onPressed: () => setState(
+                  () => _permissions = {...defaultCashierPermissions},
+                ),
+                child: const Text('Défaut caissier'),
+              ),
+            ],
           ),
           const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              boxShadow: AppShadows.card,
+          for (final category in PermissionCategory.values) ...[
+            _PermissionGroupCard(
+              category: category,
+              selected: _permissions,
+              onChanged: (p, checked) => setState(() {
+                if (checked) {
+                  _permissions.add(p);
+                } else {
+                  _permissions.remove(p);
+                }
+              }),
             ),
-            child: Column(
-              children: [
-                for (final p in EmployeePermission.values)
-                  CheckboxListTile(
-                    value: _permissions.contains(p),
-                    onChanged: (checked) => setState(() {
-                      if (checked == true) {
-                        _permissions.add(p);
-                      } else {
-                        _permissions.remove(p);
-                      }
-                    }),
-                    title: Text(
-                      p.label,
-                      style: const TextStyle(fontSize: 13.5),
-                    ),
-                    controlAffinity: ListTileControlAffinity.leading,
-                    activeColor: AppColors.teal,
-                    dense: true,
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 28),
+            const SizedBox(height: 10),
+          ],
+          const SizedBox(height: 18),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -167,4 +169,116 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
       style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
     ),
   );
+}
+
+extension _PermissionCategoryIcon on PermissionCategory {
+  IconData get icon => switch (this) {
+    PermissionCategory.vente => Icons.point_of_sale_rounded,
+    PermissionCategory.clients => Icons.people_alt_rounded,
+    PermissionCategory.fournisseurs => Icons.local_shipping_rounded,
+    PermissionCategory.catalogue => Icons.inventory_2_rounded,
+    PermissionCategory.magasin => Icons.storefront_rounded,
+  };
+}
+
+/// One collapsible-looking (but always-open) card per [PermissionCategory],
+/// each permission a compact toggle row with a small "sensible" tag on
+/// destructive/store-wide actions — replaces the old flat 9-item checkbox
+/// list, which gave an admin no sense of grouping or risk at a glance.
+class _PermissionGroupCard extends StatelessWidget {
+  final PermissionCategory category;
+  final Set<EmployeePermission> selected;
+  final void Function(EmployeePermission permission, bool checked) onChanged;
+
+  const _PermissionGroupCard({
+    required this.category,
+    required this.selected,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final permissions = EmployeePermission.values
+        .where((p) => p.category == category)
+        .toList();
+    final selectedCount = permissions.where(selected.contains).length;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        boxShadow: AppShadows.card,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
+            child: Row(
+              children: [
+                Icon(category.icon, size: 16, color: AppColors.textSecondary),
+                const SizedBox(width: 8),
+                Text(
+                  category.label,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12.5,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '$selectedCount/${permissions.length}',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textFaint,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          for (final p in permissions)
+            CheckboxListTile(
+              value: selected.contains(p),
+              onChanged: (checked) => onChanged(p, checked == true),
+              title: Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      p.label,
+                      style: const TextStyle(fontSize: 13.5),
+                    ),
+                  ),
+                  if (p.risky) ...[
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.warning.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(100),
+                      ),
+                      child: const Text(
+                        'sensible',
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.warning,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              controlAffinity: ListTileControlAffinity.leading,
+              activeColor: AppColors.teal,
+              dense: true,
+            ),
+          const SizedBox(height: 4),
+        ],
+      ),
+    );
+  }
 }

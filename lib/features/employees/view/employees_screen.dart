@@ -3,6 +3,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:sou9ix/features/caisse/view/close_cash_session_sheet.dart';
+import 'package:sou9ix/features/caisse/view/open_cash_session_sheet.dart';
 import 'package:sou9ix/features/employees/model/employee.dart';
 import 'package:sou9ix/features/employees/viewmodel/employees_provider.dart';
 import 'package:sou9ix/features/employees/viewmodel/shifts_provider.dart';
@@ -28,6 +30,7 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
     final employees = ref.watch(employeesProvider);
     final openShifts = ref.watch(openShiftsProvider);
     final activeEmployeeId = ref.watch(activeEmployeeProvider);
+    final allShifts = ref.watch(shiftsProvider);
     final list = employees.where((e) => _showArchived || e.actif).toList();
 
     return Scaffold(
@@ -146,15 +149,12 @@ class _EmployeesScreenState extends ConsumerState<EmployeesScreen> {
                             context.push('/employees/detail', extra: e),
                         onToggleShift: () {
                           if (onShift) {
-                            ref.read(shiftsProvider.notifier).clockOut(e.id);
-                            if (activeEmployeeId == e.id) {
-                              ref.read(activeEmployeeProvider.notifier).state =
-                                  null;
-                            }
+                            final shift = allShifts.firstWhere(
+                              (s) => s.employeeId == e.id && s.enCours,
+                            );
+                            showCloseCashSessionSheet(context, shift, e);
                           } else {
-                            ref.read(shiftsProvider.notifier).clockIn(e.id);
-                            ref.read(activeEmployeeProvider.notifier).state =
-                                e.id;
+                            showOpenCashSessionSheet(context, ref, e);
                           }
                         },
                       ).animate().fadeIn(
