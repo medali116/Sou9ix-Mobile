@@ -247,7 +247,7 @@ class ClientsNotifier extends StateNotifier<List<Client>> {
     }
   }
 
-  void removeClient(String id) {
+  void removeClient(String id, {required String motif}) {
     final matches = state.where((c) => c.id == id);
     final client = matches.isEmpty ? null : matches.first;
     state = state.where((c) => c.id != id).toList();
@@ -259,6 +259,7 @@ class ClientsNotifier extends StateNotifier<List<Client>> {
         impact: ActivityImpact.suppression,
         action: 'Client supprimé',
         targetName: client.nom,
+        motif: motif,
       );
     }
   }

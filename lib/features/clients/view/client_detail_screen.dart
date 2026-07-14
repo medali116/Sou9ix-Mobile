@@ -291,30 +291,54 @@ class ClientDetailScreen extends ConsumerWidget {
           ),
         );
     } else if (result == 'delete' && context.mounted) {
+      final motifCtrl = TextEditingController();
       final confirmed = await showDialog<bool>(
         context: context,
-        builder: (_) => AlertDialog(
-          title: const Text('Supprimer ce client ?'),
-          content: Text(
-            '« ${current.nom} » sera définitivement supprimé du karné.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Annuler'),
+        builder: (_) => StatefulBuilder(
+          builder: (dialogContext, setDialogState) => AlertDialog(
+            title: const Text('Supprimer ce client ?'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '« ${current.nom} » sera retiré du karné — cette action est réversible depuis la Corbeille.',
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: motifCtrl,
+                  autofocus: true,
+                  onChanged: (_) => setDialogState(() {}),
+                  decoration: const InputDecoration(
+                    labelText: 'Motif (obligatoire)',
+                    prefixIcon: Icon(Icons.edit_note_rounded),
+                    hintText: 'Ex. Client inactif',
+                  ),
+                ),
+              ],
             ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text(
-                'Supprimer',
-                style: TextStyle(color: AppColors.danger),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Annuler'),
               ),
-            ),
-          ],
+              TextButton(
+                onPressed: motifCtrl.text.trim().isEmpty
+                    ? null
+                    : () => Navigator.pop(dialogContext, true),
+                child: const Text(
+                  'Supprimer',
+                  style: TextStyle(color: AppColors.danger),
+                ),
+              ),
+            ],
+          ),
         ),
       );
       if (confirmed == true && context.mounted) {
-        ref.read(clientsProvider.notifier).removeClient(current.id);
+        ref
+            .read(clientsProvider.notifier)
+            .removeClient(current.id, motif: motifCtrl.text.trim());
         Navigator.pop(context);
       }
     }

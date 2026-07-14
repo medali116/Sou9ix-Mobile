@@ -44,6 +44,55 @@ class _SupplierFormScreenState extends ConsumerState<SupplierFormScreen> {
     super.dispose();
   }
 
+  Future<void> _confirmDelete() async {
+    final motifCtrl = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('Supprimer ce fournisseur ?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '« ${widget.supplier!.nom} » sera retiré de la liste. Cette action est réversible depuis la Corbeille.',
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: motifCtrl,
+                autofocus: true,
+                onChanged: (_) => setDialogState(() {}),
+                decoration: const InputDecoration(
+                  labelText: 'Motif (obligatoire)',
+                  prefixIcon: Icon(Icons.edit_note_rounded),
+                  hintText: 'Ex. Fournisseur inactif',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Retour'),
+            ),
+            TextButton(
+              onPressed: motifCtrl.text.trim().isEmpty
+                  ? null
+                  : () => Navigator.pop(dialogContext, true),
+              child: const Text('Supprimer', style: TextStyle(color: AppColors.danger)),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    ref
+        .read(suppliersProvider.notifier)
+        .remove(widget.supplier!.id, motif: motifCtrl.text.trim());
+    if (mounted) context.pop();
+  }
+
   void _save() {
     if (_nomCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -72,12 +121,7 @@ class _SupplierFormScreenState extends ConsumerState<SupplierFormScreen> {
         actions: [
           if (_isEdit)
             IconButton(
-              onPressed: () {
-                ref
-                    .read(suppliersProvider.notifier)
-                    .remove(widget.supplier!.id);
-                context.pop();
-              },
+              onPressed: _confirmDelete,
               icon: const Icon(
                 Icons.delete_outline_rounded,
                 color: AppColors.danger,

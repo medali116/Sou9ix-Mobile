@@ -7,29 +7,34 @@ import 'package:sou9ix/features/activity/viewmodel/trash_provider.dart';
 import 'package:sou9ix/features/clients/viewmodel/clients_provider.dart';
 import 'package:sou9ix/features/products/viewmodel/products_provider.dart';
 import 'package:sou9ix/features/sales/service/sale_service.dart';
+import 'package:sou9ix/features/suppliers/viewmodel/suppliers_provider.dart';
 import 'package:sou9ix/core/theme/app_colors.dart';
 import 'package:sou9ix/core/theme/app_theme.dart';
 import 'package:sou9ix/core/widgets/empty_state.dart';
 import 'package:sou9ix/core/widgets/product_avatar.dart';
 
-/// Where deleted products, clients and tickets land instead of vanishing
-/// right away — "Supprimer définitivement" is the only truly destructive
-/// step, so a mistaken (or malicious) delete is always recoverable.
+/// Where deleted products, clients, tickets and suppliers land instead of
+/// vanishing right away — "Supprimer définitivement" is the only truly
+/// destructive step, so a mistaken (or malicious) delete is always
+/// recoverable.
 class TrashScreen extends StatelessWidget {
   const TrashScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Corbeille'),
           bottom: const TabBar(
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
             tabs: [
               Tab(text: 'Produits'),
               Tab(text: 'Clients'),
               Tab(text: 'Tickets'),
+              Tab(text: 'Fournisseurs'),
             ],
           ),
         ),
@@ -38,6 +43,7 @@ class TrashScreen extends StatelessWidget {
             _ProductsTrashTab(),
             _ClientsTrashTab(),
             _TicketsTrashTab(),
+            _SuppliersTrashTab(),
           ],
         ),
       ),
@@ -177,6 +183,55 @@ class _TicketsTrashTab extends ConsumerWidget {
             context,
             'Ticket #$reference',
             () => ref.read(salesTrashProvider.notifier).removeById(s.id),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _SuppliersTrashTab extends ConsumerWidget {
+  const _SuppliersTrashTab();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final trash = ref.watch(suppliersTrashProvider);
+    if (trash.isEmpty) {
+      return const EmptyState(
+        icon: Icons.local_shipping_outlined,
+        title: 'Corbeille vide',
+        message: 'Les fournisseurs supprimés\napparaîtront ici.',
+      );
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+      itemCount: trash.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        final s = trash[index];
+        return _TrashTile(
+          leading: CircleAvatar(
+            radius: 20,
+            backgroundColor: AppColors.teal.withValues(alpha: 0.12),
+            foregroundColor: AppColors.tealDark,
+            backgroundImage: s.photoBytes != null ? MemoryImage(s.photoBytes!) : null,
+            child: s.photoBytes != null
+                ? null
+                : Text(
+                    s.nom.substring(0, 1),
+                    style: const TextStyle(fontWeight: FontWeight.w800),
+                  ),
+          ),
+          title: s.nom,
+          subtitle: s.telephone.isEmpty ? s.adresse : s.telephone,
+          onRestore: () {
+            ref.read(suppliersProvider.notifier).upsert(s);
+            ref.read(suppliersTrashProvider.notifier).removeById(s.id);
+          },
+          onPurge: () => _confirmPurge(
+            context,
+            s.nom,
+            () => ref.read(suppliersTrashProvider.notifier).removeById(s.id),
           ),
         );
       },

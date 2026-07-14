@@ -161,30 +161,52 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
   }
 
   Future<void> _confirmAndDelete(Product p) async {
+    final motifCtrl = TextEditingController();
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Supprimer ce produit ?'),
-        content: Text(
-          '« ${p.name} » sera retiré du catalogue. Cette action est irréversible.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
+      builder: (_) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('Supprimer ce produit ?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '« ${p.name} » sera retiré du catalogue. Cette action est réversible depuis la Corbeille.',
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: motifCtrl,
+                autofocus: true,
+                onChanged: (_) => setDialogState(() {}),
+                decoration: const InputDecoration(
+                  labelText: 'Motif (obligatoire)',
+                  prefixIcon: Icon(Icons.edit_note_rounded),
+                  hintText: 'Ex. Produit discontinué',
+                ),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text(
-              'Supprimer',
-              style: TextStyle(color: AppColors.danger),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Annuler'),
             ),
-          ),
-        ],
+            TextButton(
+              onPressed: motifCtrl.text.trim().isEmpty
+                  ? null
+                  : () => Navigator.pop(dialogContext, true),
+              child: const Text(
+                'Supprimer',
+                style: TextStyle(color: AppColors.danger),
+              ),
+            ),
+          ],
+        ),
       ),
     );
     if (confirmed == true && mounted) {
-      ref.read(productsProvider.notifier).remove(p.id);
+      ref.read(productsProvider.notifier).remove(p.id, motif: motifCtrl.text.trim());
     }
   }
 

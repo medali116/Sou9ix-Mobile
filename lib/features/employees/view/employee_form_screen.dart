@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:sou9ix/features/employees/model/employee.dart';
-import 'package:sou9ix/features/employees/model/employee_permission.dart';
+import 'package:sou9ix/features/employees/model/employee_module.dart';
 import 'package:sou9ix/features/employees/viewmodel/employees_provider.dart';
 import 'package:sou9ix/core/theme/app_colors.dart';
 import 'package:sou9ix/core/theme/app_theme.dart';
@@ -21,7 +21,7 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
   late final TextEditingController _nomCtrl;
   late final TextEditingController _telephoneCtrl;
   late final TextEditingController _posteCtrl;
-  late Set<EmployeePermission> _permissions;
+  late Set<EmployeeModule> _modules;
 
   bool get _isEdit => widget.employee != null;
 
@@ -32,7 +32,7 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
     _nomCtrl = TextEditingController(text: e?.nom ?? '');
     _telephoneCtrl = TextEditingController(text: e?.telephone ?? '');
     _posteCtrl = TextEditingController(text: e?.poste ?? '');
-    _permissions = {...e?.permissions ?? defaultCashierPermissions};
+    _modules = {...e?.modules ?? defaultCashierModules};
   }
 
   @override
@@ -58,10 +58,59 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
           ? 'Vendeur'
           : _posteCtrl.text.trim(),
       actif: widget.employee?.actif ?? true,
-      permissions: _permissions,
+      modules: _modules,
     );
     ref.read(employeesProvider.notifier).upsert(employee);
     context.pop();
+  }
+
+  Future<void> _archive() async {
+    final motifCtrl = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('Archiver cet employé ?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'L\'employé n\'apparaîtra plus dans la liste active, mais son historique (ventes, shifts) reste intact.',
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: motifCtrl,
+                autofocus: true,
+                onChanged: (_) => setDialogState(() {}),
+                decoration: const InputDecoration(
+                  labelText: 'Motif (obligatoire)',
+                  prefixIcon: Icon(Icons.edit_note_rounded),
+                  hintText: 'Ex. Fin de contrat',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('Retour'),
+            ),
+            TextButton(
+              onPressed: motifCtrl.text.trim().isEmpty
+                  ? null
+                  : () => Navigator.pop(dialogContext, true),
+              child: const Text('Archiver', style: TextStyle(color: AppColors.danger)),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    ref
+        .read(employeesProvider.notifier)
+        .archive(widget.employee!.id, motif: motifCtrl.text.trim());
+    if (mounted) context.pop();
   }
 
   @override
@@ -72,12 +121,7 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
         actions: [
           if (_isEdit)
             IconButton(
-              onPressed: () {
-                ref
-                    .read(employeesProvider.notifier)
-                    .archive(widget.employee!.id);
-                context.pop();
-              },
+              onPressed: _archive,
               icon: const Icon(Icons.archive_outlined, color: AppColors.danger),
               tooltip: 'Archiver',
             ),
@@ -114,9 +158,9 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _label('Permissions'),
+                    _label('Accès de l\'employé'),
                     Text(
-                      '${_permissions.length}/${EmployeePermission.values.length} sélectionnées',
+                      '${_modules.length}/${EmployeeModule.values.length} modules activés',
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ],
@@ -124,27 +168,23 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
               ),
               TextButton(
                 onPressed: () => setState(
-                  () => _permissions = {...defaultCashierPermissions},
+                  () => _modules = {...defaultCashierModules},
                 ),
                 child: const Text('Défaut caissier'),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          for (final category in PermissionCategory.values) ...[
-            _PermissionGroupCard(
-              category: category,
-              selected: _permissions,
-              onChanged: (p, checked) => setState(() {
-                if (checked) {
-                  _permissions.add(p);
-                } else {
-                  _permissions.remove(p);
-                }
-              }),
-            ),
-            const SizedBox(height: 10),
-          ],
+          _ModuleAccessCard(
+            selected: _modules,
+            onChanged: (m, granted) => setState(() {
+              if (granted) {
+                _modules.add(m);
+              } else {
+                _modules.remove(m);
+              }
+            }),
+          ),
           const SizedBox(height: 18),
           SizedBox(
             width: double.infinity,
@@ -171,38 +211,17 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
   );
 }
 
-extension _PermissionCategoryIcon on PermissionCategory {
-  IconData get icon => switch (this) {
-    PermissionCategory.vente => Icons.point_of_sale_rounded,
-    PermissionCategory.clients => Icons.people_alt_rounded,
-    PermissionCategory.fournisseurs => Icons.local_shipping_rounded,
-    PermissionCategory.catalogue => Icons.inventory_2_rounded,
-    PermissionCategory.magasin => Icons.storefront_rounded,
-  };
-}
+/// One module per row, each a single toggle — replaces the old
+/// category-of-checkboxes layout, since there's no grouping level left
+/// once every module is already the atomic unit an admin thinks in.
+class _ModuleAccessCard extends StatelessWidget {
+  final Set<EmployeeModule> selected;
+  final void Function(EmployeeModule module, bool granted) onChanged;
 
-/// One collapsible-looking (but always-open) card per [PermissionCategory],
-/// each permission a compact toggle row with a small "sensible" tag on
-/// destructive/store-wide actions — replaces the old flat 9-item checkbox
-/// list, which gave an admin no sense of grouping or risk at a glance.
-class _PermissionGroupCard extends StatelessWidget {
-  final PermissionCategory category;
-  final Set<EmployeePermission> selected;
-  final void Function(EmployeePermission permission, bool checked) onChanged;
-
-  const _PermissionGroupCard({
-    required this.category,
-    required this.selected,
-    required this.onChanged,
-  });
+  const _ModuleAccessCard({required this.selected, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
-    final permissions = EmployeePermission.values
-        .where((p) => p.category == category)
-        .toList();
-    final selectedCount = permissions.where(selected.contains).length;
-
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -210,52 +229,25 @@ class _PermissionGroupCard extends StatelessWidget {
         boxShadow: AppShadows.card,
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 4),
-            child: Row(
-              children: [
-                Icon(category.icon, size: 16, color: AppColors.textSecondary),
-                const SizedBox(width: 8),
-                Text(
-                  category.label,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12.5,
-                  ),
-                ),
-                const Spacer(),
-                Text(
-                  '$selectedCount/${permissions.length}',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textFaint,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          for (final p in permissions)
-            CheckboxListTile(
-              value: selected.contains(p),
-              onChanged: (checked) => onChanged(p, checked == true),
+          for (final m in EmployeeModule.values)
+            SwitchListTile(
+              value: selected.contains(m),
+              onChanged: (granted) => onChanged(m, granted),
+              activeThumbColor: AppColors.teal,
+              secondary: Icon(m.icon, color: AppColors.textSecondary),
               title: Row(
                 children: [
                   Flexible(
                     child: Text(
-                      p.label,
-                      style: const TextStyle(fontSize: 13.5),
+                      m.label,
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13.5),
                     ),
                   ),
-                  if (p.risky) ...[
+                  if (m.sensitive) ...[
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 1,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                       decoration: BoxDecoration(
                         color: AppColors.warning.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(100),
@@ -272,11 +264,8 @@ class _PermissionGroupCard extends StatelessWidget {
                   ],
                 ],
               ),
-              controlAffinity: ListTileControlAffinity.leading,
-              activeColor: AppColors.teal,
-              dense: true,
+              subtitle: Text(m.description, style: const TextStyle(fontSize: 11.5)),
             ),
-          const SizedBox(height: 4),
         ],
       ),
     );

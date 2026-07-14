@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sou9ix/features/activity/model/activity_log_entry.dart';
 import 'package:sou9ix/features/activity/viewmodel/activity_log_provider.dart';
+import 'package:sou9ix/features/activity/viewmodel/trash_provider.dart';
 import 'package:sou9ix/features/suppliers/model/supplier.dart';
 
 class SuppliersNotifier extends StateNotifier<List<Supplier>> {
@@ -80,8 +81,23 @@ class SuppliersNotifier extends StateNotifier<List<Supplier>> {
     }
   }
 
-  void remove(String id) {
+  /// Soft delete — the supplier lands in the trash (restore/purge from
+  /// there) instead of vanishing for good, matching products/clients/sales.
+  void remove(String id, {required String motif}) {
+    final matches = state.where((s) => s.id == id);
+    final supplier = matches.isEmpty ? null : matches.first;
     state = state.where((s) => s.id != id).toList();
+    if (supplier != null) {
+      _ref.read(suppliersTrashProvider.notifier).add(supplier);
+      logActivity(
+        _ref,
+        category: ActivityCategory.fournisseurs,
+        impact: ActivityImpact.suppression,
+        action: 'Fournisseur supprimé',
+        targetName: supplier.nom,
+        motif: motif,
+      );
+    }
   }
 }
 

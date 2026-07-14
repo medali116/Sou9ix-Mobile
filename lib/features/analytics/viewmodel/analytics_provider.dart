@@ -7,6 +7,7 @@ import 'package:sou9ix/features/expenses/viewmodel/expenses_provider.dart';
 import 'package:sou9ix/features/products/model/product.dart';
 import 'package:sou9ix/features/products/viewmodel/products_provider.dart';
 import 'package:sou9ix/features/sales/viewmodel/sales_provider.dart';
+import 'package:sou9ix/features/stats/viewmodel/statistics_provider.dart' show statsWindowProvider;
 import 'package:sou9ix/features/stock/viewmodel/purchase_invoices_provider.dart';
 
 /// "Centre d'analyse" — the deeper, decision-support layer above the
@@ -282,4 +283,66 @@ final stockoutForecastProvider = Provider<List<StockoutForecast>>((ref) {
   }
   forecasts.sort((a, b) => a.daysLeft.compareTo(b.daysLeft));
   return forecasts;
+});
+
+/// Vue d'ensemble's "Leaders de la période" — best cashier, best client and
+/// most-used supplier scoped to the same window as [statsWindowProvider]
+/// (shared with the Statistiques screen's period picker), instead of the
+/// fixed "today"/"this month" snapshots used elsewhere in the app.
+final periodBestCashierProvider = Provider<CashierStat?>((ref) {
+  final w = ref.watch(statsWindowProvider);
+  final employees = {for (final e in ref.watch(employeesProvider)) e.id: e.nom};
+  final byEmployee = <String, CashierStat>{};
+  for (final s in ref.watch(salesProvider)) {
+    if (s.dateHeure.isBefore(w.start) || !s.dateHeure.isBefore(w.endExclusive)) continue;
+    final id = s.employeeId;
+    if (id == null) continue;
+    final name = employees[id] ?? id;
+    final existing = byEmployee[id];
+    byEmployee[id] = CashierStat(
+      employeeName: name,
+      revenue: (existing?.revenue ?? 0) + s.total,
+      tickets: (existing?.tickets ?? 0) + 1,
+    );
+  }
+  if (byEmployee.isEmpty) return null;
+  return byEmployee.values.reduce((a, b) => a.revenue >= b.revenue ? a : b);
+});
+
+final periodBestClientProvider = Provider<ClientStat?>((ref) {
+  final w = ref.watch(statsWindowProvider);
+  final clients = {for (final c in ref.watch(clientsProvider)) c.id: c};
+  final byClient = <String, ClientStat>{};
+  for (final s in ref.watch(salesProvider)) {
+    if (s.dateHeure.isBefore(w.start) || !s.dateHeure.isBefore(w.endExclusive)) continue;
+    final id = s.clientId;
+    if (id == null) continue;
+    final client = clients[id];
+    if (client == null) continue;
+    final existing = byClient[id];
+    byClient[id] = ClientStat(
+      client: client,
+      total: (existing?.total ?? 0) + s.total,
+      tickets: (existing?.tickets ?? 0) + 1,
+    );
+  }
+  if (byClient.isEmpty) return null;
+  return byClient.values.reduce((a, b) => a.total >= b.total ? a : b);
+});
+
+final periodTopSupplierProvider = Provider<SupplierUsageStat?>((ref) {
+  final w = ref.watch(statsWindowProvider);
+  final byName = <String, SupplierUsageStat>{};
+  for (final i in ref.watch(purchaseInvoicesProvider)) {
+    if (i.date.isBefore(w.start) || !i.date.isBefore(w.endExclusive)) continue;
+    final nom = i.fournisseurNom ?? 'Fournisseur non précisé';
+    final existing = byName[nom];
+    byName[nom] = SupplierUsageStat(
+      nom: nom,
+      total: (existing?.total ?? 0) + i.montantTotal,
+      factures: (existing?.factures ?? 0) + 1,
+    );
+  }
+  if (byName.isEmpty) return null;
+  return byName.values.reduce((a, b) => a.total >= b.total ? a : b);
 });

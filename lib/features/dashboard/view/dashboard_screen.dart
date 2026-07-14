@@ -260,69 +260,84 @@ class DashboardScreen extends ConsumerWidget {
               ],
             ).animate().fadeIn(duration: 300.ms),
             const SizedBox(height: 18),
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: 1.85,
-              children: [
-                StatCard(
-                  compact: true,
-                  label: 'Recette du jour',
-                  value: AppFormat.dt(todayRevenue),
-                  icon: Icons.payments_rounded,
-                  color: AppColors.teal,
-                  trend:
-                      '${trendOf(todayRevenue, yesterdayRevenue).toStringAsFixed(0)}% vs hier',
-                  trendUp: revenueTrendUp,
-                ),
-                StatCard(
-                  compact: true,
-                  label: 'Bénéfice net',
-                  value: AppFormat.dt(todayNetProfit),
-                  icon: Icons.trending_up_rounded,
-                  color: AppColors.goldDark,
-                  trend:
-                      '${trendOf(todayNetProfit, yesterdayNetProfit).toStringAsFixed(0)}% vs hier',
-                  trendUp: profitTrendUp,
-                ),
-                StatCard(
-                  compact: true,
-                  label: 'Tickets émis',
-                  value: '$todayTickets',
-                  icon: Icons.receipt_long_rounded,
-                  color: AppColors.info,
-                  subtitle: avgTicket != null
-                      ? '${AppFormat.dtShort(avgTicket)} moy.'
-                      : null,
-                ),
-                PressScale(
-                  onTap: () => context.push('/alerts'),
-                  child: StatCard(
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final wide = constraints.maxWidth > 640;
+                final cards = [
+                  StatCard(
                     compact: true,
-                    label: 'Alertes',
-                    value: '$totalAlerts',
-                    icon: Icons.warning_amber_rounded,
-                    color: AppColors.warning,
-                    subtitle: criticalAlerts > 0
-                        ? '$criticalAlerts critique${criticalAlerts > 1 ? 's' : ''}'
-                        : null,
-                    subtitleColor: AppColors.danger,
+                    horizontal: wide,
+                    label: 'Recette du jour',
+                    value: AppFormat.dt(todayRevenue),
+                    icon: Icons.payments_rounded,
+                    color: AppColors.teal,
+                    trend:
+                        '${trendOf(todayRevenue, yesterdayRevenue).toStringAsFixed(0)}% vs hier',
+                    trendUp: revenueTrendUp,
                   ),
-                ),
-              ],
+                  StatCard(
+                    compact: true,
+                    horizontal: wide,
+                    label: 'Bénéfice net',
+                    value: AppFormat.dt(todayNetProfit),
+                    icon: Icons.trending_up_rounded,
+                    color: AppColors.goldDark,
+                    trend:
+                        '${trendOf(todayNetProfit, yesterdayNetProfit).toStringAsFixed(0)}% vs hier',
+                    trendUp: profitTrendUp,
+                  ),
+                  StatCard(
+                    compact: true,
+                    horizontal: wide,
+                    label: 'Tickets émis',
+                    value: '$todayTickets',
+                    icon: Icons.receipt_long_rounded,
+                    color: AppColors.info,
+                    subtitle: avgTicket != null
+                        ? '${AppFormat.dtShort(avgTicket)} moy.'
+                        : null,
+                  ),
+                  PressScale(
+                    onTap: () => context.push('/alerts'),
+                    child: StatCard(
+                      compact: true,
+                      horizontal: wide,
+                      label: 'Alertes',
+                      value: '$totalAlerts',
+                      icon: Icons.warning_amber_rounded,
+                      color: AppColors.warning,
+                      subtitle: criticalAlerts > 0
+                          ? '$criticalAlerts critique${criticalAlerts > 1 ? 's' : ''}'
+                          : null,
+                      subtitleColor: AppColors.danger,
+                    ),
+                  ),
+                ];
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: wide ? 4 : 2,
+                    mainAxisSpacing: 12,
+                    crossAxisSpacing: 12,
+                    // Fixed height instead of an aspect ratio — an aspect
+                    // ratio scales with the available width, which on
+                    // narrow phones stretched the cards well past their
+                    // content and left a dead band at the bottom of each.
+                    mainAxisExtent: wide ? 96 : 130,
+                  ),
+                  itemCount: cards.length,
+                  itemBuilder: (context, i) => cards[i],
+                );
+              },
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             if (todayTickets == 0)
               _EmptySalesCard(
                 onCreateTicket: () => context.push('/pos'),
               ).animate().fadeIn(duration: 380.ms).slideY(begin: 0.05, end: 0)
             else
               _SummaryCard(
-                recettes: todayRevenue,
-                beneficeNet: todayNetProfit,
                 tickets: todayTickets,
                 ticketMoyen: avgTicket,
                 especes: paymentBreakdown[ModePaiement.especes] ?? 0,
@@ -636,8 +651,6 @@ class _ForecastCard extends StatelessWidget {
 }
 
 class _SummaryCard extends StatelessWidget {
-  final double recettes;
-  final double beneficeNet;
   final int tickets;
   final double? ticketMoyen;
   final double especes;
@@ -646,8 +659,6 @@ class _SummaryCard extends StatelessWidget {
   final double? articlesParTicket;
 
   const _SummaryCard({
-    required this.recettes,
-    required this.beneficeNet,
     required this.tickets,
     this.ticketMoyen,
     required this.especes,
@@ -688,33 +699,12 @@ class _SummaryCard extends StatelessWidget {
           const SizedBox(height: 16),
           Row(
             children: [
-              Expanded(
-                child: _summaryItem(
-                  'Chiffre d\'affaires',
-                  AppFormat.dtShort(recettes),
-                  big: true,
-                ),
-              ),
-              Expanded(
-                child: _summaryItem(
-                  'Bénéfice net',
-                  AppFormat.dtShort(beneficeNet),
-                  big: true,
-                  color: beneficeNet >= 0
-                      ? AppColors.tealLight
-                      : Colors.redAccent,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(child: _summaryItem('Tickets', '$tickets')),
+              Expanded(child: _summaryItem('Tickets', '$tickets', big: true)),
               Expanded(
                 child: _summaryItem(
                   'Panier moyen',
                   ticketMoyen != null ? AppFormat.dtShort(ticketMoyen!) : '—',
+                  big: true,
                 ),
               ),
               if (articlesParTicket != null)
@@ -722,6 +712,7 @@ class _SummaryCard extends StatelessWidget {
                   child: _summaryItem(
                     'Articles / ticket',
                     articlesParTicket!.toStringAsFixed(1),
+                    big: true,
                   ),
                 ),
             ],

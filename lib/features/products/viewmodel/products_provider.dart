@@ -334,7 +334,7 @@ class ProductsNotifier extends StateNotifier<List<Product>> {
     }
   }
 
-  void remove(String productId) {
+  void remove(String productId, {required String motif}) {
     final matches = state.where((p) => p.id == productId);
     final product = matches.isEmpty ? null : matches.first;
     state = state.where((p) => p.id != productId).toList();
@@ -346,6 +346,7 @@ class ProductsNotifier extends StateNotifier<List<Product>> {
         impact: ActivityImpact.suppression,
         action: 'Produit supprimé',
         targetName: product.name,
+        motif: motif,
       );
     }
   }
