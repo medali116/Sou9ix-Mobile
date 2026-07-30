@@ -12,6 +12,7 @@ import 'package:sou9ix/features/activity/model/activity_log_entry.dart';
 import 'package:sou9ix/features/activity/viewmodel/activity_log_provider.dart';
 import 'package:sou9ix/features/auth/model/user.dart';
 import 'package:sou9ix/features/auth/viewmodel/auth_provider.dart';
+import 'package:sou9ix/features/employees/viewmodel/shifts_provider.dart';
 import 'package:sou9ix/core/theme/app_colors.dart';
 import 'package:sou9ix/core/theme/app_theme.dart';
 import 'package:sou9ix/core/widgets/photo_picker_field.dart';
@@ -400,6 +401,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ref
           .read(companySettingsProvider.notifier)
           .updateStoreInfo(
+            nom: newNom,
             adresse: newAdresse,
             telephone: newTel,
             matriculeFiscal: newMatricule,
@@ -743,6 +745,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
     if (confirmed == true && context.mounted) {
       ref.read(authProvider.notifier).logout();
+      ref.read(caisseOpeningDeferredProvider.notifier).state = false;
       context.go('/login');
     }
   }
@@ -818,9 +821,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             if (sheetContext.mounted) Navigator.pop(sheetContext, true);
           }
 
+          final hasChanges =
+              nomCtrl.text.trim() != user.nom ||
+              telCtrl.text.trim() != user.telephone ||
+              photoBytes != user.photoBytes;
+
           return Padding(
             padding: EdgeInsets.only(
-              bottom: MediaQuery.of(sheetContext).viewInsets.bottom + 20,
+              bottom:
+                  MediaQuery.of(sheetContext).viewInsets.bottom +
+                  MediaQuery.of(sheetContext).padding.bottom +
+                  20,
             ),
             child: Container(
               constraints: BoxConstraints(
@@ -849,17 +860,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       const SizedBox(height: 22),
                       Container(
                         width: double.infinity,
-                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
                           color: AppColors.surfaceMuted,
                           borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
-                        child: Column(
+                        child: Row(
                           children: [
                             PressScale(
                               onTap: saving ? () {} : pickPhoto,
                               child: CircleAvatar(
-                                radius: 34,
+                                radius: 26,
                                 backgroundColor: AppColors.teal.withValues(
                                   alpha: 0.12,
                                 ),
@@ -869,42 +880,56 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 child: photoBytes == null
                                     ? const Icon(
                                         Icons.person_rounded,
-                                        size: 32,
+                                        size: 24,
                                         color: AppColors.teal,
                                       )
                                     : null,
                               ),
                             ),
-                            const SizedBox(height: 10),
-                            Text(
-                              nomCtrl.text.trim().isEmpty
-                                  ? 'Nom complet'
-                                  : nomCtrl.text,
-                              style: const TextStyle(
-                                fontWeight: FontWeight.w800,
-                                fontSize: 15,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    nomCtrl.text.trim().isEmpty
+                                        ? 'Nom complet'
+                                        : nomCtrl.text,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 14.5,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 1),
+                                  Text(
+                                    user.role == UserRole.admin
+                                        ? 'Administrateur'
+                                        : 'Caissier',
+                                    style: const TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontSize: 11.5,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              user.role == UserRole.admin
-                                  ? 'Administrateur'
-                                  : 'Caissier',
-                              style: const TextStyle(
-                                color: AppColors.textSecondary,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 10),
                             PressScale(
                               onTap: saving ? () {} : pickPhoto,
-                              child: const Text(
-                                'Changer la photo',
-                                style: TextStyle(
-                                  color: AppColors.teal,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 13,
+                              child: const Padding(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 4,
+                                ),
+                                child: Text(
+                                  'Changer',
+                                  style: TextStyle(
+                                    color: AppColors.teal,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 12.5,
+                                  ),
                                 ),
                               ),
                             ),
@@ -954,6 +979,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       TextFormField(
                         controller: telCtrl,
                         keyboardType: TextInputType.phone,
+                        onChanged: (_) => setSheetState(() {}),
                         decoration: const InputDecoration(
                           hintText: '+216 XX XXX XXX',
                         ),
@@ -981,13 +1007,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                       const SizedBox(height: 4),
                       const Text(
-                        'Réservée à la connexion — non modifiable.',
+                        'Utilisée pour la connexion — non modifiable',
                         style: TextStyle(
                           fontSize: 11.5,
                           color: AppColors.textFaint,
                         ),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: 18),
                       PressScale(
                         onTap: saving
                             ? () {}
@@ -995,12 +1021,54 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                                 Navigator.pop(sheetContext);
                                 _openChangePasswordSheet(context);
                               },
-                        child: const Text(
-                          'Changer le mot de passe',
-                          style: TextStyle(
-                            color: AppColors.teal,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12.5,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceMuted,
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.lock_outline_rounded,
+                                size: 18,
+                                color: AppColors.textSecondary,
+                              ),
+                              const SizedBox(width: 10),
+                              const Expanded(
+                                child: Text(
+                                  'Mot de passe',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13.5,
+                                  ),
+                                ),
+                              ),
+                              const Text(
+                                '••••••••••',
+                                style: TextStyle(
+                                  color: AppColors.textFaint,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Text(
+                                'Modifier',
+                                style: TextStyle(
+                                  color: AppColors.teal,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 12.5,
+                                ),
+                              ),
+                              const Icon(
+                                Icons.chevron_right_rounded,
+                                size: 16,
+                                color: AppColors.textFaint,
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -1019,7 +1087,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           Expanded(
                             flex: 2,
                             child: ElevatedButton(
-                              onPressed: saving ? null : submit,
+                              onPressed: (saving || !hasChanges) ? null : submit,
                               child: saving
                                   ? const Row(
                                       mainAxisAlignment:

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import 'package:sou9ix/core/formatters.dart';
+import 'package:sou9ix/features/caisse/view/caisse_adjustment_sheet.dart';
 import 'package:sou9ix/features/caisse/view/close_cash_session_sheet.dart';
 import 'package:sou9ix/features/caisse/viewmodel/cash_session_provider.dart';
 import 'package:sou9ix/features/employees/model/employee.dart';
@@ -24,15 +26,13 @@ void showMaCaisseSheet(BuildContext context, Shift shift, Employee employee) {
         double sumOf(CashMovementType t) => movements
             .where((m) => m.type == t)
             .fold<double>(0, (sum, m) => sum + m.montant);
-        final sorties = movements
-            .where(
-              (m) =>
-                  m.type != CashMovementType.fond &&
-                  m.type != CashMovementType.vente &&
-                  m.type != CashMovementType.encaissement &&
-                  m.montant < 0,
-            )
+        final ajouts = movements
+            .where((m) => m.type == CashMovementType.ajustement && m.montant > 0)
             .fold<double>(0, (sum, m) => sum + m.montant);
+        final retraits = movements
+            .where((m) => m.type == CashMovementType.ajustement && m.montant < 0)
+            .fold<double>(0, (sum, m) => sum + m.montant);
+        final fournisseurs = sumOf(CashMovementType.achat);
 
         return Container(
           decoration: const BoxDecoration(
@@ -67,9 +67,26 @@ void showMaCaisseSheet(BuildContext context, Shift shift, Employee employee) {
                   children: [
                     _row('Fond initial', shift.fondInitial),
                     _row('Ventes espèces', sumOf(CashMovementType.vente)),
-                    _row('Encaissements', sumOf(CashMovementType.encaissement)),
-                    _row('Sorties caisse', sorties),
+                    _row('Paiements crédit', sumOf(CashMovementType.encaissement)),
+                    _row('Ajouts de fonds', ajouts),
+                    _row('Retraits caisse', retraits),
+                    _row('Dépenses cash', sumOf(CashMovementType.depense)),
+                    if (fournisseurs != 0)
+                      _row('Paiements fournisseurs', fournisseurs),
                   ],
+                ),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.pop(sheetContext);
+                    context.push(
+                      '/caisses/session-detail',
+                      extra: (shift, employee),
+                    );
+                  },
+                  child: const Text('Voir le détail →'),
                 ),
               ),
               const SizedBox(height: 8),
@@ -94,7 +111,42 @@ void showMaCaisseSheet(BuildContext context, Shift shift, Employee employee) {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(sheetContext);
+                        showCaisseAdjustmentSheet(
+                          context,
+                          ref,
+                          preselected: shift,
+                          startAsAjout: true,
+                        );
+                      },
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: const Text('Ajouter'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pop(sheetContext);
+                        showCaisseAdjustmentSheet(
+                          context,
+                          ref,
+                          preselected: shift,
+                        );
+                      },
+                      icon: const Icon(Icons.remove_rounded, size: 18),
+                      label: const Text('Retirer'),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton(

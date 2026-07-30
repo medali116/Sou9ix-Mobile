@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sou9ix/features/employees/model/employee.dart';
 import 'package:sou9ix/features/employees/viewmodel/shifts_provider.dart';
+import 'package:sou9ix/features/pos/viewmodel/cart_removal_provider.dart';
 import 'package:sou9ix/core/theme/app_colors.dart';
 import 'package:sou9ix/core/theme/app_theme.dart';
 import 'package:sou9ix/core/widgets/sheet_handle.dart';
@@ -88,5 +89,6 @@ Future<void> showOpenCashSessionSheet(
   if (result != null) {
     ref.read(shiftsProvider.notifier).clockIn(employee.id, fondInitial: result);
     ref.read(activeEmployeeProvider.notifier).state = employee.id;
+    ref.read(cartRemovalProvider.notifier).reset(employee.id);
   }
 }

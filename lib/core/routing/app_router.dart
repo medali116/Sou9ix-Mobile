@@ -6,13 +6,16 @@ import 'package:sou9ix/features/activity/view/trash_screen.dart';
 import 'package:sou9ix/features/analytics/view/analytics_screen.dart';
 import 'package:sou9ix/features/caisse/view/caisse_detail_screen.dart';
 import 'package:sou9ix/features/caisse/view/caisses_screen.dart';
+import 'package:sou9ix/features/caisse/view/session_detail_screen.dart';
 import 'package:sou9ix/features/employees/model/employee.dart';
 import 'package:sou9ix/features/employees/model/shift.dart';
 import 'package:sou9ix/features/expenses/view/expenses_screen.dart';
 import 'package:sou9ix/features/products/model/product.dart';
 import 'package:sou9ix/features/sales/model/sale.dart';
 import 'package:sou9ix/features/alerts/view/alerts_screen.dart';
-import 'package:sou9ix/features/auth/view/login_screen.dart';
+import 'package:sou9ix/features/auth/view/admin_login_screen.dart';
+import 'package:sou9ix/features/auth/view/create_admin_screen.dart';
+import 'package:sou9ix/features/auth/view/employee_login_screen.dart';
 import 'package:sou9ix/features/clients/model/client.dart';
 import 'package:sou9ix/features/clients/view/client_detail_screen.dart';
 import 'package:sou9ix/features/clients/view/clients_screen.dart';
@@ -52,7 +55,21 @@ final appRouter = GoRouter(
   observers: [routeObserver],
   routes: [
     GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
-    GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
+    // The real entry point after splash — a genuine login (nom complet +
+    // PIN), not a "who's using this device" picker. See
+    // EmployeeLoginScreen / AdminLoginScreen.
+    GoRoute(
+      path: '/login',
+      builder: (context, state) => const EmployeeLoginScreen(),
+    ),
+    GoRoute(
+      path: '/login/admin',
+      builder: (context, state) => const AdminLoginScreen(),
+    ),
+    GoRoute(
+      path: '/login/admin/create',
+      builder: (context, state) => const CreateAdminScreen(),
+    ),
     GoRoute(path: '/app', builder: (context, state) => const MainShell()),
     GoRoute(
       path: '/checkout',
@@ -131,7 +148,11 @@ final appRouter = GoRouter(
       builder: (context, state) =>
           SupplierDetailScreen(supplier: state.extra as Supplier),
     ),
-    GoRoute(path: '/alerts', builder: (context, state) => const AlertsScreen()),
+    GoRoute(
+      path: '/alerts',
+      builder: (context, state) =>
+          AlertsScreen(focusCategory: state.extra as String?),
+    ),
     GoRoute(
       path: '/expenses',
       builder: (context, state) => const ExpensesScreen(),
@@ -184,6 +205,13 @@ final appRouter = GoRouter(
       path: '/caisses/detail',
       builder: (context, state) =>
           CaisseDetailScreen(shift: state.extra as Shift),
+    ),
+    GoRoute(
+      path: '/caisses/session-detail',
+      builder: (context, state) {
+        final (shift, employee) = state.extra as (Shift, Employee);
+        return SessionDetailScreen(shift: shift, employee: employee);
+      },
     ),
     GoRoute(path: '/trash', builder: (context, state) => const TrashScreen()),
     GoRoute(

@@ -10,6 +10,7 @@ import 'package:sou9ix/features/employees/model/employee.dart';
 import 'package:sou9ix/features/employees/model/shift.dart';
 import 'package:sou9ix/features/employees/viewmodel/employees_provider.dart';
 import 'package:sou9ix/features/employees/viewmodel/shifts_provider.dart';
+import 'package:sou9ix/features/pos/viewmodel/cart_removal_provider.dart';
 import 'package:sou9ix/core/theme/app_colors.dart';
 import 'package:sou9ix/core/theme/app_theme.dart';
 
@@ -37,7 +38,9 @@ class CaisseGate extends ConsumerWidget {
         }
       }
     }
-    if (openShift == null) return const _OpenCaisseScreen();
+    if (openShift == null && !ref.watch(caisseOpeningDeferredProvider)) {
+      return const _OpenCaisseScreen();
+    }
     return child;
   }
 }
@@ -114,6 +117,7 @@ class _OpenCaisseScreenState extends ConsumerState<_OpenCaisseScreen> {
           fondSource: ecart != null ? 'Report de caisse' : 'Nouveau fond',
         );
     ref.read(activeEmployeeProvider.notifier).state = employee.id;
+    ref.read(cartRemovalProvider.notifier).reset(employee.id);
 
     if (hasEcart) {
       ref
@@ -401,6 +405,16 @@ class _OpenCaisseScreenState extends ConsumerState<_OpenCaisseScreen> {
                     ? () => _confirmAndOpen(employee!, montant, ecart)
                     : null,
                 child: const Text('Ouvrir ma caisse'),
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton(
+                onPressed: () =>
+                    ref.read(caisseOpeningDeferredProvider.notifier).state =
+                        true,
+                child: const Text('Plus tard'),
               ),
             ),
           ],

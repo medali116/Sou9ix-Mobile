@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sou9ix/features/activity/model/activity_log_entry.dart';
 import 'package:sou9ix/features/activity/viewmodel/activity_log_provider.dart';
+import 'package:sou9ix/features/auth/model/user.dart' show UserRole;
 import 'package:sou9ix/features/employees/model/employee.dart';
 import 'package:sou9ix/features/employees/model/employee_module.dart';
 
@@ -16,6 +17,8 @@ class EmployeesNotifier extends StateNotifier<List<Employee>> {
       nom: 'Yassine Karoui',
       telephone: '+216 20 111 222',
       poste: 'Gérant',
+      pin: '1234',
+      role: UserRole.admin,
       modules: {
         EmployeeModule.venteCaisse,
         EmployeeModule.clientsCredits,
@@ -30,6 +33,8 @@ class EmployeesNotifier extends StateNotifier<List<Employee>> {
       nom: 'Rania Mejri',
       telephone: '+216 22 333 444',
       poste: 'Caissière',
+      pin: '5678',
+      role: UserRole.caissier,
     ),
   ];
 
@@ -71,6 +76,28 @@ class EmployeesNotifier extends StateNotifier<List<Employee>> {
           champ: 'Poste',
           ancienneValeur: old.poste,
           nouvelleValeur: employee.poste,
+        );
+      }
+      if (old.role != employee.role) {
+        logActivity(
+          _ref,
+          category: ActivityCategory.employes,
+          impact: ActivityImpact.modification,
+          action: 'Rôle modifié',
+          targetName: employee.nom,
+          champ: 'Rôle',
+          ancienneValeur: old.role == UserRole.admin ? 'Administrateur' : 'Caissier',
+          nouvelleValeur: employee.role == UserRole.admin ? 'Administrateur' : 'Caissier',
+        );
+      }
+      if (old.pin != employee.pin) {
+        // Never write the actual PIN value to the audit trail.
+        logActivity(
+          _ref,
+          category: ActivityCategory.employes,
+          impact: ActivityImpact.modification,
+          action: 'Code PIN modifié',
+          targetName: employee.nom,
         );
       }
       if (old.modules != employee.modules) {

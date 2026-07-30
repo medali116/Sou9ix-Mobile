@@ -356,47 +356,97 @@ class DashboardScreen extends ConsumerWidget {
               onAction: () => _openMoreActionsSheet(context, ref),
             ),
             const SizedBox(height: 14),
-            Row(
-              children: [
-                Expanded(
-                  child: _QuickAction(
-                    icon: Icons.add_shopping_cart_rounded,
-                    label: 'Vente',
-                    color: AppColors.teal,
-                    onTap: () => context.push('/pos'),
+            SizedBox(
+              height: 98,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                clipBehavior: Clip.none,
+                children: [
+                  SizedBox(
+                    width: 74,
+                    child: _QuickAction(
+                      icon: Icons.add_shopping_cart_rounded,
+                      label: 'Vente',
+                      color: AppColors.teal,
+                      onTap: () => context.push('/pos'),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _QuickAction(
-                    icon: Icons.inventory_2_outlined,
-                    label: 'Produit',
-                    color: AppColors.goldDark,
-                    onTap: () => context.push('/products/new'),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 74,
+                    child: _QuickAction(
+                      icon: Icons.inventory_2_outlined,
+                      label: 'Produit',
+                      color: AppColors.goldDark,
+                      onTap: () => context.push('/products/new'),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _QuickAction(
-                    icon: Icons.person_add_alt_1_rounded,
-                    label: 'Client',
-                    color: AppColors.info,
-                    onTap: () => context.push('/clients'),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 74,
+                    child: _QuickAction(
+                      icon: Icons.person_add_alt_1_rounded,
+                      label: 'Client',
+                      color: AppColors.info,
+                      onTap: () => context.push('/clients'),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: _QuickAction(
-                    icon: Icons.add_business_outlined,
-                    label: 'Fournisseur',
-                    color: AppColors.tealDark,
-                    onTap: () => context.push('/suppliers/new'),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 74,
+                    child: _QuickAction(
+                      icon: Icons.add_business_outlined,
+                      label: 'Fournisseur',
+                      color: AppColors.tealDark,
+                      onTap: () => context.push('/suppliers/new'),
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 74,
+                    child: _QuickAction(
+                      icon: Icons.local_shipping_outlined,
+                      label: 'Facture fourn.',
+                      color: AppColors.warning,
+                      onTap: () => context.push('/stock/receipt'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 74,
+                    child: _QuickAction(
+                      icon: Icons.warehouse_outlined,
+                      label: 'Inventaire',
+                      color: AppColors.tealDark,
+                      onTap: () =>
+                          ref.read(requestedTabIndexProvider.notifier).state = 1,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 74,
+                    child: _QuickAction(
+                      icon: Icons.wallet_outlined,
+                      label: 'Dépense',
+                      color: AppColors.danger,
+                      onTap: () => context.push('/expenses'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  SizedBox(
+                    width: 74,
+                    child: _QuickAction(
+                      icon: Icons.payments_outlined,
+                      label: 'Encaisser',
+                      color: AppColors.success,
+                      onTap: () => context.push('/clients'),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 24),
-            _AlertsSummaryCard(onTap: () => context.push('/alerts')),
+            const _AlertsSummaryCard(),
             const SizedBox(height: 24),
             _CaisseSummaryCard(onTap: () => context.push('/caisses')),
             const SizedBox(height: 24),
@@ -878,8 +928,7 @@ class _QuickAction extends StatelessWidget {
 }
 
 class _AlertsSummaryCard extends ConsumerWidget {
-  final VoidCallback onTap;
-  const _AlertsSummaryCard({required this.onTap});
+  const _AlertsSummaryCard();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -893,23 +942,28 @@ class _AlertsSummaryCard extends ConsumerWidget {
     final todayPriceChanges = ref.watch(todayPriceChangesProvider).length;
     final frequentDeletions = ref.watch(hasFrequentTicketDeletionsProvider);
     final critical = ref.watch(criticalAlertsCountProvider);
+    final total = ref.watch(totalAlertsCountProvider);
 
     // Danger-colored (🔴 critiques) entries first, then warning (🟠), then
     // info (🔵) — so the most urgent alerts are always the first ones seen.
-    final cards = <(String, String, IconData, Color)>[
+    // The last element of each tuple is the section key AlertsScreen uses
+    // to scroll straight to the matching detail on tap.
+    final cards = <(String, String, IconData, Color, String)>[
       if (expired > 0)
         (
           '$expired produit${expired > 1 ? 's' : ''}',
           'Périmés',
           Icons.report_outlined,
           AppColors.danger,
+          'expired',
         ),
       if (unsettled > 0)
         (
           '$unsettled facture${unsettled > 1 ? 's' : ''}',
-          'Fournisseur impayée',
+          'Facture impayée',
           Icons.receipt_long_outlined,
           AppColors.danger,
+          'unsettled',
         ),
       if (overLimit > 0)
         (
@@ -917,6 +971,7 @@ class _AlertsSummaryCard extends ConsumerWidget {
           'Limite dépassée',
           Icons.person_outline_rounded,
           AppColors.danger,
+          'overLimit',
         ),
       if (lossProducts > 0)
         (
@@ -924,6 +979,7 @@ class _AlertsSummaryCard extends ConsumerWidget {
           'Vendus à perte',
           Icons.trending_down_rounded,
           AppColors.danger,
+          'lossProducts',
         ),
       if (frequentDeletions)
         (
@@ -931,13 +987,15 @@ class _AlertsSummaryCard extends ConsumerWidget {
           'Beaucoup de suppressions',
           Icons.report_gmailerrorred_rounded,
           AppColors.danger,
+          'frequentDeletions',
         ),
       if (lowStock > 0)
         (
           '$lowStock produit${lowStock > 1 ? 's' : ''}',
-          'Sous le seuil',
+          'Stock faible',
           Icons.inventory_2_outlined,
           AppColors.warning,
+          'lowStock',
         ),
       if (expiringSoon > 0)
         (
@@ -945,42 +1003,46 @@ class _AlertsSummaryCard extends ConsumerWidget {
           'Proche péremption',
           Icons.hourglass_bottom_rounded,
           AppColors.warning,
+          'expiringSoon',
         ),
       if (staleProducts > 0)
         (
           '$staleProducts produit${staleProducts > 1 ? 's' : ''}',
-          'Sans vente 30j',
+          'Sans vente · 30 j',
           Icons.pause_circle_outline_rounded,
           AppColors.warning,
+          'staleProducts',
         ),
       if (todayPriceChanges > 0)
         (
           '$todayPriceChanges prix',
-          todayPriceChanges > 1 ? 'Modifiés' : 'Modifié',
+          todayPriceChanges > 1 ? 'Prix modifiés' : 'Prix modifié',
           Icons.sell_outlined,
           AppColors.info,
+          'todayPriceChanges',
         ),
     ];
 
-    return PressScale(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+      decoration: BoxDecoration(
+        color: cards.isEmpty
+            ? AppColors.surface
+            : AppColors.warning.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(
           color: cards.isEmpty
-              ? AppColors.surface
-              : AppColors.warning.withValues(alpha: 0.06),
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(
-            color: cards.isEmpty
-                ? AppColors.border
-                : AppColors.warning.withValues(alpha: 0.25),
-          ),
+              ? AppColors.border
+              : AppColors.warning.withValues(alpha: 0.25),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          PressScale(
+            onTap: () => context.push('/alerts'),
+            child: Row(
               children: [
                 Icon(
                   cards.isEmpty
@@ -996,8 +1058,29 @@ class _AlertsSummaryCard extends ConsumerWidget {
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                if (critical > 0) ...[
+                if (total > 0) ...[
                   const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 7,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceMuted,
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                    child: Text(
+                      '$total',
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+                if (critical > 0) ...[
+                  const SizedBox(width: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 7,
@@ -1024,58 +1107,77 @@ class _AlertsSummaryCard extends ConsumerWidget {
                 ),
               ],
             ),
-            if (cards.isEmpty) ...[
-              const SizedBox(height: 6),
-              const Text(
-                'Tout est en ordre',
-                style: TextStyle(
-                  color: AppColors.textSecondary,
-                  fontSize: 12.5,
-                ),
-              ),
-            ] else ...[
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final (value, label, icon, color) in cards.take(6))
-                    Container(
-                      width: 104,
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(icon, size: 15, color: color),
-                          const SizedBox(height: 4),
-                          Text(
-                            value,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 12,
+          ),
+          if (cards.isEmpty) ...[
+            const SizedBox(height: 6),
+            const Text(
+              'Tout est en ordre',
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 12.5),
+            ),
+          ] else ...[
+            const SizedBox(height: 10),
+            SizedBox(
+              height: 72,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // Sized so ~3 cards sit fully visible and the next one
+                  // shows enough (~30%) to read as "swipe for more", not a
+                  // rendering glitch — a fixed pixel width would only hit
+                  // that ratio on one specific screen size.
+                  const gap = 10.0;
+                  const visibleCards = 3.3;
+                  final cardWidth =
+                      (constraints.maxWidth - gap * (visibleCards - 1)) /
+                      visibleCards;
+                  return ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: cards.length,
+                    separatorBuilder: (_, _) => const SizedBox(width: gap),
+                    itemBuilder: (context, index) {
+                      final (value, label, icon, color, key) = cards[index];
+                      return SizedBox(
+                        width: cardWidth,
+                        child: PressScale(
+                          onTap: () => context.push('/alerts', extra: key),
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(AppRadius.sm),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Icon(icon, size: 15, color: color),
+                                const SizedBox(height: 4),
+                                Text(
+                                  value,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                                Text(
+                                  label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 9.5,
+                                    color: AppColors.textFaint,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          Text(
-                            label,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 9.5,
-                              color: AppColors.textFaint,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
+                        ),
+                      );
+                    },
+                  );
+                },
               ),
-            ],
+            ),
           ],
-        ),
+        ],
       ),
     );
   }

@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:sou9ix/features/auth/model/user.dart';
 import 'package:sou9ix/features/employees/model/employee.dart';
 import 'package:sou9ix/features/employees/model/employee_module.dart';
 import 'package:sou9ix/features/employees/viewmodel/employees_provider.dart';
 import 'package:sou9ix/core/theme/app_colors.dart';
 import 'package:sou9ix/core/theme/app_theme.dart';
+import 'package:sou9ix/core/widgets/segmented_tabs.dart';
 
 class EmployeeFormScreen extends ConsumerStatefulWidget {
   final Employee? employee;
@@ -21,7 +23,9 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
   late final TextEditingController _nomCtrl;
   late final TextEditingController _telephoneCtrl;
   late final TextEditingController _posteCtrl;
+  late final TextEditingController _pinCtrl;
   late Set<EmployeeModule> _modules;
+  late UserRole _role;
 
   bool get _isEdit => widget.employee != null;
 
@@ -32,7 +36,9 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
     _nomCtrl = TextEditingController(text: e?.nom ?? '');
     _telephoneCtrl = TextEditingController(text: e?.telephone ?? '');
     _posteCtrl = TextEditingController(text: e?.poste ?? '');
+    _pinCtrl = TextEditingController(text: e?.pin ?? '');
     _modules = {...e?.modules ?? defaultCashierModules};
+    _role = e?.role ?? UserRole.caissier;
   }
 
   @override
@@ -40,6 +46,7 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
     _nomCtrl.dispose();
     _telephoneCtrl.dispose();
     _posteCtrl.dispose();
+    _pinCtrl.dispose();
     super.dispose();
   }
 
@@ -47,6 +54,49 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
     if (_nomCtrl.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Le nom de l\'employé est requis')),
+      );
+      return;
+    }
+    final pin = _pinCtrl.text.trim();
+    if (_role == UserRole.caissier) {
+      if (pin.length != 4) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Le code PIN doit contenir 4 chiffres')),
+        );
+        return;
+      }
+    } else {
+      if (pin.length < 4 || pin.length > 6) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Le code PIN administrateur doit contenir 4 à 6 chiffres'),
+          ),
+        );
+        return;
+      }
+      if (isWeakPin(pin)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Ce code PIN est trop simple (ex. 1234, 0000) — choisissez-en un autre'),
+          ),
+        );
+        return;
+      }
+    }
+    // Login is by full name — two active employees sharing one would make
+    // it impossible to tell them apart on the login screen.
+    final normalizedNom = normalizeEmployeeName(_nomCtrl.text.trim());
+    final duplicate = ref
+        .read(employeesProvider)
+        .where((e) => e.actif && e.id != widget.employee?.id)
+        .any((e) => normalizeEmployeeName(e.nom) == normalizedNom);
+    if (duplicate) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Un employé actif nommé "${_nomCtrl.text.trim()}" existe déjà — utilisez un nom complet différent (ex. ajoutez une initiale).',
+          ),
+        ),
       );
       return;
     }
@@ -59,6 +109,8 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
           : _posteCtrl.text.trim(),
       actif: widget.employee?.actif ?? true,
       modules: _modules,
+      pin: _pinCtrl.text.trim(),
+      role: _role,
     );
     ref.read(employeesProvider.notifier).upsert(employee);
     context.pop();
@@ -148,6 +200,36 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
             controller: _posteCtrl,
             decoration: const InputDecoration(
               hintText: 'Ex. Caissier, Vendeur, Gérant',
+            ),
+          ),
+          const SizedBox(height: 18),
+          _label('Interface à l\'ouverture de session'),
+          SegmentedTabs(
+            labels: const ['Caissier', 'Administrateur'],
+            selectedIndex: _role == UserRole.admin ? 1 : 0,
+            onChanged: (i) =>
+                setState(() => _role = i == 1 ? UserRole.admin : UserRole.caissier),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Détermine l\'interface ouverte après le PIN. Les accès réels sont définis module par module ci-dessous.',
+            style: TextStyle(fontSize: 11.5, color: AppColors.textFaint),
+          ),
+          const SizedBox(height: 18),
+          _label(
+            _role == UserRole.admin
+                ? 'Code PIN administrateur (4 à 6 chiffres)'
+                : 'Code PIN (4 chiffres)',
+          ),
+          TextField(
+            controller: _pinCtrl,
+            keyboardType: TextInputType.number,
+            obscureText: true,
+            maxLength: _role == UserRole.admin ? 6 : 4,
+            decoration: const InputDecoration(
+              hintText: '••••',
+              counterText: '',
+              helperText: 'Utilisé pour ouvrir une session sur "Connexion employé"',
             ),
           ),
           const SizedBox(height: 24),

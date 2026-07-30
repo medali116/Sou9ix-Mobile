@@ -1,11 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sou9ix/core/models/discount.dart';
+import 'package:sou9ix/features/employees/viewmodel/shifts_provider.dart';
 import 'package:sou9ix/features/pos/model/cart_item.dart';
+import 'package:sou9ix/features/pos/viewmodel/cart_removal_provider.dart';
 import 'package:sou9ix/features/products/model/product.dart';
 
 class CartNotifier extends StateNotifier<List<CartItem>> {
-  CartNotifier() : super(const []);
+  final Ref _ref;
+  CartNotifier(this._ref) : super(const []);
 
   void addPiece(Product product) {
     final index = state.indexWhere((i) => i.product.id == product.id);
@@ -100,6 +103,10 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
 
   void removeItem(String productId) {
     state = state.where((i) => i.product.id != productId).toList();
+    final employeeId = _ref.read(activeEmployeeProvider);
+    if (employeeId != null) {
+      _ref.read(cartRemovalProvider.notifier).increment(employeeId);
+    }
   }
 
   void setDiscount(String productId, Discount discount) {
@@ -116,7 +123,7 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
 }
 
 final cartProvider = StateNotifierProvider<CartNotifier, List<CartItem>>(
-  (ref) => CartNotifier(),
+  (ref) => CartNotifier(ref),
 );
 
 /// Extra discount the cashier grants on the whole ticket, on top of any

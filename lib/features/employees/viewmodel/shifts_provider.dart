@@ -71,3 +71,9 @@ final shiftsForEmployeeProvider = Provider.family<List<Shift>, String>((
 /// Who sales get attributed to right now — set on clock-in, cleared on
 /// clock-out. Mirrors the existing `pendingClientProvider` pattern.
 final activeEmployeeProvider = StateProvider<String?>((ref) => null);
+
+/// Set when the current employee taps "Plus tard" on "Ouverture de
+/// caisse" — lets them browse the rest of the app without a shift open.
+/// Reset on logout/employee switch so the next person is asked again;
+/// the actual anti-fraud check still happens at sale time, not here.
+final caisseOpeningDeferredProvider = StateProvider<bool>((ref) => false);

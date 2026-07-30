@@ -3,31 +3,29 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sou9ix/features/auth/model/user.dart';
+import 'package:sou9ix/features/employees/model/employee.dart';
+import 'package:sou9ix/features/settings/viewmodel/company_settings_provider.dart';
 
 class AuthNotifier extends StateNotifier<AppUser?> {
-  AuthNotifier() : super(null);
+  AuthNotifier(this._ref) : super(null);
 
-  void loginAsAdmin() {
-    state = const AppUser(
-      id: 'u_admin',
-      nom: 'Yassine Karoui',
-      email: 'yassine@sou9ix.tn',
-      telephone: '+216 20 123 456',
-      role: UserRole.admin,
-      magasin: 'Épicerie El Baraka — La Marsa',
-      employeeId: 'e1',
-    );
-  }
+  final Ref _ref;
 
-  void loginAsCaissier() {
-    state = const AppUser(
-      id: 'u_caissier',
-      nom: 'Rania Mejri',
-      email: 'rania@sou9ix.tn',
-      telephone: '+216 22 987 654',
-      role: UserRole.caissier,
-      magasin: 'Épicerie El Baraka — La Marsa',
-      employeeId: 'e2',
+  /// Opens the app session for whoever authenticated — either an employee
+  /// (nom complet + PIN) or an admin (e-mail + password) — with the
+  /// role/access that follows from their own roster entry, never chosen
+  /// by hand. The shop name comes from [companySettingsProvider], set once
+  /// at signup on the admin onboarding wizard (or the seed default for the
+  /// demo data).
+  void loginAsEmployee(Employee employee) {
+    state = AppUser(
+      id: 'u_${employee.id}',
+      nom: employee.nom,
+      email: employee.loginEmail,
+      telephone: employee.telephone,
+      role: employee.role,
+      magasin: _ref.read(companySettingsProvider).nom,
+      employeeId: employee.id,
     );
   }
 
@@ -53,5 +51,5 @@ class AuthNotifier extends StateNotifier<AppUser?> {
 }
 
 final authProvider = StateNotifierProvider<AuthNotifier, AppUser?>(
-  (ref) => AuthNotifier(),
+  (ref) => AuthNotifier(ref),
 );

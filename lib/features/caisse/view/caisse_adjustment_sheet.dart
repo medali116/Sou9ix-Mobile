@@ -25,18 +25,26 @@ Future<void> showCaisseAdjustmentSheet(
   BuildContext context,
   WidgetRef ref, {
   Shift? preselected,
+  bool startAsAjout = false,
 }) {
   return showModalBottomSheet(
     context: context,
     backgroundColor: Colors.transparent,
     isScrollControlled: true,
-    builder: (_) => _CaisseAdjustmentSheet(preselected: preselected),
+    builder: (_) => _CaisseAdjustmentSheet(
+      preselected: preselected,
+      startAsAjout: startAsAjout,
+    ),
   );
 }
 
 class _CaisseAdjustmentSheet extends ConsumerStatefulWidget {
   final Shift? preselected;
-  const _CaisseAdjustmentSheet({this.preselected});
+  final bool startAsAjout;
+  const _CaisseAdjustmentSheet({
+    this.preselected,
+    this.startAsAjout = false,
+  });
 
   @override
   ConsumerState<_CaisseAdjustmentSheet> createState() =>
@@ -56,6 +64,7 @@ class _CaisseAdjustmentSheetState
   void initState() {
     super.initState();
     _shift = widget.preselected;
+    _direction = widget.startAsAjout ? _Direction.ajout : _Direction.retrait;
   }
 
   @override

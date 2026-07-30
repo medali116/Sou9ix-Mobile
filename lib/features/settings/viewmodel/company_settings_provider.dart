@@ -28,13 +28,19 @@ class CompanySettingsNotifier extends StateNotifier<CompanySettings> {
       state = state.copyWith(logoBytes: bytes, clearLogo: bytes == null);
 
   void updateStoreInfo({
-    required String adresse,
-    required String telephone,
-    required String matriculeFiscal,
+    String? nom,
+    TypeActivite? typeActivite,
+    String? adresse,
+    String? telephone,
+    String? ville,
+    String? matriculeFiscal,
   }) {
     state = state.copyWith(
+      nom: nom,
+      typeActivite: typeActivite,
       adresse: adresse,
       telephone: telephone,
+      ville: ville,
       matriculeFiscal: matriculeFiscal,
     );
   }

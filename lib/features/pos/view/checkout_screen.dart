@@ -5,7 +5,12 @@ import 'package:go_router/go_router.dart';
 
 import 'package:sou9ix/core/formatters.dart';
 import 'package:sou9ix/core/models/discount.dart';
+import 'package:sou9ix/features/auth/model/user.dart';
+import 'package:sou9ix/features/auth/viewmodel/auth_provider.dart';
+import 'package:sou9ix/features/caisse/view/open_cash_session_sheet.dart';
 import 'package:sou9ix/features/clients/model/client.dart';
+import 'package:sou9ix/features/employees/model/employee.dart';
+import 'package:sou9ix/features/employees/viewmodel/employees_provider.dart';
 import 'package:sou9ix/features/sales/model/sale.dart';
 import 'package:sou9ix/features/pos/view/discount_editor_sheet.dart';
 import 'package:sou9ix/features/pos/viewmodel/cart_provider.dart';
@@ -53,10 +58,63 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     super.dispose();
   }
 
+  /// Only caissiers work a cash till in this app — the admin's "Vente
+  /// rapide" route bypasses cash-session tracking entirely, so it's never
+  /// blocked here.
+  bool _hasOpenCaisseSession() {
+    if (ref.read(authProvider)?.role != UserRole.caissier) return true;
+    final activeId = ref.read(activeEmployeeProvider);
+    if (activeId == null) return false;
+    return ref
+        .read(shiftsProvider)
+        .any((s) => s.employeeId == activeId && s.enCours);
+  }
+
+  Employee? _currentEmployee() {
+    final employeeId = ref.read(authProvider)?.employeeId;
+    if (employeeId == null) return null;
+    for (final e in ref.read(employeesProvider)) {
+      if (e.id == employeeId) return e;
+    }
+    return null;
+  }
+
+  Future<void> _showCaisseRequiredDialog() async {
+    final employee = _currentEmployee();
+    if (!mounted) return;
+    final openNow = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('🔒 Caisse non ouverte'),
+        content: const Text(
+          'Ouvrez votre caisse pour commencer à encaisser des ventes en espèces.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Annuler'),
+          ),
+          if (employee != null)
+            ElevatedButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('Ouvrir ma caisse'),
+            ),
+        ],
+      ),
+    );
+    if (openNow == true && employee != null && mounted) {
+      await showOpenCashSessionSheet(context, ref, employee);
+    }
+  }
+
   Future<void> _confirmer() async {
     final items = ref.read(cartProvider);
     if (items.isEmpty) return;
     if (_mode == ModePaiement.credit && _clientId == null) return;
+    if (_mode == ModePaiement.especes && !_hasOpenCaisseSession()) {
+      await _showCaisseRequiredDialog();
+      return;
+    }
 
     setState(() => _processing = true);
     await Future.delayed(const Duration(milliseconds: 700));
