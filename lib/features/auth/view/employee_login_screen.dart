@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:sou9ix/features/auth/model/user.dart';
 import 'package:sou9ix/features/auth/viewmodel/auth_provider.dart';
 import 'package:sou9ix/features/employees/viewmodel/employees_provider.dart';
 import 'package:sou9ix/core/theme/app_colors.dart';
@@ -70,6 +71,19 @@ class _EmployeeLoginScreenState extends ConsumerState<EmployeeLoginScreen> {
     }
     ref.read(authProvider.notifier).loginAsEmployee(matches.first);
     if (mounted) context.go('/app');
+  }
+
+  // TEMPORAIRE — raccourci de test pour l'installation/démo, à retirer
+  // avant la mise en production. Se connecte directement avec le premier
+  // employé du rôle demandé, sans passer par nom/PIN.
+  void _quickLogin(UserRole role) {
+    final matches = ref.read(activeEmployeesProvider).where((e) => e.role == role);
+    if (matches.isEmpty) {
+      setState(() => _error = 'Aucun employé "${role.name}" trouvé.');
+      return;
+    }
+    ref.read(authProvider.notifier).loginAsEmployee(matches.first);
+    context.go('/app');
   }
 
   @override
@@ -197,6 +211,58 @@ class _EmployeeLoginScreenState extends ConsumerState<EmployeeLoginScreen> {
                         child: TextButton(
                           onPressed: () => context.push('/login/admin'),
                           child: const Text('Connexion administrateur →'),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      // TEMPORAIRE — à retirer avant la mise en production.
+                      Container(
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: AppColors.warning.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          border: Border.all(
+                            color: AppColors.warning.withValues(alpha: 0.4),
+                            style: BorderStyle.solid,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Accès rapide (test — temporaire)',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                                color: AppColors.warning,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: () => _quickLogin(UserRole.admin),
+                                    style: OutlinedButton.styleFrom(
+                                      side: const BorderSide(color: AppColors.warning),
+                                      foregroundColor: AppColors.warning,
+                                    ),
+                                    child: const Text('Admin'),
+                                  ),
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: OutlinedButton(
+                                    onPressed: () => _quickLogin(UserRole.caissier),
+                                    style: OutlinedButton.styleFrom(
+                                      side: const BorderSide(color: AppColors.warning),
+                                      foregroundColor: AppColors.warning,
+                                    ),
+                                    child: const Text('Caissière'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
                       const Spacer(),

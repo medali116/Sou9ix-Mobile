@@ -356,9 +356,21 @@ final productsProvider = StateNotifierProvider<ProductsNotifier, List<Product>>(
   (ref) => ProductsNotifier(ref),
 );
 
-final categoriesProvider = Provider<List<ProductCategory>>(
-  (ref) => mockCategories,
-);
+class CategoriesNotifier extends StateNotifier<List<ProductCategory>> {
+  CategoriesNotifier() : super(mockCategories);
+
+  /// Adds a category created on the fly from the product form — a no-op
+  /// if one with the same id already exists.
+  void add(ProductCategory category) {
+    if (state.any((c) => c.id == category.id)) return;
+    state = [...state, category];
+  }
+}
+
+final categoriesProvider =
+    StateNotifierProvider<CategoriesNotifier, List<ProductCategory>>(
+      (ref) => CategoriesNotifier(),
+    );
 
 final lowStockProvider = Provider<List<Product>>((ref) {
   final products = ref.watch(productsProvider);

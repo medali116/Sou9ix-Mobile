@@ -51,58 +51,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     ),
   ];
 
-  Future<void> _openDeviseSheet(BuildContext context) async {
-    final current = ref.read(companySettingsProvider).currency;
-    final result = await showModalBottomSheet<Currency>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (_) => Container(
-        decoration: const BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(AppRadius.xl),
-          ),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SheetHandle(),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Devise',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
-            ),
-            for (final c in Currency.values)
-              ListTile(
-                title: Text(
-                  c.label,
-                  style: TextStyle(
-                    fontWeight: current == c
-                        ? FontWeight.w800
-                        : FontWeight.w500,
-                  ),
-                ),
-                trailing: current == c
-                    ? const Icon(Icons.check_rounded, color: AppColors.teal)
-                    : null,
-                onTap: () => Navigator.pop(context, c),
-              ),
-            const SizedBox(height: 8),
-          ],
-        ),
-      ),
-    );
-    if (result != null) {
-      ref.read(companySettingsProvider.notifier).setCurrency(result);
-      if (context.mounted) _toast(context, 'Devise : ${result.symbol}');
-    }
-  }
-
   Future<void> _openLangueSheet(BuildContext context) async {
     final current = ref.read(companySettingsProvider).language;
     final result = await showModalBottomSheet<AppLanguage>(
@@ -1087,7 +1035,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           Expanded(
                             flex: 2,
                             child: ElevatedButton(
-                              onPressed: (saving || !hasChanges) ? null : submit,
+                              onPressed: (saving || !hasChanges)
+                                  ? null
+                                  : submit,
                               child: saving
                                   ? const Row(
                                       mainAxisAlignment:
@@ -1571,12 +1521,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 12),
-            _MenuTile(
-              icon: Icons.payments_outlined,
-              label: 'Devise',
-              trailing: companySettings.currency.symbol,
-              onTap: () => _openDeviseSheet(context),
-            ),
             _MenuTile(
               icon: Icons.translate_rounded,
               label: 'Langue',

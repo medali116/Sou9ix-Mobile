@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:sou9ix/features/products/model/category.dart';
 import 'package:sou9ix/features/products/model/product.dart';
 import 'package:sou9ix/features/products/viewmodel/products_provider.dart';
 import 'package:sou9ix/core/theme/app_colors.dart';
@@ -209,6 +210,43 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     }
   }
 
+  Future<void> _createNewCategory() async {
+    final nameCtrl = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Nouvelle catégorie'),
+        content: TextField(
+          controller: nameCtrl,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(hintText: 'Ex. Produits laitiers'),
+          onSubmitted: (v) => Navigator.pop(dialogContext, v),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, nameCtrl.text),
+            child: const Text('Ajouter'),
+          ),
+        ],
+      ),
+    );
+    final trimmed = name?.trim();
+    if (trimmed == null || trimmed.isEmpty) return;
+
+    final category = ProductCategory(
+      id: 'cat${DateTime.now().microsecondsSinceEpoch}',
+      name: trimmed,
+      icon: Icons.category_rounded,
+    );
+    ref.read(categoriesProvider.notifier).add(category);
+    setState(() => _categorieId = category.id);
+  }
+
   @override
   Widget build(BuildContext context) {
     final categories = ref.watch(categoriesProvider);
@@ -251,14 +289,31 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: categories.map((c) {
-              final selected = c.id == _categorieId;
-              return ChoiceChip(
-                label: Text(c.name),
-                selected: selected,
-                onSelected: (_) => setState(() => _categorieId = c.id),
-              );
-            }).toList(),
+            children: [
+              ...categories.map((c) {
+                final selected = c.id == _categorieId;
+                return ChoiceChip(
+                  label: Text(c.name),
+                  selected: selected,
+                  onSelected: (_) => setState(() => _categorieId = c.id),
+                );
+              }),
+              ActionChip(
+                avatar: const Icon(
+                  Icons.add_rounded,
+                  size: 18,
+                  color: AppColors.teal,
+                ),
+                label: const Text(
+                  'Nouvelle catégorie',
+                  style: TextStyle(
+                    color: AppColors.teal,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                onPressed: _createNewCategory,
+              ),
+            ],
           ),
           const SizedBox(height: 18),
           Row(

@@ -19,14 +19,21 @@ import 'package:sou9ix/features/pos/view/barcode_capture_screen.dart';
 /// Bottom sheet to build one [DraftInvoiceLine]: restock an existing
 /// product or define a brand-new one, its received quantity and unit cost.
 class AddInvoiceLineSheet extends ConsumerStatefulWidget {
-  const AddInvoiceLineSheet({super.key});
+  /// When editing an already-staged line, its current values pre-fill the
+  /// form and "Ajouter" becomes "Modifier".
+  final DraftInvoiceLine? initial;
 
-  static Future<DraftInvoiceLine?> show(BuildContext context) {
+  const AddInvoiceLineSheet({super.key, this.initial});
+
+  static Future<DraftInvoiceLine?> show(
+    BuildContext context, {
+    DraftInvoiceLine? initial,
+  }) {
     return showModalBottomSheet<DraftInvoiceLine>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const AddInvoiceLineSheet(),
+      builder: (_) => AddInvoiceLineSheet(initial: initial),
     );
   }
 
@@ -49,8 +56,39 @@ class _AddInvoiceLineSheetState extends ConsumerState<AddInvoiceLineSheet> {
   DateTime? _newDatePeremption;
   Uint8List? _productPhotoBytes;
 
-  final _quantiteCtrl = TextEditingController();
-  final _prixAchatCtrl = TextEditingController();
+  late final _quantiteCtrl = TextEditingController(
+    text: widget.initial != null
+        ? widget.initial!.quantite.toStringAsFixed(
+            widget.initial!.venduAuPoids ? 3 : 0,
+          )
+        : '',
+  );
+  late final _prixAchatCtrl = TextEditingController(
+    text: widget.initial?.prixAchatUnitaire.toStringAsFixed(3) ?? '',
+  );
+
+  bool get _isEdit => widget.initial != null;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initial;
+    if (initial != null) {
+      _newProduct = initial.newProductDraft != null;
+      _selectedProduct = initial.existingProduct;
+      if (initial.newProductDraft != null) {
+        final p = initial.newProductDraft!;
+        _newNameCtrl.text = p.name;
+        _newPrixVenteCtrl.text = p.prixVente.toStringAsFixed(3);
+        _newCodeCtrl.text = p.codeBarres ?? '';
+        _newVenduAuPoids = p.venduAuPoids;
+        _newCategorieId = p.categorieId;
+        _newSeuilCtrl.text = p.seuilAlerte.toStringAsFixed(2);
+        _newDatePeremption = p.datePeremption;
+        _productPhotoBytes = p.photoBytes;
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -112,7 +150,9 @@ class _AddInvoiceLineSheetState extends ConsumerState<AddInvoiceLineSheet> {
         return;
       }
       final newProduct = Product(
-        id: 'p${DateTime.now().microsecondsSinceEpoch}',
+        id:
+            widget.initial?.newProductDraft?.id ??
+            'p${DateTime.now().microsecondsSinceEpoch}',
         name: name,
         emoji: '📦',
         photoBytes: _productPhotoBytes,
@@ -184,7 +224,7 @@ class _AddInvoiceLineSheetState extends ConsumerState<AddInvoiceLineSheet> {
                 children: [
                   Expanded(
                     child: Text(
-                      'Ajouter une ligne',
+                      _isEdit ? 'Modifier la ligne' : 'Ajouter une ligne',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                   ),
@@ -441,7 +481,9 @@ class _AddInvoiceLineSheetState extends ConsumerState<AddInvoiceLineSheet> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: _submit,
-                      child: const Text('Ajouter la ligne'),
+                      child: Text(
+                        _isEdit ? 'Modifier la ligne' : 'Ajouter la ligne',
+                      ),
                     ),
                   ),
                 ],

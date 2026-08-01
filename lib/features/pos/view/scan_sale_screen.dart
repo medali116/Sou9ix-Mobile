@@ -8,18 +8,17 @@ import 'package:go_router/go_router.dart';
 
 import 'package:sou9ix/core/formatters.dart';
 import 'package:sou9ix/core/models/discount.dart';
-import 'package:sou9ix/features/clients/model/client.dart';
+import 'package:sou9ix/features/auth/model/user.dart';
 import 'package:sou9ix/features/products/model/product.dart';
 import 'package:sou9ix/features/alerts/viewmodel/alerts_provider.dart';
 import 'package:sou9ix/features/auth/viewmodel/auth_provider.dart';
 import 'package:sou9ix/features/caisse/view/ma_caisse_sheet.dart';
+import 'package:sou9ix/features/caisse/view/open_cash_session_sheet.dart';
 import 'package:sou9ix/features/employees/model/employee.dart';
 import 'package:sou9ix/features/employees/model/shift.dart';
 import 'package:sou9ix/features/employees/viewmodel/employees_provider.dart';
 import 'package:sou9ix/features/employees/viewmodel/shifts_provider.dart';
 import 'package:sou9ix/features/pos/viewmodel/cart_provider.dart';
-import 'package:sou9ix/features/clients/viewmodel/clients_provider.dart';
-import 'package:sou9ix/features/pos/viewmodel/pending_sale_provider.dart';
 import 'package:sou9ix/features/products/viewmodel/products_provider.dart';
 import 'package:sou9ix/core/theme/app_colors.dart';
 import 'package:sou9ix/core/theme/app_theme.dart';
@@ -31,7 +30,6 @@ import 'package:sou9ix/core/widgets/quantity_stepper.dart';
 import 'package:sou9ix/core/widgets/weight_stepper.dart';
 import 'package:sou9ix/core/routing/app_router.dart';
 import 'package:sou9ix/features/pos/view/add_without_barcode_sheet.dart';
-import 'package:sou9ix/features/pos/view/client_picker_sheet.dart';
 import 'package:sou9ix/features/pos/view/pos_screen.dart';
 import 'package:sou9ix/features/pos/view/scanner_screen.dart';
 import 'package:sou9ix/features/pos/view/weight_entry_sheet.dart';
@@ -165,13 +163,6 @@ class _ScanSaleScreenState extends ConsumerState<ScanSaleScreen>
     });
   }
 
-  Future<void> _pickClient() async {
-    final client = await ClientPickerSheet.show(context);
-    if (client != null) {
-      ref.read(pendingClientProvider.notifier).state = client.id;
-    }
-  }
-
   Future<void> _editWeight(Product product, double currentKg) async {
     final updated = await WeightEntrySheet.show(
       context,
@@ -187,14 +178,9 @@ class _ScanSaleScreenState extends ConsumerState<ScanSaleScreen>
   Widget build(BuildContext context) {
     final user = ref.watch(authProvider);
     final cart = ref.watch(cartProvider);
+    final subtotal = ref.watch(cartSubtotalProvider);
+    final discount = ref.watch(cartDiscountProvider);
     final total = ref.watch(cartTotalProvider);
-    final pendingClientId = ref.watch(pendingClientProvider);
-    final clients = ref.watch(clientsProvider);
-    Client? pendingClient;
-    if (pendingClientId != null) {
-      final matches = clients.where((c) => c.id == pendingClientId);
-      pendingClient = matches.isEmpty ? null : matches.first;
-    }
 
     final activeEmployeeId = ref.watch(activeEmployeeProvider);
     Shift? openShift;
@@ -222,14 +208,26 @@ class _ScanSaleScreenState extends ConsumerState<ScanSaleScreen>
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 4),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          'Caisse',
-                          style: Theme.of(context).textTheme.displaySmall,
+                        Row(
+                          children: [
+                            Text(
+                              'Caisse',
+                              style: Theme.of(context).textTheme.displaySmall,
+                            ),
+                            if (openShift != null) ...[
+                              const SizedBox(width: 8),
+                              const _StatusPill(
+                                label: 'Ouvert',
+                                color: AppColors.success,
+                              ),
+                            ],
+                          ],
                         ),
                         Text(
                           user?.magasin ?? 'Sou9ix',
@@ -239,32 +237,44 @@ class _ScanSaleScreenState extends ConsumerState<ScanSaleScreen>
                       ],
                     ),
                   ),
-                  if (openShift != null && activeEmployee != null) ...[
-                    _RoundIconButton(
-                      icon: Icons.point_of_sale_rounded,
-                      onTap: () => showMaCaisseSheet(
-                        context,
-                        openShift!,
-                        activeEmployee!,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                  ],
-                  _RoundIconButton(
+                  _HeaderIconButton(
+                    icon: Icons.point_of_sale_rounded,
+                    tooltip: 'Caisse',
+                    onTap: () {
+                      if (openShift != null && activeEmployee != null) {
+                        showMaCaisseSheet(context, openShift, activeEmployee);
+                        return;
+                      }
+                      final employeeId = user?.employeeId;
+                      final matches = employeeId == null
+                          ? const <Employee>[]
+                          : ref
+                                .read(employeesProvider)
+                                .where((e) => e.id == employeeId);
+                      if (matches.isNotEmpty) {
+                        showOpenCashSessionSheet(context, ref, matches.first);
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 6),
+                  _HeaderIconButton(
                     icon: Icons.grid_view_rounded,
+                    tooltip: 'Modules',
                     onTap: () => Navigator.of(context).push(
                       MaterialPageRoute(builder: (_) => const PosScreen()),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  Badge(
-                    isLabelVisible: ref.watch(totalAlertsCountProvider) > 0,
-                    label: Text('${ref.watch(totalAlertsCountProvider)}'),
-                    child: _RoundIconButton(
-                      icon: Icons.notifications_none_rounded,
-                      onTap: () => context.push('/alerts'),
-                    ),
+                  const SizedBox(width: 6),
+                  _HeaderIconButton(
+                    icon: Icons.notifications_none_rounded,
+                    tooltip: 'Alertes',
+                    badgeCount: ref.watch(totalAlertsCountProvider),
+                    onTap: () => context.push('/alerts'),
                   ),
+                  if (user != null) ...[
+                    const SizedBox(width: 8),
+                    _UserChip(user: user),
+                  ],
                 ],
               ),
             ),
@@ -309,9 +319,7 @@ class _ScanSaleScreenState extends ConsumerState<ScanSaleScreen>
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    cart.isEmpty
-                        ? 'Panier'
-                        : 'Panier · ${cart.length} article${cart.length > 1 ? 's' : ''} · ${AppFormat.dt(total)}',
+                    'Panier (${cart.length})',
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   if (cart.isNotEmpty)
@@ -370,13 +378,18 @@ class _ScanSaleScreenState extends ConsumerState<ScanSaleScreen>
                       },
                     ),
             ),
+            if (cart.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                child: _CartSummaryRow(
+                  itemCount: cart.length,
+                  total: total,
+                  discountOff: discount.amountOff(subtotal),
+                ),
+              ),
             _BottomActionBar(
               cartEmpty: cart.isEmpty,
               total: total,
-              client: pendingClient,
-              onScanClient: _pickClient,
-              onClearClient: () =>
-                  ref.read(pendingClientProvider.notifier).state = null,
               onPayer: () => context.push('/checkout'),
             ),
           ],
@@ -407,97 +420,108 @@ class _ScanPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: GestureDetector(
-        // A real barcode is picked up automatically by the live camera feed;
-        // long-press is only a demo shortcut for environments without one.
-        onLongPress: onDemoScan,
-        child: Container(
-          height: 190,
-          clipBehavior: Clip.hardEdge,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-            boxShadow: AppShadows.soft,
-          ),
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child: LiveBarcodeScanner(
-                  onDetect: onDetect,
-                  onManualFallbackTap: onExpand,
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
-                  isActive: cameraActive,
-                ),
+      child: Center(
+        // Narrower than the full available width — this panel only needs
+        // to frame a barcode, not stretch edge to edge.
+        child: FractionallySizedBox(
+          widthFactor: 0.8,
+          child: GestureDetector(
+            // A real barcode is picked up automatically by the live camera
+            // feed; long-press is only a demo shortcut for environments
+            // without one.
+            onLongPress: onDemoScan,
+            child: Container(
+              // Just tall enough to frame a barcode — the panel's job is
+              // scanning, not filling the screen, so it stays compact and
+              // leaves more room for the cart below.
+              height: 148,
+              clipBehavior: Clip.hardEdge,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                boxShadow: AppShadows.soft,
               ),
-              Positioned(
-                top: 12,
-                left: 12,
-                right: 56,
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 220),
-                  child: confirmation == null
-                      ? const SizedBox.shrink(key: ValueKey('empty'))
-                      : Container(
-                          key: ValueKey(confirmation),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 7,
-                          ),
-                          decoration: BoxDecoration(
-                            color: confirmationIsError
-                                ? AppColors.danger
-                                : AppColors.success,
-                            borderRadius: BorderRadius.circular(100),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                confirmationIsError
-                                    ? Icons.error_rounded
-                                    : Icons.check_circle_rounded,
-                                color: Colors.white,
-                                size: 15,
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: LiveBarcodeScanner(
+                      onDetect: onDetect,
+                      onManualFallbackTap: onExpand,
+                      borderRadius: BorderRadius.circular(AppRadius.lg),
+                      isActive: cameraActive,
+                    ),
+                  ),
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    right: 56,
+                    child: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      child: confirmation == null
+                          ? const SizedBox.shrink(key: ValueKey('empty'))
+                          : Container(
+                              key: ValueKey(confirmation),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 7,
                               ),
-                              const SizedBox(width: 6),
-                              Flexible(
-                                child: Text(
-                                  confirmationIsError
-                                      ? confirmation!
-                                      : 'Ajouté : $confirmation',
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
+                              decoration: BoxDecoration(
+                                color: confirmationIsError
+                                    ? AppColors.danger
+                                    : AppColors.success,
+                                borderRadius: BorderRadius.circular(100),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    confirmationIsError
+                                        ? Icons.error_rounded
+                                        : Icons.check_circle_rounded,
                                     color: Colors.white,
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 12,
+                                    size: 15,
                                   ),
-                                ),
+                                  const SizedBox(width: 6),
+                                  Flexible(
+                                    child: Text(
+                                      confirmationIsError
+                                          ? confirmation!
+                                          : 'Ajouté : $confirmation',
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
+                    ),
+                  ),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Material(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      shape: const CircleBorder(),
+                      child: InkWell(
+                        customBorder: const CircleBorder(),
+                        onTap: onExpand,
+                        child: const Padding(
+                          padding: EdgeInsets.all(8),
+                          child: Icon(
+                            Icons.fullscreen_rounded,
+                            color: Colors.white,
+                            size: 20,
                           ),
                         ),
-                ),
-              ),
-              Positioned(
-                top: 8,
-                right: 8,
-                child: Material(
-                  color: Colors.black.withValues(alpha: 0.35),
-                  shape: const CircleBorder(),
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: onExpand,
-                    child: const Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Icon(
-                        Icons.fullscreen_rounded,
-                        color: Colors.white,
-                        size: 20,
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
@@ -629,23 +653,16 @@ class _CartRow extends StatelessWidget {
 class _BottomActionBar extends StatelessWidget {
   final bool cartEmpty;
   final double total;
-  final Client? client;
-  final VoidCallback onScanClient;
-  final VoidCallback onClearClient;
   final VoidCallback onPayer;
 
   const _BottomActionBar({
     required this.cartEmpty,
     required this.total,
-    required this.client,
-    required this.onScanClient,
-    required this.onClearClient,
     required this.onPayer,
   });
 
   @override
   Widget build(BuildContext context) {
-    final attachedClient = client;
     return Container(
       margin: const EdgeInsets.fromLTRB(20, 0, 20, 88),
       padding: const EdgeInsets.all(14),
@@ -654,87 +671,15 @@ class _BottomActionBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppRadius.lg),
         boxShadow: AppShadows.soft,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (attachedClient != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.teal.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(100),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.person_rounded,
-                          size: 14,
-                          color: AppColors.teal,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Client : ${attachedClient.nom}',
-                          style: const TextStyle(
-                            color: AppColors.teal,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  GestureDetector(
-                    onTap: onClearClient,
-                    child: const Icon(
-                      Icons.close_rounded,
-                      size: 16,
-                      color: AppColors.textFaint,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: onScanClient,
-                  icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
-                  label: const Text('Scanner client'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    side: const BorderSide(color: AppColors.border),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                flex: 2,
-                child: ElevatedButton(
-                  onPressed: cartEmpty ? null : onPayer,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                  ),
-                  child: Text(
-                    'Payer${cartEmpty ? '' : ' · ${AppFormat.dt(total)}'}',
-                  ),
-                ),
-              ),
-            ],
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: cartEmpty ? null : onPayer,
+          style: ElevatedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 15),
           ),
-        ],
+          child: Text('Payer${cartEmpty ? '' : ' · ${AppFormat.dt(total)}'}'),
+        ),
       ),
     );
   }
@@ -787,26 +732,242 @@ class _QuickActionButton extends StatelessWidget {
   }
 }
 
-class _RoundIconButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
+/// Small rounded status badge next to the "Caisse" title — e.g. "Ouvert"
+/// while a shift is running.
+class _StatusPill extends StatelessWidget {
+  final String label;
+  final Color color;
 
-  const _RoundIconButton({required this.icon, required this.onTap});
+  const _StatusPill({required this.label, required this.color});
 
   @override
   Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w700,
+              fontSize: 11.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Who's signed in, shown top-right of the Caisse header — tapping it
+/// offers to sign out, without needing a trip to the Profil tab.
+class _UserChip extends ConsumerWidget {
+  final AppUser user;
+
+  const _UserChip({required this.user});
+
+  Future<void> _handleTap(BuildContext context, WidgetRef ref) async {
+    final action = await showMenu<String>(
+      context: context,
+      position: const RelativeRect.fromLTRB(1000, 80, 20, 0),
+      items: const [
+        PopupMenuItem(value: 'logout', child: Text('Se déconnecter')),
+      ],
+    );
+    if (action == 'logout' && context.mounted) {
+      ref.read(authProvider.notifier).logout();
+      context.go('/login');
+    }
+  }
+
+  String _roleLabel(UserRole role) =>
+      role == UserRole.admin ? 'Administrateur' : 'Caissier';
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     return PressScale(
-      onTap: onTap,
+      onTap: () => _handleTap(context, ref),
       child: Container(
-        width: 44,
-        height: 44,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
           color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.sm),
+          borderRadius: BorderRadius.circular(100),
           boxShadow: AppShadows.card,
         ),
-        child: Icon(icon, color: AppColors.textPrimary),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircleAvatar(
+              radius: 14,
+              backgroundColor: AppColors.teal.withValues(alpha: 0.12),
+              foregroundColor: AppColors.tealDark,
+              backgroundImage: user.photoBytes != null
+                  ? MemoryImage(user.photoBytes!)
+                  : null,
+              child: user.photoBytes != null
+                  ? null
+                  : const Icon(Icons.person_rounded, size: 16),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  user.nom,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12.5,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  _roleLabel(user.role),
+                  style: const TextStyle(
+                    color: AppColors.textFaint,
+                    fontSize: 10.5,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(width: 2),
+            const Icon(
+              Icons.expand_more_rounded,
+              size: 18,
+              color: AppColors.textFaint,
+            ),
+          ],
+        ),
       ),
+    );
+  }
+}
+
+/// One of the three labeled shortcuts under the header (Caisse/Modules/
+/// Alertes) — icon + label together, instead of a bare icon, so each
+/// button's purpose is legible at a glance.
+/// Small round icon button for the header row (Caisse/Modules/Alertes) —
+/// sits right next to the user chip, so no room (or need) for a text
+/// label; the [tooltip] carries the same meaning on long-press.
+class _HeaderIconButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+  final int badgeCount;
+
+  const _HeaderIconButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+    this.badgeCount = 0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: PressScale(
+        onTap: onTap,
+        child: Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.sm),
+            boxShadow: AppShadows.card,
+          ),
+          child: Badge(
+            isLabelVisible: badgeCount > 0,
+            label: Text('$badgeCount'),
+            child: Icon(icon, color: AppColors.textPrimary, size: 17),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Compact "Articles / Total / Remise" recap shown above the payment bar
+/// once the cart isn't empty — so the running numbers are clear without
+/// having to read every line.
+class _CartSummaryRow extends StatelessWidget {
+  final int itemCount;
+  final double total;
+  final double discountOff;
+
+  const _CartSummaryRow({
+    required this.itemCount,
+    required this.total,
+    required this.discountOff,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        boxShadow: AppShadows.card,
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.shopping_basket_outlined,
+            color: AppColors.teal,
+            size: 20,
+          ),
+          const SizedBox(width: 12),
+          Expanded(child: _summaryCell(context, 'Articles', '$itemCount')),
+          Expanded(child: _summaryCell(context, 'Total', AppFormat.dt(total))),
+          Expanded(
+            child: _summaryCell(
+              context,
+              'Remise',
+              AppFormat.dt(discountOff),
+              valueColor: discountOff > 0 ? AppColors.goldDark : null,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _summaryCell(
+    BuildContext context,
+    String label,
+    String value, {
+    Color? valueColor,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: Theme.of(context).textTheme.bodyMedium),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            value,
+            maxLines: 1,
+            style: TextStyle(
+              fontWeight: FontWeight.w800,
+              color: valueColor ?? AppColors.textPrimary,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

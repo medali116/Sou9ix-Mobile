@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:sou9ix/core/models/discount.dart';
 import 'package:sou9ix/features/stock/model/draft_invoice_line.dart';
 import 'package:sou9ix/features/stock/model/purchase_invoice.dart';
 import 'package:sou9ix/features/stock/model/purchase_invoice_line.dart';
@@ -25,6 +26,13 @@ class PurchaseService {
     Supplier? supplier,
     Uint8List? photoBytes,
     required double montantPaye,
+    String? numeroFournisseur,
+    DateTime? dateFacture,
+    DateTime? dateReception,
+    double tvaRate = 0,
+    Discount discount = const Discount.none(),
+    String? notes,
+    PurchasePaymentMethod? modePaiement,
   }) {
     final invoiceLines = <PurchaseInvoiceLine>[];
     final pendingMovements =
@@ -84,17 +92,23 @@ class PurchaseService {
     final montantVerse = montantPaye.clamp(0, double.infinity).toDouble();
     final invoice = PurchaseInvoice(
       id: 'ach${DateTime.now().microsecondsSinceEpoch}',
-      date: DateTime.now(),
+      date: dateFacture ?? DateTime.now(),
+      dateReception: dateReception,
+      numeroFournisseur: numeroFournisseur,
       fournisseurId: supplier?.id,
       fournisseurNom: supplier?.nom,
       photoBytes: photoBytes,
       lignes: invoiceLines,
+      tvaRate: tvaRate,
+      discount: discount,
+      notes: notes,
       paiements: montantVerse > 0
           ? [
               PurchaseInvoicePayment(
                 id: DateTime.now().microsecondsSinceEpoch.toString(),
                 montant: montantVerse,
                 date: DateTime.now(),
+                modePaiement: modePaiement,
               ),
             ]
           : const [],

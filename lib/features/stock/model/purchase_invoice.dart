@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import 'package:sou9ix/core/models/discount.dart';
 import 'package:sou9ix/features/stock/model/purchase_invoice_line.dart';
 
 enum PurchasePaymentMethod { especes, cheque, virement, carte }
@@ -67,7 +68,17 @@ class PurchaseInvoicePayment {
 /// hasn't paid the supplier in full yet.
 class PurchaseInvoice {
   final String id;
+
+  /// Date on the paper invoice itself.
   final DateTime date;
+
+  /// When the goods were physically received — defaults to [date] (same
+  /// day) unless the shop logs them separately.
+  final DateTime? dateReception;
+
+  /// The supplier's own invoice number (e.g. "FA-2026-08-0012"), distinct
+  /// from [reference] which is this app's own internal identifier.
+  final String? numeroFournisseur;
   final String? fournisseurId;
 
   /// Supplier name snapshot taken when the invoice was recorded, so it
@@ -77,17 +88,39 @@ class PurchaseInvoice {
   final List<PurchaseInvoiceLine> lignes;
   final List<PurchaseInvoicePayment> paiements;
 
+  /// VAT rate applied on top of the lines' total, as a percentage (e.g.
+  /// 13 for 13%) — 0 for invoices that predate this field or genuinely
+  /// carry no VAT.
+  final double tvaRate;
+
+  /// Discount granted by the supplier on this invoice, applied after VAT.
+  final Discount discount;
+  final String? notes;
+
   const PurchaseInvoice({
     required this.id,
     required this.date,
+    this.dateReception,
+    this.numeroFournisseur,
     this.fournisseurId,
     this.fournisseurNom,
     this.photoBytes,
     required this.lignes,
     this.paiements = const [],
+    this.tvaRate = 0,
+    this.discount = const Discount.none(),
+    this.notes,
   });
 
-  double get montantTotal => lignes.fold(0, (sum, l) => sum + l.montant);
+  /// Sum of the product lines, before VAT and discount.
+  double get sousTotal => lignes.fold(0, (sum, l) => sum + l.montant);
+  double get tvaAmount => sousTotal * tvaRate / 100;
+
+  /// The real amount owed to the supplier: goods + VAT − discount. This is
+  /// what [montantPaye]/[montantRestant] reconcile against.
+  double get montantTotal =>
+      discount.applyTo(sousTotal + tvaAmount).clamp(0, double.infinity);
+
   double get montantPaye => paiements.fold(0.0, (sum, p) => sum + p.montant);
   double get montantRestant =>
       (montantTotal - montantPaye).clamp(0, double.infinity);
@@ -123,10 +156,15 @@ class PurchaseInvoice {
       PurchaseInvoice(
         id: id,
         date: date,
+        dateReception: dateReception,
+        numeroFournisseur: numeroFournisseur,
         fournisseurId: fournisseurId,
         fournisseurNom: fournisseurNom,
         photoBytes: photoBytes,
         lignes: lignes,
         paiements: paiements ?? this.paiements,
+        tvaRate: tvaRate,
+        discount: discount,
+        notes: notes,
       );
 }
