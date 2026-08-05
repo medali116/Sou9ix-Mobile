@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -59,6 +60,26 @@ class PurchaseInvoicePayment {
         : digits.padLeft(6, '0');
     return 'P-$tail';
   }
+
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'montant': montant,
+    'date': date.toIso8601String(),
+    'modePaiement': modePaiement?.name,
+  };
+
+  factory PurchaseInvoicePayment.fromMap(Map<String, dynamic> map) =>
+      PurchaseInvoicePayment(
+        id: map['id'] as String,
+        montant: (map['montant'] as num).toDouble(),
+        date: DateTime.parse(map['date'] as String),
+        modePaiement: map['modePaiement'] == null
+            ? null
+            : PurchasePaymentMethod.values.firstWhere(
+                (m) => m.name == map['modePaiement'],
+                orElse: () => PurchasePaymentMethod.especes,
+              ),
+      );
 }
 
 /// A supplier invoice — a single paper facture that can bundle several
@@ -166,5 +187,54 @@ class PurchaseInvoice {
         tvaRate: tvaRate,
         discount: discount,
         notes: notes,
+      );
+
+  Map<String, dynamic> toMap() => {
+    'date': date.toIso8601String(),
+    'dateReception': dateReception?.toIso8601String(),
+    'numeroFournisseur': numeroFournisseur,
+    'fournisseurId': fournisseurId,
+    'fournisseurNom': fournisseurNom,
+    'photo': photoBytes == null ? null : base64Encode(photoBytes!),
+    'lignes': lignes.map((l) => l.toMap()).toList(),
+    'paiements': paiements.map((p) => p.toMap()).toList(),
+    'tauxTva': tvaRate,
+    'remise': discount.toMap(),
+    'notes': notes,
+  };
+
+  factory PurchaseInvoice.fromMap(String id, Map<String, dynamic> map) =>
+      PurchaseInvoice(
+        id: id,
+        date: DateTime.parse(map['date'] as String),
+        dateReception: map['dateReception'] == null
+            ? null
+            : DateTime.parse(map['dateReception'] as String),
+        numeroFournisseur: map['numeroFournisseur'] as String?,
+        fournisseurId: map['fournisseurId'] as String?,
+        fournisseurNom: map['fournisseurNom'] as String?,
+        photoBytes: (map['photo'] ?? map['photoBytes']) == null
+            ? null
+            : base64Decode((map['photo'] ?? map['photoBytes']) as String),
+        lignes:
+            (map['lignes'] as List<dynamic>?)
+                ?.map(
+                  (l) => PurchaseInvoiceLine.fromMap(l as Map<String, dynamic>),
+                )
+                .toList() ??
+            const [],
+        paiements:
+            (map['paiements'] as List<dynamic>?)
+                ?.map(
+                  (p) =>
+                      PurchaseInvoicePayment.fromMap(p as Map<String, dynamic>),
+                )
+                .toList() ??
+            const [],
+        tvaRate: (map['tauxTva'] as num? ?? map['tvaRate'] as num?)?.toDouble() ?? 0,
+        discount: Discount.fromMap(
+          (map['remise'] ?? map['discount']) as Map<String, dynamic>?,
+        ),
+        notes: map['notes'] as String?,
       );
 }

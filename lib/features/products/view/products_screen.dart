@@ -212,10 +212,8 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
 
   void _showDetailsSheet(Product p) {
     final categories = ref.read(categoriesProvider);
-    final cat = categories.firstWhere(
-      (c) => c.id == p.categorieId,
-      orElse: () => categories.first,
-    );
+    final catMatches = categories.where((c) => c.id == p.categorieId);
+    final cat = catMatches.isEmpty ? null : catMatches.first;
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -260,13 +258,13 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                           Row(
                             children: [
                               Icon(
-                                cat.icon,
+                                cat?.icon ?? Icons.category_rounded,
                                 size: 13,
                                 color: AppColors.textFaint,
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                cat.name,
+                                cat?.name ?? 'Sans catégorie',
                                 style: Theme.of(context).textTheme.bodyMedium,
                               ),
                             ],
@@ -701,10 +699,10 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                     separatorBuilder: (_, _) => const SizedBox(height: 14),
                     itemBuilder: (context, index) {
                       final p = filtered[index];
-                      final cat = categories.firstWhere(
+                      final catMatches = categories.where(
                         (c) => c.id == p.categorieId,
-                        orElse: () => categories.first,
                       );
+                      final cat = catMatches.isEmpty ? null : catMatches.first;
                       final card = PressScale(
                         onTap: () => _openProductActions(p, isAdmin),
                         child: Container(
@@ -747,13 +745,13 @@ class _ProductsScreenState extends ConsumerState<ProductsScreen> {
                                     Row(
                                       children: [
                                         Icon(
-                                          cat.icon,
+                                          cat?.icon ?? Icons.category_rounded,
                                           size: 12,
                                           color: AppColors.textFaint,
                                         ),
                                         const SizedBox(width: 4),
                                         Text(
-                                          cat.name,
+                                          cat?.name ?? 'Sans catégorie',
                                           style: Theme.of(
                                             context,
                                           ).textTheme.bodyMedium,

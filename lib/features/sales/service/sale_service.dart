@@ -136,8 +136,16 @@ class SaleService {
       ? sale.id.substring(sale.id.length - 6).toUpperCase()
       : sale.id.toUpperCase();
 
-  double _currentStock(String productId) =>
-      _ref.read(productsProvider).firstWhere((p) => p.id == productId).stock;
+  /// 0 if the product can't be found — e.g. the Firestore snapshot for
+  /// [productsProvider] hasn't caught up yet with a write this same
+  /// checkout just made. A stock-movement record with an approximate
+  /// "after" value is far better than crashing the whole sale.
+  double _currentStock(String productId) {
+    final matches = _ref
+        .read(productsProvider)
+        .where((p) => p.id == productId);
+    return matches.isEmpty ? 0 : matches.first.stock;
+  }
 
   /// Reverses a sale entirely: restores the stock it consumed, cancels the
   /// client credit it created (if any), then removes the record — but

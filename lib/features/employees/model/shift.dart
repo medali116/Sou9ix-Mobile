@@ -35,6 +35,31 @@ class Shift {
   bool get enCours => clockOut == null;
   Duration get duree => (clockOut ?? DateTime.now()).difference(clockIn);
 
+  Map<String, dynamic> toMap() => {
+    'employeeId': employeeId,
+    'debut': clockIn.toIso8601String(),
+    'fin': clockOut?.toIso8601String(),
+    'fondInitial': fondInitial,
+    'fondSource': fondSource,
+    'montantCompte': montantCompte,
+    'ecartMotif': ecartMotif,
+    'ecartCommentaire': ecartCommentaire,
+  };
+
+  factory Shift.fromMap(String id, Map<String, dynamic> map) => Shift(
+    id: id,
+    employeeId: map['employeeId'] as String,
+    clockIn: DateTime.parse((map['debut'] ?? map['clockIn']) as String),
+    clockOut: (map['fin'] ?? map['clockOut']) == null
+        ? null
+        : DateTime.parse((map['fin'] ?? map['clockOut']) as String),
+    fondInitial: (map['fondInitial'] as num?)?.toDouble() ?? 0,
+    fondSource: map['fondSource'] as String? ?? 'Report de caisse',
+    montantCompte: (map['montantCompte'] as num?)?.toDouble(),
+    ecartMotif: map['ecartMotif'] as String?,
+    ecartCommentaire: map['ecartCommentaire'] as String?,
+  );
+
   Shift copyWith({
     DateTime? clockOut,
     double? montantCompte,

@@ -60,4 +60,34 @@ class StockMovement {
   });
 
   double get stockAvant => stockApres - quantite;
+
+  Map<String, dynamic> toMap() => {
+    'date': date.toIso8601String(),
+    'productId': productId,
+    'nomProduit': productName,
+    'type': type.name,
+    'quantite': quantite,
+    'stockApres': stockApres,
+    'reference': reference,
+    'motif': motif,
+    'nomEmploye': employeeName,
+  };
+
+  factory StockMovement.fromMap(String id, Map<String, dynamic> map) =>
+      StockMovement(
+        id: id,
+        date: DateTime.parse(map['date'] as String),
+        productId: map['productId'] as String,
+        productName: (map['nomProduit'] ?? map['productName']) as String,
+        type: StockMovementType.values.firstWhere(
+          (t) => t.name == map['type'],
+          orElse: () => StockMovementType.ajustement,
+        ),
+        quantite: (map['quantite'] as num).toDouble(),
+        stockApres: (map['stockApres'] as num).toDouble(),
+        reference: map['reference'] as String?,
+        motif: map['motif'] as String?,
+        employeeName:
+            (map['nomEmploye'] ?? map['employeeName']) as String? ?? 'Inconnu',
+      );
 }

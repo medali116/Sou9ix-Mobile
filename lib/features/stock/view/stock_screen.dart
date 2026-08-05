@@ -193,9 +193,10 @@ class _StockScreenState extends ConsumerState<StockScreen> {
         list.sort((a, b) => a.stock.compareTo(b.stock));
         break;
       case _StockSort.categorie:
-        String catName(String id) => categories
-            .firstWhere((c) => c.id == id, orElse: () => categories.first)
-            .name;
+        String catName(String id) {
+          final matches = categories.where((c) => c.id == id);
+          return matches.isEmpty ? 'Sans catégorie' : matches.first.name;
+        }
         list.sort(
           (a, b) => catName(a.categorieId).compareTo(catName(b.categorieId)),
         );

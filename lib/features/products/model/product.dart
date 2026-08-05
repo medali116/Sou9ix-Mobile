@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 class Product {
@@ -33,6 +34,41 @@ class Product {
   double get margePct => prixAchat == 0 ? 0 : (marge / prixAchat) * 100;
   bool get stockFaible => stock <= seuilAlerte;
   String get unite => venduAuPoids ? 'kg' : 'pc';
+
+  Map<String, dynamic> toMap() => {
+    'nom': name,
+    'emoji': emoji,
+    'photo': photoBytes == null ? null : base64Encode(photoBytes!),
+    'prixVente': prixVente,
+    'prixAchat': prixAchat,
+    'codeBarres': codeBarres,
+    'venduAuPoids': venduAuPoids,
+    'categorieId': categorieId,
+    'stock': stock,
+    'seuilAlerte': seuilAlerte,
+    'datePeremption': datePeremption?.toIso8601String(),
+  };
+
+  // Reads 'nom'/'photo' (current) falling back to the old 'name'/'photoBytes'
+  // keys so documents written before the French field-naming pass still load.
+  factory Product.fromMap(String id, Map<String, dynamic> map) => Product(
+    id: id,
+    name: (map['nom'] ?? map['name']) as String,
+    emoji: map['emoji'] as String,
+    photoBytes: (map['photo'] ?? map['photoBytes']) == null
+        ? null
+        : base64Decode((map['photo'] ?? map['photoBytes']) as String),
+    prixVente: (map['prixVente'] as num).toDouble(),
+    prixAchat: (map['prixAchat'] as num).toDouble(),
+    codeBarres: map['codeBarres'] as String?,
+    venduAuPoids: map['venduAuPoids'] as bool,
+    categorieId: map['categorieId'] as String,
+    stock: (map['stock'] as num).toDouble(),
+    seuilAlerte: (map['seuilAlerte'] as num).toDouble(),
+    datePeremption: map['datePeremption'] == null
+        ? null
+        : DateTime.parse(map['datePeremption'] as String),
+  );
 
   Product copyWith({
     String? name,

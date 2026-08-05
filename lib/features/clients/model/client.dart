@@ -36,6 +36,14 @@ class PaymentAllocation {
   final double montant;
 
   const PaymentAllocation({required this.saleId, required this.montant});
+
+  Map<String, dynamic> toMap() => {'saleId': saleId, 'montant': montant};
+
+  factory PaymentAllocation.fromMap(Map<String, dynamic> map) =>
+      PaymentAllocation(
+        saleId: map['saleId'] as String,
+        montant: (map['montant'] as num).toDouble(),
+      );
 }
 
 /// A non-sale balance change on a client's karné: either a payment
@@ -66,6 +74,39 @@ class ClientTransaction {
     this.notes,
     this.allocations = const [],
   });
+
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'type': type.name,
+    'montant': montant,
+    'date': date.toIso8601String(),
+    'modePaiement': modePaiement?.name,
+    'notes': notes,
+    'allocations': allocations.map((a) => a.toMap()).toList(),
+  };
+
+  factory ClientTransaction.fromMap(Map<String, dynamic> map) =>
+      ClientTransaction(
+        id: map['id'] as String,
+        type: ClientTransactionType.values.firstWhere(
+          (t) => t.name == map['type'],
+          orElse: () => ClientTransactionType.ajustement,
+        ),
+        montant: (map['montant'] as num).toDouble(),
+        date: DateTime.parse(map['date'] as String),
+        modePaiement: map['modePaiement'] == null
+            ? null
+            : PaymentMethod.values.firstWhere(
+                (m) => m.name == map['modePaiement'],
+                orElse: () => PaymentMethod.especes,
+              ),
+        notes: map['notes'] as String?,
+        allocations:
+            (map['allocations'] as List<dynamic>?)
+                ?.map((a) => PaymentAllocation.fromMap(a as Map<String, dynamic>))
+                .toList() ??
+            const [],
+      );
 }
 
 class Client {
@@ -109,5 +150,32 @@ class Client {
     notes: notes ?? this.notes,
     limiteCredit: limiteCredit ?? this.limiteCredit,
     transactions: transactions ?? this.transactions,
+  );
+
+  Map<String, dynamic> toMap() => {
+    'nom': nom,
+    'telephone': telephone,
+    'creditTotal': creditTotal,
+    'dernierAchat': dernierAchat.toIso8601String(),
+    'adresse': adresse,
+    'notes': notes,
+    'limiteCredit': limiteCredit,
+    'transactions': transactions.map((t) => t.toMap()).toList(),
+  };
+
+  factory Client.fromMap(String id, Map<String, dynamic> map) => Client(
+    id: id,
+    nom: map['nom'] as String,
+    telephone: map['telephone'] as String,
+    creditTotal: (map['creditTotal'] as num).toDouble(),
+    dernierAchat: DateTime.parse(map['dernierAchat'] as String),
+    adresse: map['adresse'] as String?,
+    notes: map['notes'] as String?,
+    limiteCredit: (map['limiteCredit'] as num?)?.toDouble(),
+    transactions:
+        (map['transactions'] as List<dynamic>?)
+            ?.map((t) => ClientTransaction.fromMap(t as Map<String, dynamic>))
+            .toList() ??
+        const [],
   );
 }

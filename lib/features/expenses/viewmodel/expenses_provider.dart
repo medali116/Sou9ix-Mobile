@@ -1,70 +1,41 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sou9ix/features/activity/model/activity_log_entry.dart';
 import 'package:sou9ix/features/activity/viewmodel/activity_log_provider.dart';
+import 'package:sou9ix/features/auth/viewmodel/auth_provider.dart';
 import 'package:sou9ix/features/expenses/model/expense.dart';
-
-List<Expense> _buildMockExpenses() {
-  final now = DateTime.now();
-  return [
-    Expense(
-      id: 'e1',
-      label: 'Loyer du local',
-      montant: 850,
-      categorie: ExpenseCategory.loyer,
-      date: DateTime(now.year, now.month, 1),
-      recurrente: true,
-      paye: true,
-      ajouteePar: 'Yassine Karoui',
-    ),
-    Expense(
-      id: 'e2',
-      label: 'Facture STEG',
-      montant: 120.5,
-      categorie: ExpenseCategory.steg,
-      date: now.subtract(const Duration(days: 4)),
-      recurrente: true,
-      paye: false,
-      ajouteePar: 'Rania Mejri',
-    ),
-    Expense(
-      id: 'e3',
-      label: 'Salaire — Rania Mejri',
-      montant: 900,
-      categorie: ExpenseCategory.salaires,
-      date: now.subtract(const Duration(days: 6)),
-      recurrente: true,
-      paye: true,
-      ajouteePar: 'Yassine Karoui',
-    ),
-    Expense(
-      id: 'e4',
-      label: 'Sacs & emballages',
-      montant: 65,
-      categorie: ExpenseCategory.fournitures,
-      date: now.subtract(const Duration(days: 10)),
-      paye: true,
-      ajouteePar: 'Rania Mejri',
-    ),
-    Expense(
-      id: 'e5',
-      label: 'Produits de nettoyage',
-      montant: 15,
-      categorie: ExpenseCategory.nettoyage,
-      date: now,
-      paye: true,
-      ajouteePar: 'Yassine Karoui',
-    ),
-  ];
-}
+import 'package:sou9ix/features/expenses/service/expenses_repository.dart';
 
 class ExpensesNotifier extends StateNotifier<List<Expense>> {
-  ExpensesNotifier(this._ref) : super(_buildMockExpenses());
+  ExpensesNotifier(
+    this._ref, {
+    required String? shopCode,
+    ExpensesRepository? repository,
+  }) : _repo = shopCode == null
+           ? null
+           : (repository ?? ExpensesRepository(shopCode: shopCode)),
+       super([]) {
+    final repo = _repo;
+    if (repo != null) {
+      _subscription = repo.watchAll().listen((expenses) => state = expenses);
+    }
+  }
 
   final Ref _ref;
+  final ExpensesRepository? _repo;
+  StreamSubscription<List<Expense>>? _subscription;
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
 
   void add(Expense expense) {
     state = [expense, ...state];
+    _repo?.upsert(expense);
     logActivity(
       _ref,
       category: ActivityCategory.depenses,
@@ -80,6 +51,7 @@ class ExpensesNotifier extends StateNotifier<List<Expense>> {
       for (final e in state)
         if (e.id == expense.id) expense else e,
     ];
+    _repo?.upsert(expense);
   }
 
   void duplicate(Expense expense) {
@@ -89,13 +61,17 @@ class ExpensesNotifier extends StateNotifier<List<Expense>> {
       date: DateTime.now(),
     );
     state = [copy, ...state];
+    _repo?.upsert(copy);
   }
 
-  void remove(String id) => state = state.where((e) => e.id != id).toList();
+  void remove(String id) {
+    state = state.where((e) => e.id != id).toList();
+    _repo?.remove(id);
+  }
 }
 
 final expensesProvider = StateNotifierProvider<ExpensesNotifier, List<Expense>>(
-  (ref) => ExpensesNotifier(ref),
+  (ref) => ExpensesNotifier(ref, shopCode: ref.watch(currentShopCodeProvider)),
 );
 
 List<Expense> _forMonth(List<Expense> expenses, int year, int month) => expenses

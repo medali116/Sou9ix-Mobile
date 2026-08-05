@@ -1,9 +1,29 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:sou9ix/features/auth/viewmodel/auth_provider.dart';
 import 'package:sou9ix/features/employees/model/shift.dart';
+import 'package:sou9ix/features/employees/service/shifts_repository.dart';
 
 class ShiftsNotifier extends StateNotifier<List<Shift>> {
-  ShiftsNotifier() : super(const []);
+  ShiftsNotifier({required String? shopCode, ShiftsRepository? repository})
+    : _repo = shopCode == null ? null : (repository ?? ShiftsRepository(shopCode: shopCode)),
+      super([]) {
+    final repo = _repo;
+    if (repo != null) {
+      _subscription = repo.watchAll().listen((shifts) => state = shifts);
+    }
+  }
+
+  final ShiftsRepository? _repo;
+  StreamSubscription<List<Shift>>? _subscription;
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
 
   /// Opens a cash-register session for [employeeId] with a starting float
   /// of [fondInitial] — a no-op if they already have one open.
@@ -13,16 +33,15 @@ class ShiftsNotifier extends StateNotifier<List<Shift>> {
     String fondSource = 'Report de caisse',
   }) {
     if (state.any((s) => s.employeeId == employeeId && s.enCours)) return;
-    state = [
-      Shift(
-        id: 'sh${DateTime.now().microsecondsSinceEpoch}',
-        employeeId: employeeId,
-        clockIn: DateTime.now(),
-        fondInitial: fondInitial,
-        fondSource: fondSource,
-      ),
-      ...state,
-    ];
+    final shift = Shift(
+      id: 'sh${DateTime.now().microsecondsSinceEpoch}',
+      employeeId: employeeId,
+      clockIn: DateTime.now(),
+      fondInitial: fondInitial,
+      fondSource: fondSource,
+    );
+    state = [shift, ...state];
+    _repo?.upsert(shift);
   }
 
   /// Closes [shiftId]'s cash session with what was physically counted in
@@ -35,23 +54,25 @@ class ShiftsNotifier extends StateNotifier<List<Shift>> {
     String? ecartMotif,
     String? ecartCommentaire,
   }) {
+    Shift? updated;
     state = [
       for (final s in state)
         if (s.id == shiftId)
-          s.copyWith(
+          (updated = s.copyWith(
             clockOut: DateTime.now(),
             montantCompte: montantCompte,
             ecartMotif: ecartMotif,
             ecartCommentaire: ecartCommentaire,
-          )
+          ))
         else
           s,
     ];
+    if (updated != null) _repo?.upsert(updated);
   }
 }
 
 final shiftsProvider = StateNotifierProvider<ShiftsNotifier, List<Shift>>(
-  (ref) => ShiftsNotifier(),
+  (ref) => ShiftsNotifier(shopCode: ref.watch(currentShopCodeProvider)),
 );
 
 final openShiftsProvider = Provider<List<Shift>>((ref) {

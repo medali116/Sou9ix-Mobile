@@ -75,9 +75,9 @@ final appRouter = GoRouter(
       path: '/checkout',
       builder: (context, state) => const CheckoutScreen(),
     ),
-    // The admin's shell has no permanent Caisse tab (daily sales is a
-    // Caissier job) — this lets the dashboard's "Vente" quick action still
-    // reach the same scan-and-sell screen as a one-off pushed route.
+    // Not reachable from the admin's dashboard by design — selling is a
+    // Caissier-only job (they get ScanSaleScreen as their permanent Caisse
+    // tab in MainShell instead of a pushed route).
     GoRoute(path: '/pos', builder: (context, state) => const ScanSaleScreen()),
     GoRoute(
       path: '/receipt',
@@ -168,8 +168,16 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: '/returns/new',
-      builder: (context, state) =>
-          AddReturnScreen(initialProduct: state.extra as Product?),
+      builder: (context, state) {
+        final extra = state.extra;
+        if (extra is AddReturnArgs) {
+          return AddReturnScreen(
+            initialProduct: extra.product,
+            initialMotif: extra.motif,
+          );
+        }
+        return AddReturnScreen(initialProduct: extra as Product?);
+      },
     ),
     GoRoute(
       path: '/employees',

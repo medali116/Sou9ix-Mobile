@@ -54,4 +54,30 @@ class Sale {
   double get sousTotal => lignes.fold(0, (sum, l) => sum + l.sousTotal);
   double get total => discount.applyTo(sousTotal);
   int get nombreArticles => lignes.length;
+
+  Map<String, dynamic> toMap() => {
+    'dateHeure': dateHeure.toIso8601String(),
+    'lignes': lignes.map((l) => l.toMap()).toList(),
+    'modePaiement': modePaiement.name,
+    'clientId': clientId,
+    'employeeId': employeeId,
+    'remise': discount.toMap(),
+  };
+
+  factory Sale.fromMap(String id, Map<String, dynamic> map) => Sale(
+    id: id,
+    dateHeure: DateTime.parse(map['dateHeure'] as String),
+    lignes: (map['lignes'] as List<dynamic>? ?? [])
+        .map((l) => CartItem.fromMap(l as Map<String, dynamic>))
+        .toList(),
+    modePaiement: ModePaiement.values.firstWhere(
+      (m) => m.name == map['modePaiement'],
+      orElse: () => ModePaiement.especes,
+    ),
+    clientId: map['clientId'] as String?,
+    employeeId: map['employeeId'] as String?,
+    discount: Discount.fromMap(
+      (map['remise'] ?? map['discount']) as Map<String, dynamic>?,
+    ),
+  );
 }

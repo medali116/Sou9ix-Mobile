@@ -22,6 +22,22 @@ class Discount {
 
   double applyTo(double base) => base - amountOff(base);
 
+  Map<String, dynamic> toMap() => {'type': type.name, 'valeur': value};
+
+  factory Discount.fromMap(Map<String, dynamic>? map) {
+    if (map == null) return const Discount.none();
+    final type = DiscountType.values.firstWhere(
+      (t) => t.name == map['type'],
+      orElse: () => DiscountType.none,
+    );
+    final value = (map['valeur'] as num? ?? map['value'] as num?)?.toDouble() ?? 0;
+    return switch (type) {
+      DiscountType.none => const Discount.none(),
+      DiscountType.percent => Discount.percent(value),
+      DiscountType.amount => Discount.amount(value),
+    };
+  }
+
   String label(String Function(num) formatAmount) {
     switch (type) {
       case DiscountType.none:

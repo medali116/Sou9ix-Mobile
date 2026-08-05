@@ -8,6 +8,15 @@ import 'package:sou9ix/features/employees/model/employee_module.dart';
 /// "Connexion administrateur" (e-mail + mot de passe).
 class Employee {
   final String id;
+
+  /// Which shop's roster this employee belongs to — the Firestore document
+  /// itself already lives under `shops/{shopCode}/employees`, so this isn't
+  /// written back into [toMap] (that would just be duplicate, staleness-prone
+  /// data); it's supplied by whoever reads the doc (see [fromMap]) from the
+  /// document's own path. Carried on the in-memory object because login
+  /// resolves an employee via a cross-shop [EmployeeDirectory] search before
+  /// the app knows which shop it's in — this is how it finds out.
+  final String shopCode;
   final String nom;
   final String telephone;
   final String poste;
@@ -38,6 +47,7 @@ class Employee {
 
   const Employee({
     required this.id,
+    required this.shopCode,
     required this.nom,
     required this.telephone,
     required this.poste,
@@ -78,6 +88,48 @@ class Employee {
   /// the duplicate-name guard in `employee_form_screen.dart`).
   bool matchesFullName(String query) => _normalizeName(nom) == _normalizeName(query);
 
+  Map<String, dynamic> toMap() => {
+    'nom': nom,
+    'telephone': telephone,
+    'poste': poste,
+    'actif': actif,
+    'modules': modules.map((m) => m.name).toList(),
+    'codePin': pin,
+    'role': role.name,
+    'email': email,
+    'motDePasse': password,
+  };
+
+  factory Employee.fromMap(
+    String id,
+    Map<String, dynamic> map, {
+    required String shopCode,
+  }) => Employee(
+    id: id,
+    shopCode: shopCode,
+    nom: map['nom'] as String,
+    telephone: map['telephone'] as String,
+    poste: map['poste'] as String,
+    actif: map['actif'] as bool? ?? true,
+    modules:
+        (map['modules'] as List<dynamic>?)
+            ?.map(
+              (name) => EmployeeModule.values.firstWhere(
+                (m) => m.name == name,
+                orElse: () => EmployeeModule.venteCaisse,
+              ),
+            )
+            .toSet() ??
+        defaultCashierModules,
+    pin: (map['codePin'] ?? map['pin']) as String? ?? '0000',
+    role: UserRole.values.firstWhere(
+      (r) => r.name == map['role'],
+      orElse: () => UserRole.caissier,
+    ),
+    email: map['email'] as String?,
+    password: (map['motDePasse'] ?? map['password']) as String?,
+  );
+
   Employee copyWith({
     String? nom,
     String? telephone,
@@ -90,6 +142,7 @@ class Employee {
     String? password,
   }) => Employee(
     id: id,
+    shopCode: shopCode,
     nom: nom ?? this.nom,
     telephone: telephone ?? this.telephone,
     poste: poste ?? this.poste,
@@ -124,6 +177,11 @@ String _slugify(String input) => _normalizeName(input).replaceAll(' ', '.');
 /// creation time — the employee login screen depends on names being
 /// unique among active employees.
 String normalizeEmployeeName(String input) => _normalizeName(input);
+
+/// Digits-only phone comparison, e.g. "+216 71 123 456" and "21671123456"
+/// should be treated as the same number — used both for login matching
+/// (nom + téléphone + PIN) and for the signup uniqueness check.
+String normalizePhone(String input) => input.replaceAll(RegExp(r'[^0-9]'), '');
 
 /// True for a PIN that's all one digit (`0000`, `1111`…) or a strictly
 /// ascending/descending run (`1234`, `2345`…`9876`, `4321`…) — works for

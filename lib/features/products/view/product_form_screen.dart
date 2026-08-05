@@ -33,6 +33,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   late String _categorieId;
   Uint8List? _photoBytes;
   DateTime? _datePeremption;
+  bool _saving = false;
 
   bool get _isEdit => widget.product != null;
 
@@ -117,7 +118,19 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       if (motifPrix == null) return; // cancelled — required, so bail out
     }
 
-    ref.read(productsProvider.notifier).upsert(product, motifPrix: motifPrix);
+    setState(() => _saving = true);
+    try {
+      await ref
+          .read(productsProvider.notifier)
+          .upsert(product, motifPrix: motifPrix);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Échec de l\'enregistrement : $e')),
+      );
+      return;
+    }
     if (!mounted) return;
     context.pop();
   }
@@ -243,7 +256,16 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       name: trimmed,
       icon: Icons.category_rounded,
     );
-    ref.read(categoriesProvider.notifier).add(category);
+    try {
+      await ref.read(categoriesProvider.notifier).add(category);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Échec de l\'ajout : $e')));
+      return;
+    }
+    if (!mounted) return;
     setState(() => _categorieId = category.id);
   }
 
@@ -432,12 +454,21 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: _save,
-              child: Text(
-                _isEdit
-                    ? 'Enregistrer les modifications'
-                    : 'Ajouter le produit',
-              ),
+              onPressed: _saving ? null : _save,
+              child: _saving
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Text(
+                      _isEdit
+                          ? 'Enregistrer les modifications'
+                          : 'Ajouter le produit',
+                    ),
             ),
           ),
         ],

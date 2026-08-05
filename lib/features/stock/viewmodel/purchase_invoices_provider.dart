@@ -1,81 +1,42 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sou9ix/features/activity/model/activity_log_entry.dart';
 import 'package:sou9ix/features/activity/viewmodel/activity_log_provider.dart';
+import 'package:sou9ix/features/auth/viewmodel/auth_provider.dart';
 import 'package:sou9ix/features/stock/model/purchase_invoice.dart';
-import 'package:sou9ix/features/stock/model/purchase_invoice_line.dart';
+import 'package:sou9ix/features/stock/service/purchase_invoices_repository.dart';
 
 class PurchaseInvoicesNotifier extends StateNotifier<List<PurchaseInvoice>> {
-  PurchaseInvoicesNotifier(this._ref) : super(_seed());
-
-  final Ref _ref;
-
-  static List<PurchaseInvoice> _seed() {
-    final now = DateTime.now();
-    return [
-      PurchaseInvoice(
-        id: 'ach1',
-        date: now.subtract(const Duration(days: 2)),
-        fournisseurId: 'f1',
-        fournisseurNom: 'Grossiste Fruits Secs Sfax',
-        paiements: [
-          PurchaseInvoicePayment(
-            id: 'pay1',
-            montant: 165.000,
-            date: now.subtract(const Duration(days: 2)),
-            modePaiement: PurchasePaymentMethod.especes,
-          ),
-        ],
-        lignes: const [
-          PurchaseInvoiceLine(
-            productId: 'p2',
-            productName: 'Amandes décortiquées',
-            quantite: 10,
-            venduAuPoids: true,
-            prixAchatUnitaire: 16.500,
-          ),
-        ],
-      ),
-      PurchaseInvoice(
-        id: 'ach2',
-        date: now.subtract(const Duration(days: 1)),
-        fournisseurId: 'f2',
-        fournisseurNom: 'Torréfaction Ben Ali',
-        paiements: [
-          PurchaseInvoicePayment(
-            id: 'pay2',
-            montant: 35.000,
-            date: now.subtract(const Duration(days: 1)),
-            modePaiement: PurchasePaymentMethod.especes,
-          ),
-          PurchaseInvoicePayment(
-            id: 'pay3',
-            montant: 25.000,
-            date: now.subtract(const Duration(hours: 6)),
-            modePaiement: PurchasePaymentMethod.virement,
-          ),
-        ],
-        lignes: const [
-          PurchaseInvoiceLine(
-            productId: 'p6',
-            productName: 'Café torréfié Arabica',
-            quantite: 15,
-            venduAuPoids: true,
-            prixAchatUnitaire: 12.500,
-          ),
-          PurchaseInvoiceLine(
-            productId: 'p7',
-            productName: 'Café moulu Robusta',
-            quantite: 5,
-            venduAuPoids: true,
-            prixAchatUnitaire: 9.800,
-          ),
-        ],
-      ),
-    ];
+  PurchaseInvoicesNotifier(
+    this._ref, {
+    required String? shopCode,
+    PurchaseInvoicesRepository? repository,
+  }) : _repo = shopCode == null
+           ? null
+           : (repository ?? PurchaseInvoicesRepository(shopCode: shopCode)),
+       super([]) {
+    final repo = _repo;
+    if (repo != null) {
+      _subscription = repo.watchAll().listen((invoices) => state = invoices);
+    }
   }
 
-  void add(PurchaseInvoice invoice) => state = [invoice, ...state];
+  final Ref _ref;
+  final PurchaseInvoicesRepository? _repo;
+  StreamSubscription<List<PurchaseInvoice>>? _subscription;
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void add(PurchaseInvoice invoice) {
+    state = [invoice, ...state];
+    _repo?.upsert(invoice);
+  }
 
   /// Records an additional payment against an invoice (partial or final) —
   /// clamped so a single payment can never exceed what's still owed.
@@ -84,10 +45,11 @@ class PurchaseInvoicesNotifier extends StateNotifier<List<PurchaseInvoice>> {
     double montant, {
     PurchasePaymentMethod? modePaiement,
   }) {
+    PurchaseInvoice? updated;
     state = [
       for (final i in state)
         if (i.id == invoiceId)
-          i.copyWith(
+          (updated = i.copyWith(
             paiements: [
               ...i.paiements,
               PurchaseInvoicePayment(
@@ -97,10 +59,11 @@ class PurchaseInvoicesNotifier extends StateNotifier<List<PurchaseInvoice>> {
                 modePaiement: modePaiement,
               ),
             ],
-          )
+          ))
         else
           i,
     ];
+    if (updated != null) _repo?.upsert(updated);
     final matches = state.where((i) => i.id == invoiceId);
     logActivity(
       _ref,
@@ -115,7 +78,10 @@ class PurchaseInvoicesNotifier extends StateNotifier<List<PurchaseInvoice>> {
 
 final purchaseInvoicesProvider =
     StateNotifierProvider<PurchaseInvoicesNotifier, List<PurchaseInvoice>>(
-      (ref) => PurchaseInvoicesNotifier(ref),
+      (ref) => PurchaseInvoicesNotifier(
+        ref,
+        shopCode: ref.watch(currentShopCodeProvider),
+      ),
     );
 
 final totalUnpaidPurchasesProvider = Provider<double>((ref) {

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:sou9ix/features/auth/model/user.dart';
+import 'package:sou9ix/features/auth/viewmodel/auth_provider.dart';
 import 'package:sou9ix/features/employees/model/employee.dart';
 import 'package:sou9ix/features/employees/model/employee_module.dart';
 import 'package:sou9ix/features/employees/viewmodel/employees_provider.dart';
@@ -57,6 +58,15 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
       );
       return;
     }
+    // Required, not just recommended — "Connexion employé" now matches on
+    // nom + téléphone + PIN together, so an employee saved without a phone
+    // number could never log in.
+    if (normalizePhone(_telephoneCtrl.text.trim()).length < 8) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Un numéro de téléphone valide est requis')),
+      );
+      return;
+    }
     final pin = _pinCtrl.text.trim();
     if (_role == UserRole.caissier) {
       if (pin.length != 4) {
@@ -102,6 +112,7 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
     }
     final employee = Employee(
       id: widget.employee?.id ?? 'e${DateTime.now().microsecondsSinceEpoch}',
+      shopCode: widget.employee?.shopCode ?? ref.read(currentShopCodeProvider)!,
       nom: _nomCtrl.text.trim(),
       telephone: _telephoneCtrl.text.trim(),
       poste: _posteCtrl.text.trim().isEmpty
@@ -192,7 +203,10 @@ class _EmployeeFormScreenState extends ConsumerState<EmployeeFormScreen> {
           TextField(
             controller: _telephoneCtrl,
             keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(hintText: '+216 XX XXX XXX'),
+            decoration: const InputDecoration(
+              hintText: '+216 XX XXX XXX',
+              helperText: 'Requis pour se connecter sur "Connexion employé"',
+            ),
           ),
           const SizedBox(height: 18),
           _label('Poste'),

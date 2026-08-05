@@ -19,11 +19,10 @@ import 'package:sou9ix/features/stock/view/stock_screen.dart';
 
 /// Bottom-tab shell. Tabs (and their order) depend on the signed-in role:
 /// the Administrator gets a management-oriented set (Dashboard, Stock,
-/// Stats, Profil) — daily sales is a Caissier job, so Caisse isn't one of
-/// their permanent tabs; they can still ring up a sale via the dashboard's
-/// "Vente" quick action, which pushes it as a one-off route instead
-/// (see [ScanSaleScreen] pushed at `/pos`). The Caissier gets a
-/// sales-first set (Caisse, Produits, Stock, Historique).
+/// Stats, Profil) — daily sales is a Caissier-only job, so the
+/// Administrator has no way to reach the Caisse/checkout flow at all, by
+/// design. The Caissier gets a sales-first set (Caisse, Produits, Stock,
+/// Historique), with [ScanSaleScreen] as their permanent Caisse tab.
 class MainShell extends ConsumerStatefulWidget {
   const MainShell({super.key});
 

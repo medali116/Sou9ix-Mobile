@@ -1,50 +1,45 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sou9ix/features/activity/model/activity_log_entry.dart';
 import 'package:sou9ix/features/activity/viewmodel/activity_log_provider.dart';
 import 'package:sou9ix/features/activity/viewmodel/trash_provider.dart';
+import 'package:sou9ix/features/auth/viewmodel/auth_provider.dart';
 import 'package:sou9ix/features/clients/model/client.dart';
+import 'package:sou9ix/features/clients/service/clients_repository.dart';
 import 'package:sou9ix/features/sales/model/sale.dart';
 
-List<Client> _buildMockClients() => [
-  Client(
-    id: 'c1',
-    nom: 'Mohamed Trabelsi',
-    telephone: '+216 20 123 456',
-    creditTotal: 45.500,
-    dernierAchat: DateTime.now().subtract(const Duration(days: 1)),
-  ),
-  Client(
-    id: 'c2',
-    nom: 'Amira Ben Salah',
-    telephone: '+216 22 987 654',
-    creditTotal: 0,
-    dernierAchat: DateTime.now().subtract(const Duration(days: 3)),
-  ),
-  Client(
-    id: 'c3',
-    nom: 'Sami Gharbi',
-    telephone: '+216 55 741 258',
-    creditTotal: 128.000,
-    dernierAchat: DateTime.now().subtract(const Duration(hours: 6)),
-  ),
-  Client(
-    id: 'c4',
-    nom: 'Café Central',
-    telephone: '+216 71 456 789',
-    creditTotal: 260.750,
-    dernierAchat: DateTime.now().subtract(const Duration(days: 2)),
-    limiteCredit: 300,
-  ),
-];
-
 class ClientsNotifier extends StateNotifier<List<Client>> {
-  ClientsNotifier(this._ref) : super(_buildMockClients());
+  ClientsNotifier(
+    this._ref, {
+    required String? shopCode,
+    ClientsRepository? repository,
+  }) : _repo = shopCode == null
+           ? null
+           : (repository ?? ClientsRepository(shopCode: shopCode)),
+       super([]) {
+    final repo = _repo;
+    if (repo != null) {
+      _subscription = repo.watchAll().listen((clients) => state = clients);
+    }
+  }
 
   final Ref _ref;
+  final ClientsRepository? _repo;
+  StreamSubscription<List<Client>>? _subscription;
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
 
   /// Brings a client back from the Corbeille.
-  void restore(Client client) => state = [...state, client];
+  void restore(Client client) {
+    state = [...state, client];
+    _repo?.upsert(client);
+  }
 
   /// Registers a new client on the fly (e.g. from the checkout screen when
   /// a credit customer isn't in the karné yet) and returns it so the caller
@@ -58,6 +53,7 @@ class ClientsNotifier extends StateNotifier<List<Client>> {
       dernierAchat: DateTime.now(),
     );
     state = [...state, client];
+    _repo?.upsert(client);
     logActivity(
       _ref,
       category: ActivityCategory.clients,
@@ -73,15 +69,17 @@ class ClientsNotifier extends StateNotifier<List<Client>> {
   /// like [settle]. Deliberately not logged as a [ClientTransaction]: the
   /// [Sale] record itself is the timeline entry for this change.
   void addCredit(String clientId, double montant) {
+    Client? updated;
     state = [
       for (final c in state)
         if (c.id == clientId)
-          c.copyWith(
+          (updated = c.copyWith(
             creditTotal: (c.creditTotal + montant).clamp(0, double.infinity),
-          )
+          ))
         else
           c,
     ];
+    if (updated != null) _repo?.upsert(updated);
   }
 
   /// Manual credit adjustment from the "Ajouter crédit" action — unlike
@@ -89,10 +87,11 @@ class ClientsNotifier extends StateNotifier<List<Client>> {
   /// [ClientTransactionType.ajustement] to keep the client's timeline
   /// complete.
   void addManualCredit(String clientId, double montant, {String? notes}) {
+    Client? updated;
     state = [
       for (final c in state)
         if (c.id == clientId)
-          c.copyWith(
+          (updated = c.copyWith(
             creditTotal: (c.creditTotal + montant).clamp(0, double.infinity),
             transactions: [
               ...c.transactions,
@@ -104,10 +103,11 @@ class ClientsNotifier extends StateNotifier<List<Client>> {
                 notes: notes,
               ),
             ],
-          )
+          ))
         else
           c,
     ];
+    if (updated != null) _repo?.upsert(updated);
   }
 
   /// Records a payment collected against a client's karné — clamps the
@@ -126,10 +126,11 @@ class ClientsNotifier extends StateNotifier<List<Client>> {
     PaymentMethod? modePaiement,
     String? notes,
   }) {
+    Client? updated;
     state = [
       for (final c in state)
         if (c.id == clientId)
-          c.copyWith(
+          (updated = c.copyWith(
             creditTotal: (c.creditTotal - montant).clamp(0, double.infinity),
             transactions: [
               ...c.transactions,
@@ -143,10 +144,11 @@ class ClientsNotifier extends StateNotifier<List<Client>> {
                 allocations: _allocateFifo(c, montant, creditSalesOldestFirst),
               ),
             ],
-          )
+          ))
         else
           c,
     ];
+    if (updated != null) _repo?.upsert(updated);
     final client = state.where((c) => c.id == clientId);
     logActivity(
       _ref,
@@ -194,19 +196,21 @@ class ClientsNotifier extends StateNotifier<List<Client>> {
   }) {
     final matches = state.where((c) => c.id == id);
     final old = matches.isEmpty ? null : matches.first;
+    Client? updated;
     state = [
       for (final c in state)
         if (c.id == id)
-          c.copyWith(
+          (updated = c.copyWith(
             nom: nom,
             telephone: telephone,
             adresse: adresse,
             notes: notes,
             limiteCredit: limiteCredit,
-          )
+          ))
         else
           c,
     ];
+    if (updated != null) _repo?.upsert(updated);
     if (old != null) {
       if (old.nom != nom) {
         logActivity(
@@ -252,6 +256,7 @@ class ClientsNotifier extends StateNotifier<List<Client>> {
     final client = matches.isEmpty ? null : matches.first;
     state = state.where((c) => c.id != id).toList();
     if (client != null) {
+      _repo?.remove(id);
       _ref.read(clientsTrashProvider.notifier).add(client);
       logActivity(
         _ref,
@@ -266,7 +271,7 @@ class ClientsNotifier extends StateNotifier<List<Client>> {
 }
 
 final clientsProvider = StateNotifierProvider<ClientsNotifier, List<Client>>(
-  (ref) => ClientsNotifier(ref),
+  (ref) => ClientsNotifier(ref, shopCode: ref.watch(currentShopCodeProvider)),
 );
 
 final totalCreditProvider = Provider<double>((ref) {

@@ -18,4 +18,21 @@ class PurchaseInvoiceLine {
 
   double get montant => quantite * prixAchatUnitaire;
   String get unite => venduAuPoids ? 'kg' : 'pcs';
+
+  Map<String, dynamic> toMap() => {
+    'productId': productId,
+    'nomProduit': productName,
+    'quantite': quantite,
+    'venduAuPoids': venduAuPoids,
+    'prixAchatUnitaire': prixAchatUnitaire,
+  };
+
+  factory PurchaseInvoiceLine.fromMap(Map<String, dynamic> map) =>
+      PurchaseInvoiceLine(
+        productId: map['productId'] as String?,
+        productName: (map['nomProduit'] ?? map['productName']) as String,
+        quantite: (map['quantite'] as num).toDouble(),
+        venduAuPoids: map['venduAuPoids'] as bool,
+        prixAchatUnitaire: (map['prixAchatUnitaire'] as num).toDouble(),
+      );
 }

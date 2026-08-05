@@ -1,27 +1,43 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:sou9ix/features/auth/viewmodel/auth_provider.dart';
+import 'package:sou9ix/features/employees/model/employee_module.dart';
 import 'package:sou9ix/features/products/model/product.dart';
 import 'package:sou9ix/features/returns/model/stock_return.dart';
 import 'package:sou9ix/features/products/viewmodel/products_provider.dart';
 import 'package:sou9ix/features/returns/service/stock_service.dart';
 import 'package:sou9ix/core/theme/app_colors.dart';
 import 'package:sou9ix/core/theme/app_theme.dart';
+import 'package:sou9ix/core/widgets/empty_state.dart';
+import 'package:sou9ix/core/widgets/photo_picker_field.dart';
 import 'package:sou9ix/core/widgets/press_scale.dart';
 import 'package:sou9ix/core/widgets/product_avatar.dart';
 
-/// Records a product write-off (expired, damaged, stolen…): decrements
-/// stock and logs the loss at cost price for later review in the Retours
-/// & pertes screen.
-class AddReturnScreen extends ConsumerStatefulWidget {
-  /// Preselects the product being returned — e.g. when reached from a
-  /// ticket's "Retourner un produit" action — so the cashier doesn't have
-  /// to search for it again.
-  final Product? initialProduct;
+/// Arguments for the `/returns/new` route — either bare (search from
+/// scratch), a preselected [Product] (e.g. from a ticket's "Retourner un
+/// produit" action), or a full [AddReturnArgs] pairing a product and/or a
+/// preselected [RetourMotif] (e.g. from the Retours & pertes screen's
+/// "+" menu, where the reason is chosen before the product).
+class AddReturnArgs {
+  final Product? product;
+  final RetourMotif? motif;
 
-  const AddReturnScreen({super.key, this.initialProduct});
+  const AddReturnArgs({this.product, this.motif});
+}
+
+/// Records a product write-off (expired, damaged, stolen, returned to a
+/// supplier…): decrements stock and logs the loss at cost price for later
+/// review in the Retours & pertes screen.
+class AddReturnScreen extends ConsumerStatefulWidget {
+  final Product? initialProduct;
+  final RetourMotif? initialMotif;
+
+  const AddReturnScreen({super.key, this.initialProduct, this.initialMotif});
 
   @override
   ConsumerState<AddReturnScreen> createState() => _AddReturnScreenState();
@@ -32,13 +48,15 @@ class _AddReturnScreenState extends ConsumerState<AddReturnScreen> {
   String _productQuery = '';
   final _quantiteCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
-  RetourMotif _motif = RetourMotif.peremption;
+  late RetourMotif _motif;
+  Uint8List? _photoBytes;
   bool _saving = false;
 
   @override
   void initState() {
     super.initState();
     _selectedProduct = widget.initialProduct;
+    _motif = widget.initialMotif ?? RetourMotif.peremption;
   }
 
   @override
@@ -74,14 +92,22 @@ class _AddReturnScreenState extends ConsumerState<AddReturnScreen> {
 
     setState(() => _saving = true);
 
-    ref
-        .read(stockServiceProvider)
-        .recordReturn(
-          product: product,
-          quantite: quantite,
-          motif: _motif,
-          note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
-        );
+    try {
+      await ref
+          .read(stockServiceProvider)
+          .recordReturn(
+            product: product,
+            quantite: quantite,
+            motif: _motif,
+            note: _noteCtrl.text.trim().isEmpty ? null : _noteCtrl.text.trim(),
+            photoBytes: _photoBytes,
+          );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      _showError('Échec de l\'enregistrement : $e');
+      return;
+    }
 
     if (!mounted) return;
     context.pop();
@@ -89,6 +115,21 @@ class _AddReturnScreenState extends ConsumerState<AddReturnScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final canRecord = ref.watch(
+      hasModuleProvider(EmployeeModule.stockProduits),
+    );
+    if (!canRecord) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Enregistrer une perte')),
+        body: const EmptyState(
+          icon: Icons.lock_outline_rounded,
+          title: 'Accès restreint',
+          message:
+              'Votre compte n\'a pas accès au module\nStock & produits — contactez un administrateur.',
+        ),
+      );
+    }
+
     final products = ref.watch(productsProvider);
     final filtered = products
         .where(
@@ -99,7 +140,7 @@ class _AddReturnScreenState extends ConsumerState<AddReturnScreen> {
         .toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Enregistrer un retour')),
+      appBar: AppBar(title: const Text('Enregistrer une perte')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
         children: [
@@ -213,8 +254,18 @@ class _AddReturnScreenState extends ConsumerState<AddReturnScreen> {
             children: RetourMotif.values.map((m) {
               final selected = m == _motif;
               return ChoiceChip(
+                avatar: Icon(
+                  m.icon,
+                  size: 16,
+                  color: selected ? Colors.white : m.color,
+                ),
                 label: Text(m.label),
                 selected: selected,
+                selectedColor: m.color,
+                labelStyle: TextStyle(
+                  color: selected ? Colors.white : null,
+                  fontWeight: FontWeight.w600,
+                ),
                 onSelected: (_) => setState(() => _motif = m),
               );
             }).toList(),
@@ -227,6 +278,15 @@ class _AddReturnScreenState extends ConsumerState<AddReturnScreen> {
             decoration: const InputDecoration(
               hintText: 'Détails supplémentaires…',
             ),
+          ),
+          const SizedBox(height: 18),
+          _label('Photo (optionnel)'),
+          PhotoPickerField(
+            photoBytes: _photoBytes,
+            onChanged: (bytes) => setState(() => _photoBytes = bytes),
+            placeholderLabel: 'Ajouter une photo du dommage',
+            placeholderIcon: Icons.camera_alt_outlined,
+            height: 110,
           ),
           const SizedBox(height: 28),
           SizedBox(
@@ -242,7 +302,7 @@ class _AddReturnScreenState extends ConsumerState<AddReturnScreen> {
                             color: Colors.white,
                           ),
                         )
-                      : const Text('Enregistrer le retour'),
+                      : const Text('Enregistrer la perte'),
                 ),
               )
               .animate(target: _saving ? 1 : 0, onPlay: (c) => c.repeat())

@@ -11,6 +11,12 @@ class AppUser {
   final String magasin;
   final Uint8List? photoBytes;
 
+  /// Which shop this session is scoped to — every shop-scoped provider
+  /// (products, employees, suppliers, company settings) watches this
+  /// indirectly via `currentShopCodeProvider` to know which
+  /// `shops/{shopCode}/...` subtree to read/write.
+  final String shopCode;
+
   /// Which staff-roster [Employee] this login account is — lets a
   /// Caissier's session (fond de caisse, ventes attribuées) resolve
   /// automatically from who's logged in, instead of asking them to pick
@@ -25,6 +31,7 @@ class AppUser {
     this.telephone = '',
     required this.role,
     required this.magasin,
+    required this.shopCode,
     this.photoBytes,
     this.employeeId,
   });
@@ -49,6 +56,7 @@ class AppUser {
     telephone: telephone ?? this.telephone,
     role: role,
     magasin: magasin ?? this.magasin,
+    shopCode: shopCode,
     photoBytes: photoBytes ?? this.photoBytes,
   );
 }

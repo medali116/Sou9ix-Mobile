@@ -332,19 +332,14 @@ class DashboardScreen extends ConsumerWidget {
               },
             ),
             const SizedBox(height: 24),
-            if (todayTickets == 0)
-              _EmptySalesCard(
-                onCreateTicket: () => context.push('/pos'),
-              ).animate().fadeIn(duration: 380.ms).slideY(begin: 0.05, end: 0)
-            else
-              _SummaryCard(
-                tickets: todayTickets,
-                ticketMoyen: avgTicket,
-                especes: paymentBreakdown[ModePaiement.especes] ?? 0,
-                carte: paymentBreakdown[ModePaiement.carte] ?? 0,
-                credit: paymentBreakdown[ModePaiement.credit] ?? 0,
-                articlesParTicket: avgBasket,
-              ).animate().fadeIn(duration: 380.ms).slideY(begin: 0.05, end: 0),
+            _SummaryCard(
+              tickets: todayTickets,
+              ticketMoyen: avgTicket,
+              especes: paymentBreakdown[ModePaiement.especes] ?? 0,
+              carte: paymentBreakdown[ModePaiement.carte] ?? 0,
+              credit: paymentBreakdown[ModePaiement.credit] ?? 0,
+              articlesParTicket: avgBasket,
+            ).animate().fadeIn(duration: 380.ms).slideY(begin: 0.05, end: 0),
             if (forecast != null) ...[
               const SizedBox(height: 12),
               _ForecastCard(forecast: forecast),
@@ -362,16 +357,6 @@ class DashboardScreen extends ConsumerWidget {
                 scrollDirection: Axis.horizontal,
                 clipBehavior: Clip.none,
                 children: [
-                  SizedBox(
-                    width: 74,
-                    child: _QuickAction(
-                      icon: Icons.add_shopping_cart_rounded,
-                      label: 'Vente',
-                      color: AppColors.teal,
-                      onTap: () => context.push('/pos'),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
                   SizedBox(
                     width: 74,
                     child: _QuickAction(
@@ -825,49 +810,6 @@ class _SummaryCard extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _EmptySalesCard extends StatelessWidget {
-  final VoidCallback onCreateTicket;
-  const _EmptySalesCard({required this.onCreateTicket});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: AppColors.inkGradient,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-      ),
-      child: Column(
-        children: [
-          const Icon(
-            Icons.point_of_sale_rounded,
-            color: AppColors.tealLight,
-            size: 30,
-          ),
-          const SizedBox(height: 10),
-          const Text(
-            'Aucune vente aujourd\'hui',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w800,
-              fontSize: 15,
-            ),
-          ),
-          const SizedBox(height: 14),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: onCreateTicket,
-              child: const Text('Créer votre premier ticket'),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

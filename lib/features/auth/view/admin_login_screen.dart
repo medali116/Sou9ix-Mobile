@@ -5,7 +5,8 @@ import 'package:go_router/go_router.dart';
 
 import 'package:sou9ix/features/auth/model/user.dart';
 import 'package:sou9ix/features/auth/viewmodel/auth_provider.dart';
-import 'package:sou9ix/features/employees/viewmodel/employees_provider.dart';
+import 'package:sou9ix/features/employees/model/employee.dart';
+import 'package:sou9ix/features/employees/service/employee_directory.dart';
 import 'package:sou9ix/core/theme/app_colors.dart';
 import 'package:sou9ix/core/theme/app_theme.dart';
 
@@ -59,13 +60,25 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
       return;
     }
     setState(() => _loading = true);
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (!mounted) return;
 
+    // Looked up via EmployeeDirectory (every shop at once) rather than the
+    // normal shop-scoped employeesProvider, since nobody's logged in yet —
+    // there is no shop to scope that provider to.
     final normalized = email.toLowerCase();
-    final admins = ref
-        .read(activeEmployeesProvider)
-        .where((e) => e.role == UserRole.admin);
+    List<Employee> employees;
+    try {
+      employees = await EmployeeDirectory().findAll();
+    } catch (e) {
+      debugPrint('AdminLoginScreen lookup failed: $e');
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = 'Connexion au serveur impossible — vérifiez votre connexion et réessayez.';
+      });
+      return;
+    }
+    if (!mounted) return;
+    final admins = employees.where((e) => e.actif && e.role == UserRole.admin);
     final matches = admins.where((e) => e.loginEmail.toLowerCase() == normalized);
     final match = matches.isEmpty ? null : matches.first;
     final passwordOk =
@@ -79,7 +92,7 @@ class _AdminLoginScreenState extends ConsumerState<AdminLoginScreen> {
       });
       return;
     }
-    ref.read(authProvider.notifier).loginAsEmployee(match);
+    await ref.read(authProvider.notifier).loginAsEmployee(match);
     if (mounted) context.go('/app');
   }
 

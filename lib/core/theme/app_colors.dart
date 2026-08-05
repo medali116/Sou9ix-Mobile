@@ -29,6 +29,7 @@ class AppColors {
   static const Color warning = Color(0xFFF59E0B);
   static const Color danger = Color(0xFFEF4444);
   static const Color info = Color(0xFF3B82F6);
+  static const Color purple = Color(0xFF8B5CF6);
 
   static const LinearGradient tealGradient = LinearGradient(
     begin: Alignment.topLeft,

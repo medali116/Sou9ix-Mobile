@@ -1,6 +1,5 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -1515,6 +1514,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 ),
               ],
             ),
+            const SizedBox(height: 16),
+            _ShopCodeCard(code: user?.shopCode ?? ''),
             const SizedBox(height: 24),
             Text(
               'Gestion de l\'entreprise',
@@ -1790,6 +1791,77 @@ class _InfoCard extends StatelessWidget {
               ),
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Permanently visible so the admin can always grab it to hand to a new
+/// caissier — that code is what a caissier types once, on their first login
+/// on a device, to join this shop's data (see `EmployeeLoginScreen`).
+class _ShopCodeCard extends StatelessWidget {
+  final String code;
+  const _ShopCodeCard({required this.code});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.teal.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.teal.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Code de magasin',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  code,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'À donner à vos employés pour leur première connexion',
+                  style: TextStyle(fontSize: 11, color: AppColors.textFaint),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            onPressed: code.isEmpty
+                ? null
+                : () {
+                    Clipboard.setData(ClipboardData(text: code));
+                    ScaffoldMessenger.of(context)
+                      ..hideCurrentSnackBar()
+                      ..showSnackBar(
+                        const SnackBar(
+                          behavior: SnackBarBehavior.floating,
+                          content: Text('Code copié'),
+                        ),
+                      );
+                  },
+            icon: const Icon(Icons.copy_rounded, color: AppColors.teal),
+            tooltip: 'Copier',
+          ),
         ],
       ),
     );

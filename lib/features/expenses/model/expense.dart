@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -125,5 +126,40 @@ class Expense {
     recurrente: recurrente ?? this.recurrente,
     ajouteePar: ajouteePar ?? this.ajouteePar,
     modePaiement: modePaiement ?? this.modePaiement,
+  );
+
+  Map<String, dynamic> toMap() => {
+    'libelle': label,
+    'montant': montant,
+    'categorie': categorie.name,
+    'date': date.toIso8601String(),
+    'description': description,
+    'photo': photoBytes == null ? null : base64Encode(photoBytes!),
+    'paye': paye,
+    'recurrente': recurrente,
+    'ajouteePar': ajouteePar,
+    'modePaiement': modePaiement.name,
+  };
+
+  factory Expense.fromMap(String id, Map<String, dynamic> map) => Expense(
+    id: id,
+    label: (map['libelle'] ?? map['label']) as String,
+    montant: (map['montant'] as num).toDouble(),
+    categorie: ExpenseCategory.values.firstWhere(
+      (c) => c.name == map['categorie'],
+      orElse: () => ExpenseCategory.autre,
+    ),
+    date: DateTime.parse(map['date'] as String),
+    description: map['description'] as String?,
+    photoBytes: (map['photo'] ?? map['photoBytes']) == null
+        ? null
+        : base64Decode((map['photo'] ?? map['photoBytes']) as String),
+    paye: map['paye'] as bool? ?? true,
+    recurrente: map['recurrente'] as bool? ?? false,
+    ajouteePar: map['ajouteePar'] as String?,
+    modePaiement: PaymentMethod.values.firstWhere(
+      (m) => m.name == map['modePaiement'],
+      orElse: () => PaymentMethod.especes,
+    ),
   );
 }

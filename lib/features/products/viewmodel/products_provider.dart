@@ -1,271 +1,91 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sou9ix/core/formatters.dart';
 import 'package:sou9ix/features/activity/model/activity_log_entry.dart';
 import 'package:sou9ix/features/activity/viewmodel/activity_log_provider.dart';
 import 'package:sou9ix/features/activity/viewmodel/trash_provider.dart';
+import 'package:sou9ix/features/auth/viewmodel/auth_provider.dart';
 import 'package:sou9ix/features/products/model/category.dart';
 import 'package:sou9ix/features/products/model/product.dart';
-
-final List<ProductCategory> mockCategories = [
-  const ProductCategory(
-    id: 'fruits_secs',
-    name: 'Fruits secs',
-    icon: Icons.eco_rounded,
-  ),
-  const ProductCategory(
-    id: 'epices',
-    name: 'Épices',
-    icon: Icons.local_fire_department_rounded,
-  ),
-  const ProductCategory(
-    id: 'cafe',
-    name: 'Torréfaction',
-    icon: Icons.coffee_rounded,
-  ),
-  const ProductCategory(
-    id: 'epicerie',
-    name: 'Épicerie',
-    icon: Icons.kitchen_rounded,
-  ),
-  const ProductCategory(
-    id: 'boissons',
-    name: 'Boissons',
-    icon: Icons.local_drink_rounded,
-  ),
-];
-
-List<Product> _buildMockProducts() => [
-  Product(
-    id: 'p1',
-    name: 'Cacahuètes grillées',
-    emoji: '🥜',
-    prixVente: 8.000,
-    prixAchat: 5.200,
-    codeBarres: '6191234500017',
-    venduAuPoids: true,
-    categorieId: 'fruits_secs',
-    stock: 12.5,
-    seuilAlerte: 3,
-  ),
-  Product(
-    id: 'p2',
-    name: 'Amandes décortiquées',
-    emoji: '🌰',
-    prixVente: 22.000,
-    prixAchat: 16.500,
-    codeBarres: '6191234500024',
-    venduAuPoids: true,
-    categorieId: 'fruits_secs',
-    stock: 2.0,
-    seuilAlerte: 3,
-  ),
-  Product(
-    id: 'p3',
-    name: 'Pistaches grillées',
-    emoji: '🥨',
-    prixVente: 34.000,
-    prixAchat: 27.000,
-    codeBarres: '6191234500031',
-    venduAuPoids: true,
-    categorieId: 'fruits_secs',
-    stock: 8.0,
-    seuilAlerte: 2,
-  ),
-  Product(
-    id: 'p4',
-    name: 'Noix de cajou',
-    emoji: '🌰',
-    prixVente: 29.500,
-    prixAchat: 22.000,
-    codeBarres: '6191234500048',
-    venduAuPoids: true,
-    categorieId: 'fruits_secs',
-    stock: 5.4,
-    seuilAlerte: 2,
-  ),
-  Product(
-    id: 'p5',
-    name: 'Graines de tournesol',
-    emoji: '🌻',
-    prixVente: 6.000,
-    prixAchat: 3.800,
-    codeBarres: '6191234500055',
-    venduAuPoids: true,
-    categorieId: 'fruits_secs',
-    stock: 1.2,
-    seuilAlerte: 2,
-  ),
-  Product(
-    id: 'p6',
-    name: 'Café torréfié Arabica',
-    emoji: '☕',
-    prixVente: 18.000,
-    prixAchat: 12.500,
-    codeBarres: '6191234500062',
-    venduAuPoids: true,
-    categorieId: 'cafe',
-    stock: 9.0,
-    seuilAlerte: 2,
-  ),
-  Product(
-    id: 'p7',
-    name: 'Café moulu Robusta',
-    emoji: '☕',
-    prixVente: 14.500,
-    prixAchat: 9.800,
-    codeBarres: '6191234500079',
-    venduAuPoids: true,
-    categorieId: 'cafe',
-    stock: 0.8,
-    seuilAlerte: 2,
-  ),
-  Product(
-    id: 'p8',
-    name: 'Ras el-hanout',
-    emoji: '🌶️',
-    prixVente: 25.000,
-    prixAchat: 17.000,
-    codeBarres: '6191234500086',
-    venduAuPoids: true,
-    categorieId: 'epices',
-    stock: 3.5,
-    seuilAlerte: 1,
-  ),
-  Product(
-    id: 'p9',
-    name: 'Curcuma moulu',
-    emoji: '🟡',
-    prixVente: 16.000,
-    prixAchat: 10.500,
-    codeBarres: '6191234500093',
-    venduAuPoids: true,
-    categorieId: 'epices',
-    stock: 4.2,
-    seuilAlerte: 1,
-  ),
-  Product(
-    id: 'p10',
-    name: 'Huile d\'olive 1L',
-    emoji: '🫒',
-    prixVente: 19.900,
-    prixAchat: 15.200,
-    codeBarres: '6191234500109',
-    venduAuPoids: false,
-    categorieId: 'epicerie',
-    stock: 24,
-    seuilAlerte: 6,
-  ),
-  Product(
-    id: 'p11',
-    name: 'Pâtes 500g',
-    emoji: '🍝',
-    prixVente: 2.200,
-    prixAchat: 1.500,
-    codeBarres: '6191234500116',
-    venduAuPoids: false,
-    categorieId: 'epicerie',
-    stock: 60,
-    seuilAlerte: 10,
-  ),
-  Product(
-    id: 'p12',
-    name: 'Eau minérale 1.5L',
-    emoji: '💧',
-    prixVente: 1.100,
-    prixAchat: 0.650,
-    codeBarres: '6191234500123',
-    venduAuPoids: false,
-    categorieId: 'boissons',
-    stock: 4,
-    seuilAlerte: 12,
-  ),
-  Product(
-    id: 'p13',
-    name: 'Jus d\'orange 1L',
-    emoji: '🧃',
-    prixVente: 3.800,
-    prixAchat: 2.600,
-    codeBarres: '6191234500130',
-    venduAuPoids: false,
-    categorieId: 'boissons',
-    stock: 18,
-    seuilAlerte: 5,
-  ),
-  Product(
-    id: 'p14',
-    name: 'Dattes Deglet Nour',
-    emoji: '🍈',
-    prixVente: 12.000,
-    prixAchat: 8.400,
-    codeBarres: '6191234500147',
-    venduAuPoids: true,
-    categorieId: 'fruits_secs',
-    stock: 15.0,
-    seuilAlerte: 3,
-  ),
-  Product(
-    id: 'p15',
-    name: 'Figues séchées',
-    emoji: '🫐',
-    prixVente: 17.500,
-    prixAchat: 12.000,
-    codeBarres: '6191234500154',
-    venduAuPoids: true,
-    categorieId: 'fruits_secs',
-    stock: 6.6,
-    seuilAlerte: 2,
-  ),
-];
+import 'package:sou9ix/features/products/service/categories_repository.dart';
+import 'package:sou9ix/features/products/service/products_repository.dart';
 
 class ProductsNotifier extends StateNotifier<List<Product>> {
-  ProductsNotifier(this._ref) : super(_buildMockProducts());
+  /// [shopCode] is null when nobody's logged in yet — there's no shop to
+  /// subscribe to, so the catalog just stays empty until a session with a
+  /// shop code exists.
+  ProductsNotifier(
+    this._ref, {
+    required String? shopCode,
+    ProductsRepository? repository,
+  }) : _repo = shopCode == null
+           ? null
+           : (repository ?? ProductsRepository(shopCode: shopCode)),
+       super([]) {
+    final repo = _repo;
+    if (repo != null) {
+      _subscription = repo.watchAll().listen((products) => state = products);
+    }
+  }
 
   final Ref _ref;
+  final ProductsRepository? _repo;
+  StreamSubscription<List<Product>>? _subscription;
 
-  void decrementStock(String productId, double quantite) {
-    state = [
-      for (final p in state)
-        if (p.id == productId) p.copyWith(stock: p.stock - quantite) else p,
-    ];
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> decrementStock(String productId, double quantite) async {
+    final matches = state.where((p) => p.id == productId);
+    if (matches.isEmpty) return;
+    await _repo?.upsert(
+      matches.first.copyWith(stock: matches.first.stock - quantite),
+    );
   }
 
   /// Adds freshly received quantity to a product's stock, e.g. after a
   /// supplier delivery — optionally updating the purchase price if it
   /// changed since the last restock.
-  void restock(
+  Future<void> restock(
     String productId,
     double quantiteRecue, {
     double? nouveauPrixAchat,
-  }) {
-    state = [
-      for (final p in state)
-        if (p.id == productId)
-          p.copyWith(
-            stock: p.stock + quantiteRecue,
-            prixAchat: nouveauPrixAchat ?? p.prixAchat,
-          )
-        else
-          p,
-    ];
+  }) async {
+    final matches = state.where((p) => p.id == productId);
+    if (matches.isEmpty) return;
+    final p = matches.first;
+    await _repo?.upsert(
+      p.copyWith(
+        stock: p.stock + quantiteRecue,
+        prixAchat: nouveauPrixAchat ?? p.prixAchat,
+      ),
+    );
   }
 
   /// Applies an arbitrary signed adjustment to a product's stock — used to
   /// reconcile stock when a past sale is edited or deleted (unlike
   /// [decrementStock]/[restock], which only move in one direction).
   void adjustStock(String productId, double delta) {
-    state = [
-      for (final p in state)
-        if (p.id == productId) p.copyWith(stock: p.stock + delta) else p,
-    ];
+    final matches = state.where((p) => p.id == productId);
+    if (matches.isEmpty) return;
+    final p = matches.first;
+    _repo?.upsert(p.copyWith(stock: p.stock + delta));
   }
 
   /// Edits go through here whether they come from the product form (price)
   /// or the stock screen's "Ajuster" sheet (stock) — comparing against the
   /// previous value here, once, means every edit path gets logged the same
   /// way without each screen having to remember to do it.
-  void upsert(Product product, {String? motifStock, String? motifPrix}) {
+  Future<void> upsert(
+    Product product, {
+    String? motifStock,
+    String? motifPrix,
+  }) async {
     final exists = state.any((p) => p.id == product.id);
     if (exists) {
       final old = state.firstWhere((p) => p.id == product.id);
@@ -325,51 +145,67 @@ class ProductsNotifier extends StateNotifier<List<Product>> {
           motif: motifStock,
         );
       }
-      state = [
-        for (final p in state)
-          if (p.id == product.id) product else p,
-      ];
-    } else {
-      state = [...state, product];
     }
+    await _repo?.upsert(product);
   }
 
-  void remove(String productId, {required String motif}) {
+  Future<void> remove(String productId, {required String motif}) async {
     final matches = state.where((p) => p.id == productId);
     final product = matches.isEmpty ? null : matches.first;
-    state = state.where((p) => p.id != productId).toList();
-    if (product != null) {
-      _ref.read(productsTrashProvider.notifier).add(product);
-      logActivity(
-        _ref,
-        category: ActivityCategory.produits,
-        impact: ActivityImpact.suppression,
-        action: 'Produit supprimé',
-        targetName: product.name,
-        motif: motif,
-      );
-    }
+    if (product == null) return;
+    await _repo?.remove(productId);
+    _ref.read(productsTrashProvider.notifier).add(product);
+    logActivity(
+      _ref,
+      category: ActivityCategory.produits,
+      impact: ActivityImpact.suppression,
+      action: 'Produit supprimé',
+      targetName: product.name,
+      motif: motif,
+    );
   }
 }
 
 final productsProvider = StateNotifierProvider<ProductsNotifier, List<Product>>(
-  (ref) => ProductsNotifier(ref),
+  (ref) => ProductsNotifier(ref, shopCode: ref.watch(currentShopCodeProvider)),
 );
 
 class CategoriesNotifier extends StateNotifier<List<ProductCategory>> {
-  CategoriesNotifier() : super(mockCategories);
+  CategoriesNotifier({
+    required String? shopCode,
+    CategoriesRepository? repository,
+  }) : _repo = shopCode == null
+           ? null
+           : (repository ?? CategoriesRepository(shopCode: shopCode)),
+       super([]) {
+    final repo = _repo;
+    if (repo != null) {
+      _subscription = repo.watchAll().listen(
+        (categories) => state = categories,
+      );
+    }
+  }
+
+  final CategoriesRepository? _repo;
+  StreamSubscription<List<ProductCategory>>? _subscription;
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
 
   /// Adds a category created on the fly from the product form — a no-op
   /// if one with the same id already exists.
-  void add(ProductCategory category) {
+  Future<void> add(ProductCategory category) async {
     if (state.any((c) => c.id == category.id)) return;
-    state = [...state, category];
+    await _repo?.add(category);
   }
 }
 
 final categoriesProvider =
     StateNotifierProvider<CategoriesNotifier, List<ProductCategory>>(
-      (ref) => CategoriesNotifier(),
+      (ref) => CategoriesNotifier(shopCode: ref.watch(currentShopCodeProvider)),
     );
 
 final lowStockProvider = Provider<List<Product>>((ref) {

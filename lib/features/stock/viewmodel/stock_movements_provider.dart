@@ -1,17 +1,43 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sou9ix/features/auth/viewmodel/auth_provider.dart';
 import 'package:sou9ix/features/stock/model/stock_movement.dart';
+import 'package:sou9ix/features/stock/service/stock_movements_repository.dart';
 
 class StockMovementsNotifier extends StateNotifier<List<StockMovement>> {
-  StockMovementsNotifier() : super(const []);
+  StockMovementsNotifier({
+    required String? shopCode,
+    StockMovementsRepository? repository,
+  }) : _repo = shopCode == null
+           ? null
+           : (repository ?? StockMovementsRepository(shopCode: shopCode)),
+       super([]) {
+    final repo = _repo;
+    if (repo != null) {
+      _subscription = repo.watchAll().listen((movements) => state = movements);
+    }
+  }
 
-  void record(StockMovement movement) => state = [movement, ...state];
+  final StockMovementsRepository? _repo;
+  StreamSubscription<List<StockMovement>>? _subscription;
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void record(StockMovement movement) {
+    state = [movement, ...state];
+    _repo?.record(movement);
+  }
 }
 
 final stockMovementsProvider =
     StateNotifierProvider<StockMovementsNotifier, List<StockMovement>>(
-      (ref) => StockMovementsNotifier(),
+      (ref) => StockMovementsNotifier(shopCode: ref.watch(currentShopCodeProvider)),
     );
 
 /// Single entry point every stock-mutating flow records through (sale

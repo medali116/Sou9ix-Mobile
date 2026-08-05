@@ -1,112 +1,44 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sou9ix/features/activity/model/activity_log_entry.dart';
+import 'package:sou9ix/features/activity/service/activity_log_repository.dart';
 import 'package:sou9ix/features/auth/viewmodel/auth_provider.dart';
 
 class ActivityLogNotifier extends StateNotifier<List<ActivityLogEntry>> {
-  ActivityLogNotifier() : super(_seed());
-
-  static List<ActivityLogEntry> _seed() {
-    final now = DateTime.now();
-    return [
-      ActivityLogEntry(
-        id: 'a1',
-        date: now.subtract(const Duration(hours: 3)),
-        employeeName: 'Rania Mejri',
-        category: ActivityCategory.prix,
-        impact: ActivityImpact.modification,
-        action: 'Prix modifié',
-        targetName: 'Eau Safia',
-        champ: 'Prix de vente',
-        ancienneValeur: '1.000 DT',
-        nouvelleValeur: '1.200 DT',
-        difference: 0.2,
-        motif: 'Nouveau tarif fournisseur',
-        platform: currentPlatformLabel(),
-      ),
-      ActivityLogEntry(
-        id: 'a2',
-        date: now.subtract(const Duration(hours: 6)),
-        employeeName: 'Rania Mejri',
-        category: ActivityCategory.tickets,
-        impact: ActivityImpact.suppression,
-        action: 'Ticket supprimé',
-        targetName: 'Ticket #001182',
-        montant: 18,
-        motif: 'Erreur de saisie',
-        platform: currentPlatformLabel(),
-      ),
-      ActivityLogEntry(
-        id: 'a3',
-        date: now.subtract(const Duration(days: 1, hours: 2)),
-        employeeName: 'Yassine Karoui',
-        category: ActivityCategory.stock,
-        impact: ActivityImpact.modification,
-        action: 'Stock ajusté',
-        targetName: 'Amandes décortiquées',
-        champ: 'Stock',
-        ancienneValeur: '20.000 kg',
-        nouvelleValeur: '18.000 kg',
-        difference: -2,
-        motif: 'Produit cassé',
-        platform: currentPlatformLabel(),
-      ),
-      ActivityLogEntry(
-        id: 'a4',
-        date: now.subtract(const Duration(days: 1, hours: 5)),
-        employeeName: 'Yassine Karoui',
-        category: ActivityCategory.clients,
-        impact: ActivityImpact.ajout,
-        action: 'Nouveau client',
-        targetName: 'Café Central',
-        platform: currentPlatformLabel(),
-      ),
-      ActivityLogEntry(
-        id: 'a5',
-        date: now.subtract(const Duration(days: 2)),
-        employeeName: 'Yassine Karoui',
-        category: ActivityCategory.depenses,
-        impact: ActivityImpact.ajout,
-        action: 'Dépense ajoutée',
-        targetName: 'Facture STEG',
-        montant: 120.5,
-        platform: currentPlatformLabel(),
-      ),
-      ActivityLogEntry(
-        id: 'a6',
-        date: now.subtract(const Duration(days: 2, hours: 3)),
-        employeeName: 'Rania Mejri',
-        category: ActivityCategory.prix,
-        impact: ActivityImpact.modification,
-        action: 'Prix modifié',
-        targetName: 'Pistaches grillées',
-        champ: 'Prix de vente',
-        ancienneValeur: '32.000 DT',
-        nouvelleValeur: '34.000 DT',
-        difference: 2,
-        platform: currentPlatformLabel(),
-      ),
-      ActivityLogEntry(
-        id: 'a7',
-        date: now.subtract(const Duration(days: 3)),
-        employeeName: 'Yassine Karoui',
-        category: ActivityCategory.fournisseurs,
-        impact: ActivityImpact.paiement,
-        action: 'Paiement fournisseur',
-        targetName: 'Torréfaction Ben Ali',
-        montant: 35,
-        platform: currentPlatformLabel(),
-      ),
-    ];
+  ActivityLogNotifier({
+    required String? shopCode,
+    ActivityLogRepository? repository,
+  }) : _repo = shopCode == null
+           ? null
+           : (repository ?? ActivityLogRepository(shopCode: shopCode)),
+       super([]) {
+    final repo = _repo;
+    if (repo != null) {
+      _subscription = repo.watchAll().listen((entries) => state = entries);
+    }
   }
 
-  void log(ActivityLogEntry entry) => state = [entry, ...state];
+  final ActivityLogRepository? _repo;
+  StreamSubscription<List<ActivityLogEntry>>? _subscription;
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void log(ActivityLogEntry entry) {
+    state = [entry, ...state];
+    _repo?.log(entry);
+  }
 }
 
 final activityLogProvider =
     StateNotifierProvider<ActivityLogNotifier, List<ActivityLogEntry>>(
-      (ref) => ActivityLogNotifier(),
+      (ref) => ActivityLogNotifier(shopCode: ref.watch(currentShopCodeProvider)),
     );
 
 /// Best-effort "which device is this" — real, not fabricated: Flutter

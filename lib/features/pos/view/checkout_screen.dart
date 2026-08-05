@@ -58,9 +58,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     super.dispose();
   }
 
-  /// Only caissiers work a cash till in this app — the admin's "Vente
-  /// rapide" route bypasses cash-session tracking entirely, so it's never
-  /// blocked here.
+  /// Only caissiers work a cash till in this app — the admin has no UI path
+  /// to this screen at all (see `MainShell`), so this only ever runs for a
+  /// caissier in practice; the role check is kept as a defensive fallback.
   bool _hasOpenCaisseSession() {
     if (ref.read(authProvider)?.role != UserRole.caissier) return true;
     final activeId = ref.read(activeEmployeeProvider);
@@ -117,17 +117,32 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     }
 
     setState(() => _processing = true);
-    await Future.delayed(const Duration(milliseconds: 700));
 
-    final sale = ref
-        .read(saleServiceProvider)
-        .checkout(
-          lignes: items,
-          modePaiement: _mode,
-          clientId: _clientId,
-          employeeId: ref.read(activeEmployeeProvider),
-          discount: ref.read(cartDiscountProvider),
+    final Sale sale;
+    try {
+      sale = ref
+          .read(saleServiceProvider)
+          .checkout(
+            lignes: items,
+            modePaiement: _mode,
+            clientId: _clientId,
+            employeeId: ref.read(activeEmployeeProvider),
+            discount: ref.read(cartDiscountProvider),
+          );
+    } catch (e) {
+      debugPrint('Checkout failed: $e');
+      if (!mounted) return;
+      setState(() => _processing = false);
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            behavior: SnackBarBehavior.floating,
+            content: Text('Erreur lors de l\'encaissement — réessayez.'),
+          ),
         );
+      return;
+    }
     ref.read(cartProvider.notifier).clear();
     ref.read(cartDiscountProvider.notifier).state = const Discount.none();
     ref.read(pendingClientProvider.notifier).state = null;

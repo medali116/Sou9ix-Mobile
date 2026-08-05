@@ -32,4 +32,27 @@ class CartItem {
     poidsUnitaire: poidsUnitaire ?? this.poidsUnitaire,
     discount: discount ?? this.discount,
   );
+
+  /// Embeds a full snapshot of [product] as it was at sale time (not a
+  /// reference) — a later price/name change on the catalogue must never
+  /// alter what a past ticket shows it sold for.
+  Map<String, dynamic> toMap() => {
+    'productId': product.id,
+    'produit': product.toMap(),
+    'quantite': quantite,
+    'poidsUnitaire': poidsUnitaire,
+    'remise': discount.toMap(),
+  };
+
+  factory CartItem.fromMap(Map<String, dynamic> map) => CartItem(
+    product: Product.fromMap(
+      map['productId'] as String,
+      (map['produit'] ?? map['product']) as Map<String, dynamic>,
+    ),
+    quantite: (map['quantite'] as num).toDouble(),
+    poidsUnitaire: (map['poidsUnitaire'] as num?)?.toDouble(),
+    discount: Discount.fromMap(
+      (map['remise'] ?? map['discount']) as Map<String, dynamic>?,
+    ),
+  );
 }

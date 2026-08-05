@@ -52,126 +52,133 @@ class _BarcodeCaptureScreenState extends State<BarcodeCaptureScreen> {
     return Scaffold(
       backgroundColor: AppColors.ink,
       body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 4, 16, 0),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close_rounded, color: Colors.white),
-                  ),
-                  const Spacer(),
-                  const Text(
-                    'Scanner un code-barres',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const Spacer(),
-                  const SizedBox(width: 48),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: AspectRatio(
-                aspectRatio: 1,
-                child: Stack(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 4, 16, 0),
+                child: Row(
                   children: [
-                    LiveBarcodeScanner(
-                      onDetect: _handleDetect,
-                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                    ),
-                    if (_captured)
-                      Positioned.fill(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.55),
-                            borderRadius: BorderRadius.circular(AppRadius.lg),
-                          ),
-                          child: const Center(
-                            child: Icon(
-                              Icons.check_circle_rounded,
-                              color: AppColors.success,
-                              size: 64,
-                            ),
-                          ),
-                        ),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: Colors.white,
                       ),
+                    ),
+                    const Spacer(),
+                    const Text(
+                      'Scanner un code-barres',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const Spacer(),
+                    const SizedBox(width: 48),
                   ],
                 ),
               ),
-            ),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(24, 6, 24, 12),
-              child: Text(
-                'Placez le code-barres dans le cadre\nou saisissez-le manuellement.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white70, fontSize: 13),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.only(left: 4, bottom: 6),
-                    child: Text(
-                      'Saisie manuelle',
-                      style: TextStyle(color: Colors.white70, fontSize: 12.5),
-                    ),
-                  ),
-                  Row(
+              const SizedBox(height: 12),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: Stack(
                     children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _manualCtrl,
-                          keyboardType: TextInputType.number,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: InputDecoration(
-                            hintText: 'Code-barres (EAN)',
-                            prefixIcon: const Icon(
-                              Icons.sell_outlined,
-                              color: Colors.white54,
-                              size: 20,
+                      LiveBarcodeScanner(
+                        onDetect: _handleDetect,
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                      ),
+                      if (_captured)
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.55),
+                              borderRadius: BorderRadius.circular(AppRadius.lg),
                             ),
-                            filled: true,
-                            fillColor: Colors.white.withValues(alpha: 0.08),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(AppRadius.md),
-                              borderSide: BorderSide.none,
+                            child: const Center(
+                              child: Icon(
+                                Icons.check_circle_rounded,
+                                color: AppColors.success,
+                                size: 64,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 10),
-                      IconButton.filled(
-                        onPressed: _manualCtrl.text.trim().isEmpty
-                            ? null
-                            : _submitManual,
-                        style: IconButton.styleFrom(
-                          backgroundColor: AppColors.teal,
-                          disabledBackgroundColor: Colors.white.withValues(
-                            alpha: 0.08,
-                          ),
-                        ),
-                        icon: const Icon(Icons.check_rounded),
-                      ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+              const Padding(
+                padding: EdgeInsets.fromLTRB(24, 6, 24, 12),
+                child: Text(
+                  'Placez le code-barres dans le cadre\nou saisissez-le manuellement.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white70, fontSize: 13),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.only(left: 4, bottom: 6),
+                      child: Text(
+                        'Saisie manuelle',
+                        style: TextStyle(color: Colors.white70, fontSize: 12.5),
+                      ),
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _manualCtrl,
+                            keyboardType: TextInputType.number,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
+                              hintText: 'Code-barres (EAN)',
+                              prefixIcon: const Icon(
+                                Icons.sell_outlined,
+                                color: Colors.white54,
+                                size: 20,
+                              ),
+                              filled: true,
+                              fillColor: Colors.white.withValues(alpha: 0.08),
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 14,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.md,
+                                ),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        IconButton.filled(
+                          onPressed: _manualCtrl.text.trim().isEmpty
+                              ? null
+                              : _submitManual,
+                          style: IconButton.styleFrom(
+                            backgroundColor: AppColors.teal,
+                            disabledBackgroundColor: Colors.white.withValues(
+                              alpha: 0.08,
+                            ),
+                          ),
+                          icon: const Icon(Icons.check_rounded),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

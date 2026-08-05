@@ -67,4 +67,26 @@ class CaisseAdjustment {
     this.note,
     required this.recordedByName,
   });
+
+  Map<String, dynamic> toMap() => {
+    'date': date.toIso8601String(),
+    'montant': montant,
+    'targetEmployeeId': targetEmployeeId,
+    'motif': motif,
+    'note': note,
+    'enregistrePar': recordedByName,
+  };
+
+  factory CaisseAdjustment.fromMap(String id, Map<String, dynamic> map) =>
+      CaisseAdjustment(
+        id: id,
+        date: DateTime.parse(map['date'] as String),
+        montant: (map['montant'] as num).toDouble(),
+        targetEmployeeId: map['targetEmployeeId'] as String,
+        motif: map['motif'] as String,
+        note: map['note'] as String?,
+        recordedByName:
+            (map['enregistrePar'] ?? map['recordedByName']) as String? ??
+            'Inconnu',
+      );
 }

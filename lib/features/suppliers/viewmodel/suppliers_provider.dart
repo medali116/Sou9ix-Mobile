@@ -1,29 +1,36 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sou9ix/features/activity/model/activity_log_entry.dart';
 import 'package:sou9ix/features/activity/viewmodel/activity_log_provider.dart';
 import 'package:sou9ix/features/activity/viewmodel/trash_provider.dart';
+import 'package:sou9ix/features/auth/viewmodel/auth_provider.dart';
 import 'package:sou9ix/features/suppliers/model/supplier.dart';
+import 'package:sou9ix/features/suppliers/service/suppliers_repository.dart';
 
 class SuppliersNotifier extends StateNotifier<List<Supplier>> {
-  SuppliersNotifier(this._ref) : super(_seed());
+  /// [shopCode] is null when nobody's logged in yet — there's no shop to
+  /// subscribe to, so the list just stays empty until a session with a shop
+  /// code exists.
+  SuppliersNotifier(this._ref, {required String? shopCode, SuppliersRepository? repository})
+    : _repo = shopCode == null ? null : (repository ?? SuppliersRepository(shopCode: shopCode)),
+      super([]) {
+    final repo = _repo;
+    if (repo != null) {
+      _subscription = repo.watchAll().listen((suppliers) => state = suppliers);
+    }
+  }
 
   final Ref _ref;
+  final SuppliersRepository? _repo;
+  StreamSubscription<List<Supplier>>? _subscription;
 
-  static List<Supplier> _seed() => const [
-    Supplier(
-      id: 'f1',
-      nom: 'Grossiste Fruits Secs Sfax',
-      telephone: '+216 74 111 222',
-      adresse: 'Zone industrielle, Sfax',
-    ),
-    Supplier(
-      id: 'f2',
-      nom: 'Torréfaction Ben Ali',
-      telephone: '+216 71 333 444',
-      adresse: 'Rue de la Torréfaction, Tunis',
-    ),
-  ];
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
 
   void upsert(Supplier supplier) {
     final exists = state.any((s) => s.id == supplier.id);
@@ -65,12 +72,7 @@ class SuppliersNotifier extends StateNotifier<List<Supplier>> {
           nouvelleValeur: supplier.adresse,
         );
       }
-      state = [
-        for (final s in state)
-          if (s.id == supplier.id) supplier else s,
-      ];
     } else {
-      state = [...state, supplier];
       logActivity(
         _ref,
         category: ActivityCategory.fournisseurs,
@@ -79,6 +81,7 @@ class SuppliersNotifier extends StateNotifier<List<Supplier>> {
         targetName: supplier.nom,
       );
     }
+    _repo?.upsert(supplier);
   }
 
   /// Soft delete — the supplier lands in the trash (restore/purge from
@@ -86,22 +89,21 @@ class SuppliersNotifier extends StateNotifier<List<Supplier>> {
   void remove(String id, {required String motif}) {
     final matches = state.where((s) => s.id == id);
     final supplier = matches.isEmpty ? null : matches.first;
-    state = state.where((s) => s.id != id).toList();
-    if (supplier != null) {
-      _ref.read(suppliersTrashProvider.notifier).add(supplier);
-      logActivity(
-        _ref,
-        category: ActivityCategory.fournisseurs,
-        impact: ActivityImpact.suppression,
-        action: 'Fournisseur supprimé',
-        targetName: supplier.nom,
-        motif: motif,
-      );
-    }
+    if (supplier == null) return;
+    _repo?.remove(id);
+    _ref.read(suppliersTrashProvider.notifier).add(supplier);
+    logActivity(
+      _ref,
+      category: ActivityCategory.fournisseurs,
+      impact: ActivityImpact.suppression,
+      action: 'Fournisseur supprimé',
+      targetName: supplier.nom,
+      motif: motif,
+    );
   }
 }
 
 final suppliersProvider =
     StateNotifierProvider<SuppliersNotifier, List<Supplier>>(
-      (ref) => SuppliersNotifier(ref),
+      (ref) => SuppliersNotifier(ref, shopCode: ref.watch(currentShopCodeProvider)),
     );

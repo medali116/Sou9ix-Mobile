@@ -273,7 +273,7 @@ class _ScanSaleScreenState extends ConsumerState<ScanSaleScreen>
                   ),
                   if (user != null) ...[
                     const SizedBox(width: 8),
-                    _UserChip(user: user),
+                    Flexible(child: _UserChip(user: user)),
                   ],
                 ],
               ),
@@ -821,26 +821,29 @@ class _UserChip extends ConsumerWidget {
                   : const Icon(Icons.person_rounded, size: 16),
             ),
             const SizedBox(width: 8),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  user.nom,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12.5,
+            Flexible(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    user.nom,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12.5,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  _roleLabel(user.role),
-                  style: const TextStyle(
-                    color: AppColors.textFaint,
-                    fontSize: 10.5,
+                  Text(
+                    _roleLabel(user.role),
+                    style: const TextStyle(
+                      color: AppColors.textFaint,
+                      fontSize: 10.5,
+                    ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
             const SizedBox(width: 2),
             const Icon(

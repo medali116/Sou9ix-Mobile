@@ -1,42 +1,37 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sou9ix/features/activity/model/activity_log_entry.dart';
 import 'package:sou9ix/features/activity/viewmodel/activity_log_provider.dart';
 import 'package:sou9ix/features/auth/model/user.dart' show UserRole;
+import 'package:sou9ix/features/auth/viewmodel/auth_provider.dart';
 import 'package:sou9ix/features/employees/model/employee.dart';
 import 'package:sou9ix/features/employees/model/employee_module.dart';
+import 'package:sou9ix/features/employees/service/employees_repository.dart';
 
 class EmployeesNotifier extends StateNotifier<List<Employee>> {
-  EmployeesNotifier(this._ref) : super(_seed());
+  /// [shopCode] is null when nobody's logged in yet (e.g. on the login
+  /// screens themselves) — there's no shop to subscribe to, so the roster
+  /// just stays empty until a session with a shop code exists.
+  EmployeesNotifier(this._ref, {required String? shopCode, EmployeesRepository? repository})
+    : _repo = shopCode == null ? null : (repository ?? EmployeesRepository(shopCode: shopCode)),
+      super([]) {
+    final repo = _repo;
+    if (repo != null) {
+      _subscription = repo.watchAll().listen((employees) => state = employees);
+    }
+  }
 
   final Ref _ref;
+  final EmployeesRepository? _repo;
+  StreamSubscription<List<Employee>>? _subscription;
 
-  static List<Employee> _seed() => [
-    const Employee(
-      id: 'e1',
-      nom: 'Yassine Karoui',
-      telephone: '+216 20 111 222',
-      poste: 'Gérant',
-      pin: '1234',
-      role: UserRole.admin,
-      modules: {
-        EmployeeModule.venteCaisse,
-        EmployeeModule.clientsCredits,
-        EmployeeModule.stockProduits,
-        EmployeeModule.fournisseurs,
-        EmployeeModule.rapportsFinanciers,
-        EmployeeModule.administration,
-      },
-    ),
-    const Employee(
-      id: 'e2',
-      nom: 'Rania Mejri',
-      telephone: '+216 22 333 444',
-      poste: 'Caissière',
-      pin: '5678',
-      role: UserRole.caissier,
-    ),
-  ];
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
 
   void upsert(Employee employee) {
     final exists = state.any((e) => e.id == employee.id);
@@ -112,12 +107,7 @@ class EmployeesNotifier extends StateNotifier<List<Employee>> {
           nouvelleValeur: employee.modules.map((m) => m.label).join(', '),
         );
       }
-      state = [
-        for (final e in state)
-          if (e.id == employee.id) employee else e,
-      ];
     } else {
-      state = [...state, employee];
       logActivity(
         _ref,
         category: ActivityCategory.employes,
@@ -126,6 +116,7 @@ class EmployeesNotifier extends StateNotifier<List<Employee>> {
         targetName: employee.nom,
       );
     }
+    _repo?.upsert(employee);
   }
 
   /// Soft delete — keeps history/shifts pointing at a valid employee id
@@ -133,26 +124,22 @@ class EmployeesNotifier extends StateNotifier<List<Employee>> {
   void archive(String id, {required String motif}) {
     final matches = state.where((e) => e.id == id);
     final employee = matches.isEmpty ? null : matches.first;
-    state = [
-      for (final e in state)
-        if (e.id == id) e.copyWith(actif: false) else e,
-    ];
-    if (employee != null) {
-      logActivity(
-        _ref,
-        category: ActivityCategory.employes,
-        impact: ActivityImpact.suppression,
-        action: 'Employé archivé',
-        targetName: employee.nom,
-        motif: motif,
-      );
-    }
+    if (employee == null) return;
+    _repo?.upsert(employee.copyWith(actif: false));
+    logActivity(
+      _ref,
+      category: ActivityCategory.employes,
+      impact: ActivityImpact.suppression,
+      action: 'Employé archivé',
+      targetName: employee.nom,
+      motif: motif,
+    );
   }
 }
 
 final employeesProvider =
     StateNotifierProvider<EmployeesNotifier, List<Employee>>(
-      (ref) => EmployeesNotifier(ref),
+      (ref) => EmployeesNotifier(ref, shopCode: ref.watch(currentShopCodeProvider)),
     );
 
 final activeEmployeesProvider = Provider<List<Employee>>((ref) {

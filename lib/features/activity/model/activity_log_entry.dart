@@ -126,4 +126,45 @@ class ActivityLogEntry {
 
   bool get isFieldChange =>
       champ != null && ancienneValeur != null && nouvelleValeur != null;
+
+  Map<String, dynamic> toMap() => {
+    'date': date.toIso8601String(),
+    'nomEmploye': employeeName,
+    'categorie': category.name,
+    'impact': impact.name,
+    'action': action,
+    'nomCible': targetName,
+    'champ': champ,
+    'ancienneValeur': ancienneValeur,
+    'nouvelleValeur': nouvelleValeur,
+    'difference': difference,
+    'motif': motif,
+    'montant': montant,
+    'plateforme': platform,
+  };
+
+  factory ActivityLogEntry.fromMap(String id, Map<String, dynamic> map) =>
+      ActivityLogEntry(
+        id: id,
+        date: DateTime.parse(map['date'] as String),
+        employeeName:
+            (map['nomEmploye'] ?? map['employeeName']) as String? ?? 'Inconnu',
+        category: ActivityCategory.values.firstWhere(
+          (c) => c.name == (map['categorie'] ?? map['category']),
+          orElse: () => ActivityCategory.tickets,
+        ),
+        impact: ActivityImpact.values.firstWhere(
+          (i) => i.name == map['impact'],
+          orElse: () => ActivityImpact.modification,
+        ),
+        action: map['action'] as String,
+        targetName: (map['nomCible'] ?? map['targetName']) as String?,
+        champ: map['champ'] as String?,
+        ancienneValeur: map['ancienneValeur'] as String?,
+        nouvelleValeur: map['nouvelleValeur'] as String?,
+        difference: (map['difference'] as num?)?.toDouble(),
+        motif: map['motif'] as String?,
+        montant: (map['montant'] as num?)?.toDouble(),
+        platform: (map['plateforme'] ?? map['platform']) as String?,
+      );
 }
