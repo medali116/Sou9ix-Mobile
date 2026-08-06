@@ -1,0 +1,59 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Sou9ix — Admin (debug)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_admin.dart",
+      "flutterMode": "debug",
+      "args": ["--flavor", "admin"]
+    },
+    {
+      "name": "Sou9ix — Caissier (debug)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_caissier.dart",
+      "flutterMode": "debug",
+      "args": ["--flavor", "caissier"]
+    },
+    {
+      "name": "Sou9ix — Admin (profile)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_admin.dart",
+      "flutterMode": "profile",
+      "args": ["--flavor", "admin"]
+    },
+    {
+      "name": "Sou9ix — Caissier (profile)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_caissier.dart",
+      "flutterMode": "profile",
+      "args": ["--flavor", "caissier"]
+    },
+    {
+      "name": "Sou9ix — Admin (Windows, debug, no flavor)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_admin.dart",
+      "flutterMode": "debug",
+      "deviceId": "windows"
+    },
+    {
+      "name": "Sou9ix — Caissier (Windows, debug, no flavor)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main_caissier.dart",
+      "flutterMode": "debug",
+      "deviceId": "windows"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Sou9ix — Admin + Caissier (both, debug, Android)",
+      "configurations": ["Sou9ix — Admin (debug)", "Sou9ix — Caissier (debug)"]
+    }
+  ]
+}
